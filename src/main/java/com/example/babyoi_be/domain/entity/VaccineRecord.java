@@ -41,4 +41,8 @@ public class VaccineRecord {
 
     @Column(name = "updated_by")
     private Long updatedBy;
+
+    @Column(name = "status")
+    private Long status;
+
 }

@@ -10,4 +10,8 @@ import java.util.List;
 public interface VaccineRecordRepository extends JpaRepository<VaccineRecord, Long> {
     List<VaccineRecord> findByProfileId(Long profileId);
     List<VaccineRecord> findByVaccineTypeId(Long vaccineTypeId);
+    
+    List<VaccineRecord> findByProfileIdAndStatus(Long profileId, Long status);
+    
+    long countByProfileIdAndStatus(Long profileId, Long status);
 }

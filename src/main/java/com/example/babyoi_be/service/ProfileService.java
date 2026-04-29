@@ -10,4 +10,7 @@ public interface ProfileService {
     void deleteProfile(Long id);
     ProfileResponse getProfileById(Long id);
     List<ProfileResponse> getProfilesByUserId(Long userId);
+    
+    // New methods
+    boolean hasProfile(Long userId);
 }

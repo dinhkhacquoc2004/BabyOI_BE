@@ -48,6 +48,7 @@ public class Profile {
     @Column(name = "update_by")
     private Long updatedBy;
 
+    @Column(name = "status")
     private Long status;
 
     @Column(name = "profile_code")
