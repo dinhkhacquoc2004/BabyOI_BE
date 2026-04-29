@@ -5,13 +5,17 @@ public interface Constants {
         private TABLE_STATUS() {
             throw new IllegalStateException("Utility class");
         }
-
+        public static final Long SUCCESS = 3L;
         public static final Long PENDING = -1L;
         public static final Long INACTIVE = 0L;
         public static final Long INITIATED = 1L;
         public static final Long ACTIVE = 2L;
         public static final Long UPDATING = -3L;
         public static final Long CANCELED = -2L;
+        public static final Long DELETED = -4L;
+        public static final Long EXPIRED = -5L;
+        public static final Long BLOCKED = -6L;
+        public static final Long FAILED = -7L;
     }
 
     final class API_RESPONSE {

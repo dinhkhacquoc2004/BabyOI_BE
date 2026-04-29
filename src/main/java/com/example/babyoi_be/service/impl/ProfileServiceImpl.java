@@ -1,5 +1,6 @@
 package com.example.babyoi_be.service.impl;
 
+import com.example.babyoi_be.common.Constants;
 import com.example.babyoi_be.domain.dto.request.ProfileRequest;
 import com.example.babyoi_be.domain.dto.respone.ProfileResponse;
 import com.example.babyoi_be.domain.entity.Profile;
@@ -13,6 +14,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -23,11 +25,24 @@ public class ProfileServiceImpl implements ProfileService {
     private final ProfileRepository profileRepository;
     private final UsersRepository usersRepository;
 
+    private static final List<Long> VALID_STATUSES = Arrays.asList(
+            Constants.TABLE_STATUS.ACTIVE,
+            Constants.TABLE_STATUS.INACTIVE,
+            Constants.TABLE_STATUS.DELETED
+    );
+
     @Override
     @Transactional
     public ProfileResponse createProfile(ProfileRequest request) {
         Users user = usersRepository.findById(request.getUserId())
                 .orElseThrow(() -> new RuntimeException("User not found"));
+
+        // Check limit: max 2 profiles with valid status
+        long activeProfileCount = profileRepository.countByUserIdAndStatusIn(user.getId(), VALID_STATUSES);
+        
+        if (activeProfileCount >= 2) {
+            throw new RuntimeException("User already has maximum number of profiles (2)");
+        }
 
         Profile profile = new Profile();
         BeanUtils.copyProperties(request, profile);
@@ -37,7 +52,7 @@ public class ProfileServiceImpl implements ProfileService {
             profile.setSex(Profile.Sex.valueOf(request.getSex()));
         }
         profile.setCreatedAt(LocalDateTime.now());
-        profile.setStatus(1L);
+        profile.setStatus(Constants.TABLE_STATUS.INITIATED);
 
         return mapToResponse(profileRepository.save(profile));
     }
@@ -48,8 +63,6 @@ public class ProfileServiceImpl implements ProfileService {
         Profile profile = profileRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Profile not found"));
 
-        // Copy properties from request to existing profile, excluding null or special fields if necessary
-        // In this case, we copy most fields
         BeanUtils.copyProperties(request, profile, "id", "userId", "sex");
         
         if (request.getSex() != null) {
@@ -65,7 +78,10 @@ public class ProfileServiceImpl implements ProfileService {
     public void deleteProfile(Long id) {
         Profile profile = profileRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Profile not found"));
-        profile.setStatus(0L);
+        
+        // Soft delete: change status to INACTIVE
+        profile.setStatus(Constants.TABLE_STATUS.INACTIVE);
+        profile.setUpdatedAt(LocalDateTime.now());
         profileRepository.save(profile);
     }
 
@@ -83,11 +99,15 @@ public class ProfileServiceImpl implements ProfileService {
                 .collect(Collectors.toList());
     }
 
+    @Override
+    public boolean hasProfile(Long userId) {
+        return profileRepository.existsByUserIdAndStatusIn(userId, VALID_STATUSES);
+    }
+
     private ProfileResponse mapToResponse(Profile profile) {
         ProfileResponse response = new ProfileResponse();
         BeanUtils.copyProperties(profile, response, "userId", "sex");
         
-        // Handle special fields that BeanUtils can't map automatically
         if (profile.getUser() != null) {
             response.setUserId(profile.getUser().getId());
         }
