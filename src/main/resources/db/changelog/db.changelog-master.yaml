@@ -1,3 +1,17 @@
 databaseChangeLog:
   - include:
       file: db/changelog/changes/001_init_auth_schema.sql
+  - include:
+      file: db/changelog/changes/002_create_food_schema.sql
+  - include:
+      file: db/changelog/changes/003_seed_food_catalog.sql
+  - include:
+      file: db/changelog/changes/004_add_food_goal_catalog.sql
+  - include:
+      file: db/changelog/changes/005_add_food_images.sql
+  - include:
+      file: db/changelog/changes/006_update_food_image_paths.sql
+  - include:
+      file: db/changelog/changes/007_enrich_food_ingredients.sql
+  - include:
+      file: db/changelog/changes/008_add_restricted_food_and_filters.sql
