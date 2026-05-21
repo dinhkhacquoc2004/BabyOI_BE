@@ -2,6 +2,7 @@ package com.example.babyoi_be.domain.dto.request;
 
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
+import java.math.BigDecimal;
 import java.time.LocalDate;
 
 @Getter
@@ -18,6 +19,7 @@ public class VaccineRecordRequest {
 
     private LocalDate injectionDate;
     private String location;
+    private BigDecimal price;
     private String note;
     private Long status;
 }
