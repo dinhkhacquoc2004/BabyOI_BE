@@ -2,6 +2,7 @@ package com.example.babyoi_be.domain.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import java.math.BigDecimal;
 import java.time.LocalDate;
 
 @Entity
@@ -27,6 +28,8 @@ public class VaccineRecord {
     private LocalDate injectionDate;
 
     private String location;
+
+    private BigDecimal price;
 
     private String note;
 

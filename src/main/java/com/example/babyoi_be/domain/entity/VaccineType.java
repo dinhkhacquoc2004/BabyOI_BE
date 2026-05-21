@@ -25,6 +25,9 @@ public class VaccineType {
     @Column(name = "total_dose")
     private Integer totalDose;
 
+    @Column(name = "required_age")
+    private String requiredAge;
+
     @Column(name = "for_mother")
     private Boolean forMother;
 
