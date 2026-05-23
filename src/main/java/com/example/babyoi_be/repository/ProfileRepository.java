@@ -11,6 +11,7 @@ import java.util.List;
 @Repository
 public interface ProfileRepository extends JpaRepository<Profile, Long> {
     List<Profile> findByUserId(Long userId);
+    List<Profile> findByUserIdAndStatus(Long userId, Long status);
     List<Profile> findByProfileType(String profileType);
     
     long countByUserIdAndStatusIn(Long userId, Collection<Long> statuses);

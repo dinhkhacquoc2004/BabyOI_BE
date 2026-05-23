@@ -15,3 +15,7 @@ databaseChangeLog:
       file: db/changelog/changes/007_enrich_food_ingredients.sql
   - include:
       file: db/changelog/changes/008_add_restricted_food_and_filters.sql
+  - include:
+      file: db/changelog/changes/009_profile_image_and_status.sql
+  - include:
+      file: db/changelog/changes/010_profile_audit_fields.sql
