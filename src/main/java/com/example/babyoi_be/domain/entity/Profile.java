@@ -40,19 +40,22 @@ public class Profile {
     private LocalDateTime createdAt;
 
     @Column(name = "created_by")
-    private Long createdBy;
+    private String createdBy;
 
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
-    @Column(name = "update_by")
-    private Long updatedBy;
+    @Column(name = "updated_by")
+    private String updatedBy;
 
     @Column(name = "status")
     private Long status;
 
     @Column(name = "profile_code")
     private String profileCode;
+
+    @Column(name = "image_url")
+    private String imageUrl;
 
     public enum Sex {
         MALE, FEMALE, OTHER
