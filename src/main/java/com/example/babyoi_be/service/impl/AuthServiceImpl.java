@@ -10,7 +10,7 @@ import com.example.babyoi_be.domain.entity.Users;
 import com.example.babyoi_be.repository.RolesRepository;
 import com.example.babyoi_be.repository.UsersRepository;
 import com.example.babyoi_be.security.CustomUserDetails;
-import com.example.babyoi_be.security.SessionTokenService;
+import com.example.babyoi_be.security.JwtService;
 import com.example.babyoi_be.service.AuthService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -35,7 +35,7 @@ public class AuthServiceImpl implements AuthService {
     private final RolesRepository rolesRepository;
     private final PasswordEncoder passwordEncoder;
     private final AuthenticationManager authenticationManager;
-    private final SessionTokenService sessionTokenService;
+    private final JwtService jwtService;
 
     @Override
     @Transactional
@@ -63,7 +63,7 @@ public class AuthServiceImpl implements AuthService {
                 .build();
 
         Users savedUser = usersRepository.save(user);
-        String accessToken = sessionTokenService.issueToken(savedUser);
+        String accessToken = jwtService.generateToken(savedUser);
 
         return buildAuthResponse(savedUser, accessToken);
     }
@@ -85,7 +85,7 @@ public class AuthServiceImpl implements AuthService {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "auth.login.account-disabled");
         }
 
-        return buildAuthResponse(user, sessionTokenService.issueToken(user));
+        return buildAuthResponse(user, jwtService.generateToken(user));
     }
 
     @Override
@@ -94,9 +94,6 @@ public class AuthServiceImpl implements AuthService {
         if (authorizationHeader == null || !authorizationHeader.startsWith("Bearer ")) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "auth.authorization.invalid");
         }
-
-        String rawToken = authorizationHeader.substring(7);
-        sessionTokenService.revoke(rawToken);
     }
 
     @Override
