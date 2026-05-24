@@ -12,9 +12,13 @@ import com.example.babyoi_be.repository.VaccineTypeRepository;
 import com.example.babyoi_be.security.CustomUserDetails;
 import com.example.babyoi_be.service.VaccineRecordService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDate;
 import java.util.HashMap;
@@ -25,6 +29,11 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 public class VaccineRecordServiceImpl implements VaccineRecordService {
+
+    private static final List<Long> DUPLICATE_CHECK_STATUSES = List.of(
+            Constants.TABLE_STATUS.SUCCESS,
+            Constants.TABLE_STATUS.PENDING
+    );
 
     private final VaccineRecordRepository vaccineRecordRepository;
     private final VaccineTypeRepository vaccineTypeRepository;
@@ -42,10 +51,21 @@ public class VaccineRecordServiceImpl implements VaccineRecordService {
         }
     }
 
+    private void validateUniqueVaccineType(Long profileId, Long vaccineTypeId, Long currentRecordId) {
+        boolean exists = currentRecordId == null
+                ? vaccineRecordRepository.existsByProfileIdAndVaccineTypeIdAndStatusIn(profileId, vaccineTypeId, DUPLICATE_CHECK_STATUSES)
+                : vaccineRecordRepository.existsByProfileIdAndVaccineTypeIdAndStatusInAndIdNot(profileId, vaccineTypeId, DUPLICATE_CHECK_STATUSES, currentRecordId);
+
+        if (exists) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Loại vaccin này đã tồn tại cho hồ sơ này");
+        }
+    }
+
     @Override
     @Transactional
     public VaccineRecordResponse createVaccineRecord(VaccineRecordRequest request) {
         validateProfileOwnership(request.getProfileId());
+        validateUniqueVaccineType(request.getProfileId(), request.getVaccineTypeId(), null);
 
         VaccineType vaccineType = vaccineTypeRepository.findById(request.getVaccineTypeId())
                 .orElseThrow(() -> new RuntimeException("Vaccine type not found"));
@@ -75,6 +95,8 @@ public class VaccineRecordServiceImpl implements VaccineRecordService {
         if (!record.getProfileId().equals(request.getProfileId())) {
             validateProfileOwnership(request.getProfileId());
         }
+
+        validateUniqueVaccineType(request.getProfileId(), request.getVaccineTypeId(), id);
 
         VaccineType vaccineType = vaccineTypeRepository.findById(request.getVaccineTypeId())
                 .orElseThrow(() -> new RuntimeException("Vaccine type not found"));
@@ -117,9 +139,26 @@ public class VaccineRecordServiceImpl implements VaccineRecordService {
 
     @Override
     public List<VaccineRecordResponse> getVaccineRecordsByStatus(Long profileId, Long status) {
+        return getVaccineRecordsByStatus(profileId, status, null);
+    }
+
+    @Override
+    public List<VaccineRecordResponse> getVaccineRecordsByStatus(Long profileId, Long status, Integer limit) {
         validateProfileOwnership(profileId);
-        
-        return vaccineRecordRepository.findByProfileIdAndStatus(profileId, status)
+
+        if (limit == null || limit <= 0) {
+            return vaccineRecordRepository.findByProfileIdAndStatus(profileId, status, Sort.by("injectionDate").ascending())
+                    .stream()
+                    .map(this::mapToResponse)
+                    .collect(Collectors.toList());
+        }
+
+        Sort sort = Constants.TABLE_STATUS.SUCCESS.equals(status)
+                ? Sort.by(Sort.Direction.DESC, "injectionDate")
+                : Sort.by(Sort.Direction.ASC, "injectionDate");
+
+        return vaccineRecordRepository.findByProfileIdAndStatus(profileId, status, PageRequest.of(0, limit, sort))
+                .getContent()
                 .stream()
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());
