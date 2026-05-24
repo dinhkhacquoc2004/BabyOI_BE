@@ -12,6 +12,7 @@ import java.time.LocalDateTime;
 public class FavoriteFoodResponse {
     private Long id;
     private Long userId;
+    private Long profileId;
     private Long foodId;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;

@@ -7,10 +7,12 @@ import com.example.babyoi_be.domain.entity.Profile;
 import com.example.babyoi_be.domain.entity.Users;
 import com.example.babyoi_be.repository.ProfileRepository;
 import com.example.babyoi_be.repository.UsersRepository;
+import com.example.babyoi_be.security.CustomUserDetails;
 import com.example.babyoi_be.service.ProfileService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.BeanUtils;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
@@ -36,6 +38,7 @@ public class ProfileServiceImpl implements ProfileService {
     @Transactional
     public ProfileResponse createProfile(ProfileRequest request) {
         validateProfileRequest(request);
+        validateCurrentUser(request.getUserId());
 
         Users user = usersRepository.findById(request.getUserId())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
@@ -66,9 +69,11 @@ public class ProfileServiceImpl implements ProfileService {
     @Transactional
     public ProfileResponse updateProfile(Long id, ProfileRequest request) {
         validateProfileRequest(request);
+        validateCurrentUser(request.getUserId());
 
         Profile profile = profileRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Profile not found"));
+        validateCurrentUser(profile.getUser().getId());
         Users updater = usersRepository.findById(request.getUserId())
                 .orElse(profile.getUser());
 
@@ -88,6 +93,7 @@ public class ProfileServiceImpl implements ProfileService {
     public void deleteProfile(Long id) {
         Profile profile = profileRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Profile not found"));
+        validateCurrentUser(profile.getUser().getId());
         
         // Soft delete: change status to INACTIVE
         profile.setStatus(Constants.TABLE_STATUS.INACTIVE);
@@ -100,11 +106,13 @@ public class ProfileServiceImpl implements ProfileService {
     public ProfileResponse getProfileById(Long id) {
         Profile profile = profileRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Profile not found"));
+        validateCurrentUser(profile.getUser().getId());
         return mapToResponse(profile);
     }
 
     @Override
     public List<ProfileResponse> getProfilesByUserId(Long userId) {
+        validateCurrentUser(userId);
         return profileRepository.findByUserIdAndStatus(userId, Constants.TABLE_STATUS.ACTIVE).stream()
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());
@@ -112,6 +120,7 @@ public class ProfileServiceImpl implements ProfileService {
 
     @Override
     public boolean hasProfile(Long userId) {
+        validateCurrentUser(userId);
         return profileRepository.existsByUserIdAndStatusIn(userId, List.of(Constants.TABLE_STATUS.ACTIVE));
     }
 
@@ -161,6 +170,18 @@ public class ProfileServiceImpl implements ProfileService {
             return user.getEmail().trim();
         }
         return "USER_" + user.getId();
+    }
+
+    private void validateCurrentUser(Long userId) {
+        Object principal = SecurityContextHolder.getContext().getAuthentication() != null
+                ? SecurityContextHolder.getContext().getAuthentication().getPrincipal()
+                : null;
+        if (!(principal instanceof CustomUserDetails userDetails)) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "auth.unauthorized");
+        }
+        if (!userDetails.getId().equals(userId)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "auth.forbidden");
+        }
     }
 
     private ProfileResponse mapToResponse(Profile profile) {

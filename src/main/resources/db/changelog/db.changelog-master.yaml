@@ -19,3 +19,7 @@ databaseChangeLog:
       file: db/changelog/changes/009_profile_image_and_status.sql
   - include:
       file: db/changelog/changes/010_profile_audit_fields.sql
+  - include:
+      file: db/changelog/changes/011_drop_session_token_table.sql
+  - include:
+      file: db/changelog/changes/012_food_preference_by_profile.sql

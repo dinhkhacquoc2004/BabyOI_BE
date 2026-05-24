@@ -43,46 +43,46 @@ public class FoodController {
         return foodService.getFoodDetail(foodId);
     }
 
-    @GetMapping("/favorites/user/{userId}")
-    public List<FoodResponse> getFavoriteFoodsByUserId(@PathVariable Long userId) {
-        return foodService.getFavoriteFoodsByUserId(userId);
+    @GetMapping("/favorites/profile/{profileId}")
+    public List<FoodResponse> getFavoriteFoodsByProfileId(@PathVariable Long profileId) {
+        return foodService.getFavoriteFoodsByProfileId(profileId);
     }
 
-    @PostMapping("/favorites/user/{userId}/food/{foodId}")
+    @PostMapping("/favorites/profile/{profileId}/food/{foodId}")
     @ResponseStatus(HttpStatus.CREATED)
     public FavoriteFoodResponse addFavoriteFood(
-            @PathVariable Long userId,
+            @PathVariable Long profileId,
             @PathVariable Long foodId) {
-        return foodService.addFavoriteFood(userId, foodId);
+        return foodService.addFavoriteFood(profileId, foodId);
     }
 
-    @DeleteMapping("/favorites/user/{userId}/food/{foodId}")
+    @DeleteMapping("/favorites/profile/{profileId}/food/{foodId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void deleteFavoriteFood(
-            @PathVariable Long userId,
+            @PathVariable Long profileId,
             @PathVariable Long foodId) {
-        foodService.deleteFavoriteFood(userId, foodId);
+        foodService.deleteFavoriteFood(profileId, foodId);
     }
 
-    @GetMapping("/restricted/user/{userId}")
-    public List<FoodResponse> getRestrictedFoodsByUserId(@PathVariable Long userId) {
-        return foodService.getRestrictedFoodsByUserId(userId);
+    @GetMapping("/restricted/profile/{profileId}")
+    public List<FoodResponse> getRestrictedFoodsByProfileId(@PathVariable Long profileId) {
+        return foodService.getRestrictedFoodsByProfileId(profileId);
     }
 
-    @PostMapping("/restricted/user/{userId}/food/{foodId}")
+    @PostMapping("/restricted/profile/{profileId}/food/{foodId}")
     @ResponseStatus(HttpStatus.CREATED)
     public FavoriteFoodResponse addRestrictedFood(
-            @PathVariable Long userId,
+            @PathVariable Long profileId,
             @PathVariable Long foodId) {
-        return foodService.addRestrictedFood(userId, foodId);
+        return foodService.addRestrictedFood(profileId, foodId);
     }
 
-    @DeleteMapping("/restricted/user/{userId}/food/{foodId}")
+    @DeleteMapping("/restricted/profile/{profileId}/food/{foodId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void deleteRestrictedFood(
-            @PathVariable Long userId,
+            @PathVariable Long profileId,
             @PathVariable Long foodId) {
-        foodService.deleteRestrictedFood(userId, foodId);
+        foodService.deleteRestrictedFood(profileId, foodId);
     }
 
     @GetMapping("/{foodId}/ingredients")

@@ -11,8 +11,8 @@ import java.util.Optional;
 @Repository
 public interface FavoriteFoodRepository extends JpaRepository<FavoriteFood, Long> {
     @EntityGraph(attributePaths = {"foodLibrary", "foodLibrary.nutritionSummary", "foodLibrary.recommendation"})
-    List<FavoriteFood> findByUserId(Long userId);
+    List<FavoriteFood> findByProfileId(Long profileId);
 
     @EntityGraph(attributePaths = {"foodLibrary", "foodLibrary.nutritionSummary", "foodLibrary.recommendation"})
-    Optional<FavoriteFood> findByUserIdAndFoodLibraryId(Long userId, Long foodId);
+    Optional<FavoriteFood> findByProfileIdAndFoodLibraryId(Long profileId, Long foodId);
 }

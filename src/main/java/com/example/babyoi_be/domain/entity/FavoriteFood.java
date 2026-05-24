@@ -18,8 +18,8 @@ public class FavoriteFood {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id")
-    private Users user;
+    @JoinColumn(name = "profile_id")
+    private Profile profile;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "food_libarary_id")

@@ -12,16 +12,20 @@ import com.example.babyoi_be.domain.entity.*;
 import com.example.babyoi_be.repository.FavoriteFoodRepository;
 import com.example.babyoi_be.repository.FoodLibraryIngredientRepository;
 import com.example.babyoi_be.repository.FoodLibraryRepository;
+import com.example.babyoi_be.repository.ProfileRepository;
 import com.example.babyoi_be.repository.RestrictedFoodRepository;
-import com.example.babyoi_be.repository.UsersRepository;
+import com.example.babyoi_be.security.CustomUserDetails;
 import com.example.babyoi_be.service.FoodService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.http.HttpStatus;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -36,7 +40,7 @@ public class FoodServiceImpl implements FoodService {
     private final FavoriteFoodRepository favoriteFoodRepository;
     private final RestrictedFoodRepository restrictedFoodRepository;
     private final FoodLibraryIngredientRepository foodLibraryIngredientRepository;
-    private final UsersRepository usersRepository;
+    private final ProfileRepository profileRepository;
 
     @Override
     public List<FoodResponse> getFoods() {
@@ -97,8 +101,9 @@ public class FoodServiceImpl implements FoodService {
     }
 
     @Override
-    public List<FoodResponse> getFavoriteFoodsByUserId(Long userId) {
-        return favoriteFoodRepository.findByUserId(userId)
+    public List<FoodResponse> getFavoriteFoodsByProfileId(Long profileId) {
+        validateCurrentProfile(profileId);
+        return favoriteFoodRepository.findByProfileId(profileId)
                 .stream()
                 .map(FavoriteFood::getFoodLibrary)
                 .filter(foodLibrary -> foodLibrary != null
@@ -109,25 +114,28 @@ public class FoodServiceImpl implements FoodService {
 
     @Override
     @Transactional
-    public FavoriteFoodResponse addFavoriteFood(Long userId, Long foodId) {
-        FavoriteFood favoriteFood = favoriteFoodRepository.findByUserIdAndFoodLibraryId(userId, foodId)
-                .orElseGet(() -> createFavoriteFood(userId, foodId));
+    public FavoriteFoodResponse addFavoriteFood(Long profileId, Long foodId) {
+        Profile profile = validateCurrentProfile(profileId);
+        FavoriteFood favoriteFood = favoriteFoodRepository.findByProfileIdAndFoodLibraryId(profileId, foodId)
+                .orElseGet(() -> createFavoriteFood(profile, foodId));
 
         return mapToFavoriteFoodResponse(favoriteFood);
     }
 
     @Override
     @Transactional
-    public void deleteFavoriteFood(Long userId, Long foodId) {
-        FavoriteFood favoriteFood = favoriteFoodRepository.findByUserIdAndFoodLibraryId(userId, foodId)
+    public void deleteFavoriteFood(Long profileId, Long foodId) {
+        validateCurrentProfile(profileId);
+        FavoriteFood favoriteFood = favoriteFoodRepository.findByProfileIdAndFoodLibraryId(profileId, foodId)
                 .orElseThrow(() -> new RuntimeException("Favorite food not found"));
 
         favoriteFoodRepository.delete(favoriteFood);
     }
 
     @Override
-    public List<FoodResponse> getRestrictedFoodsByUserId(Long userId) {
-        return restrictedFoodRepository.findByUserId(userId)
+    public List<FoodResponse> getRestrictedFoodsByProfileId(Long profileId) {
+        validateCurrentProfile(profileId);
+        return restrictedFoodRepository.findByProfileId(profileId)
                 .stream()
                 .map(RestrictedFood::getFoodLibrary)
                 .filter(foodLibrary -> foodLibrary != null
@@ -138,17 +146,19 @@ public class FoodServiceImpl implements FoodService {
 
     @Override
     @Transactional
-    public FavoriteFoodResponse addRestrictedFood(Long userId, Long foodId) {
-        RestrictedFood restrictedFood = restrictedFoodRepository.findByUserIdAndFoodLibraryId(userId, foodId)
-                .orElseGet(() -> createRestrictedFood(userId, foodId));
+    public FavoriteFoodResponse addRestrictedFood(Long profileId, Long foodId) {
+        Profile profile = validateCurrentProfile(profileId);
+        RestrictedFood restrictedFood = restrictedFoodRepository.findByProfileIdAndFoodLibraryId(profileId, foodId)
+                .orElseGet(() -> createRestrictedFood(profile, foodId));
 
         return mapToRestrictedFoodResponse(restrictedFood);
     }
 
     @Override
     @Transactional
-    public void deleteRestrictedFood(Long userId, Long foodId) {
-        RestrictedFood restrictedFood = restrictedFoodRepository.findByUserIdAndFoodLibraryId(userId, foodId)
+    public void deleteRestrictedFood(Long profileId, Long foodId) {
+        validateCurrentProfile(profileId);
+        RestrictedFood restrictedFood = restrictedFoodRepository.findByProfileIdAndFoodLibraryId(profileId, foodId)
                 .orElseThrow(() -> new RuntimeException("Restricted food not found"));
 
         restrictedFoodRepository.delete(restrictedFood);
@@ -185,40 +195,60 @@ public class FoodServiceImpl implements FoodService {
                 .build();
     }
 
-    private FavoriteFood createFavoriteFood(Long userId, Long foodId) {
-        Users user = usersRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+    private FavoriteFood createFavoriteFood(Profile profile, Long foodId) {
         FoodLibrary foodLibrary = foodLibraryRepository.findById(foodId)
                 .orElseThrow(() -> new RuntimeException("Food not found"));
+        String actor = resolveProfileActor(profile);
 
         FavoriteFood favoriteFood = FavoriteFood.builder()
-                .user(user)
+                .profile(profile)
                 .foodLibrary(foodLibrary)
                 .createdAt(LocalDateTime.now())
                 .updatedAt(LocalDateTime.now())
-                .createdBy(String.valueOf(userId))
-                .updatedBy(String.valueOf(userId))
+                .createdBy(actor)
+                .updatedBy(actor)
                 .build();
 
         return favoriteFoodRepository.save(favoriteFood);
     }
 
-    private RestrictedFood createRestrictedFood(Long userId, Long foodId) {
-        Users user = usersRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+    private Profile validateCurrentProfile(Long profileId) {
+        Profile profile = profileRepository.findById(profileId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Profile not found"));
+        Object principal = SecurityContextHolder.getContext().getAuthentication() != null
+                ? SecurityContextHolder.getContext().getAuthentication().getPrincipal()
+                : null;
+        if (!(principal instanceof CustomUserDetails userDetails)) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "auth.unauthorized");
+        }
+        if (profile.getUser() == null || !userDetails.getId().equals(profile.getUser().getId())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "auth.forbidden");
+        }
+        return profile;
+    }
+
+    private RestrictedFood createRestrictedFood(Profile profile, Long foodId) {
         FoodLibrary foodLibrary = foodLibraryRepository.findById(foodId)
                 .orElseThrow(() -> new RuntimeException("Food not found"));
+        String actor = resolveProfileActor(profile);
 
         RestrictedFood restrictedFood = RestrictedFood.builder()
-                .user(user)
+                .profile(profile)
                 .foodLibrary(foodLibrary)
                 .createdAt(LocalDateTime.now())
                 .updatedAt(LocalDateTime.now())
-                .createdBy(String.valueOf(userId))
-                .updatedBy(String.valueOf(userId))
+                .createdBy(actor)
+                .updatedBy(actor)
                 .build();
 
         return restrictedFoodRepository.save(restrictedFood);
+    }
+
+    private String resolveProfileActor(Profile profile) {
+        if (profile.getName() != null && !profile.getName().isBlank()) {
+            return profile.getName().trim();
+        }
+        return "PROFILE_" + profile.getId();
     }
 
     private FavoriteFoodResponse mapToFavoriteFoodResponse(FavoriteFood favoriteFood) {
@@ -226,7 +256,8 @@ public class FoodServiceImpl implements FoodService {
 
         return FavoriteFoodResponse.builder()
                 .id(favoriteFood.getId())
-                .userId(favoriteFood.getUser() != null ? favoriteFood.getUser().getId() : null)
+                .userId(favoriteFood.getProfile() != null && favoriteFood.getProfile().getUser() != null ? favoriteFood.getProfile().getUser().getId() : null)
+                .profileId(favoriteFood.getProfile() != null ? favoriteFood.getProfile().getId() : null)
                 .foodId(foodLibrary != null ? foodLibrary.getId() : null)
                 .createdAt(favoriteFood.getCreatedAt())
                 .updatedAt(favoriteFood.getUpdatedAt())
@@ -241,7 +272,8 @@ public class FoodServiceImpl implements FoodService {
 
         return FavoriteFoodResponse.builder()
                 .id(restrictedFood.getId())
-                .userId(restrictedFood.getUser() != null ? restrictedFood.getUser().getId() : null)
+                .userId(restrictedFood.getProfile() != null && restrictedFood.getProfile().getUser() != null ? restrictedFood.getProfile().getUser().getId() : null)
+                .profileId(restrictedFood.getProfile() != null ? restrictedFood.getProfile().getId() : null)
                 .foodId(foodLibrary != null ? foodLibrary.getId() : null)
                 .createdAt(restrictedFood.getCreatedAt())
                 .updatedAt(restrictedFood.getUpdatedAt())

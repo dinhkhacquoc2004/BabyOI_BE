@@ -14,17 +14,17 @@ public interface FoodService {
 
     FoodResponse getFoodDetail(Long foodId);
 
-    List<FoodResponse> getFavoriteFoodsByUserId(Long userId);
+    List<FoodResponse> getFavoriteFoodsByProfileId(Long profileId);
 
-    FavoriteFoodResponse addFavoriteFood(Long userId, Long foodId);
+    FavoriteFoodResponse addFavoriteFood(Long profileId, Long foodId);
 
-    void deleteFavoriteFood(Long userId, Long foodId);
+    void deleteFavoriteFood(Long profileId, Long foodId);
 
-    List<FoodResponse> getRestrictedFoodsByUserId(Long userId);
+    List<FoodResponse> getRestrictedFoodsByProfileId(Long profileId);
 
-    FavoriteFoodResponse addRestrictedFood(Long userId, Long foodId);
+    FavoriteFoodResponse addRestrictedFood(Long profileId, Long foodId);
 
-    void deleteRestrictedFood(Long userId, Long foodId);
+    void deleteRestrictedFood(Long profileId, Long foodId);
 
     List<FoodIngredientResponse> getIngredientsByFoodId(Long foodId);
 }
