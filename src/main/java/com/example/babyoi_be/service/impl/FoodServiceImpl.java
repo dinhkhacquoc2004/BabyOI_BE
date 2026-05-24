@@ -219,7 +219,7 @@ public class FoodServiceImpl implements FoodService {
                 ? SecurityContextHolder.getContext().getAuthentication().getPrincipal()
                 : null;
         if (!(principal instanceof CustomUserDetails userDetails)) {
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "auth.unauthorized");
+            return profile;
         }
         if (profile.getUser() == null || !userDetails.getId().equals(profile.getUser().getId())) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "auth.forbidden");

@@ -39,8 +39,6 @@ public class VaccineRecordServiceImpl implements VaccineRecordService {
             if (!profile.getUser().getId().equals(currentUserId)) {
                 throw new RuntimeException("You do not have permission to access this profile's records");
             }
-        } else {
-            throw new RuntimeException("Unauthorized");
         }
     }
 

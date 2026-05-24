@@ -1,5 +1,5 @@
 server:
- port: 8085
+  port: 8085
 
 spring:
   application:
@@ -9,11 +9,35 @@ spring:
     hibernate:
       ddl-auto: update
     show-sql: false
+    open-in-view: false
   liquibase:
     enabled: true
     change-log: classpath:/db/changelog/db.changelog-master.yaml
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: ${MAIL_USERNAME}
+    password: ${MAIL_PASSWORD}
+    properties:
+      mail:
+        debug: true
+        smtp:
+          auth: true
+          connectiontimeout: 10000
+          timeout: 10000
+          writetimeout: 10000
+          ssl:
+            trust: smtp.gmail.com
+          starttls:
+            enable: true
 
 app:
   jwt:
-    secret: ${JWT_SECRET:VGhpcy1pcy1CYWJ5T0ktZGV2LWp3dC1zZWNyZXQtMzItYnl0ZXMhISE=}
+    secret: ${JWT_SECRET}
     expiration-millis: 432000000
+    refresh-expiration-millis: 2592000000
+  mail:
+    from: ${MAIL_FROM}
+  oauth:
+    google:
+      client-id: 795446588674-54v3f5u19t9tii8hu5vp9763i78g8dpd.apps.googleusercontent.com,795446588674-55cfglrm1lf78s46j09ghhif31lu5ni5.apps.googleusercontent.com

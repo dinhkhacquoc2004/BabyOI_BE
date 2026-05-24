@@ -23,3 +23,9 @@ databaseChangeLog:
       file: db/changelog/changes/011_drop_session_token_table.sql
   - include:
       file: db/changelog/changes/012_food_preference_by_profile.sql
+  - include:
+      file: db/changelog/changes/013_auth_otp_email_verification.sql
+  - include:
+      file: db/changelog/changes/014_social_login_user_fields.sql
+  - include:
+      file: db/changelog/changes/015_auth_refresh_token.sql
