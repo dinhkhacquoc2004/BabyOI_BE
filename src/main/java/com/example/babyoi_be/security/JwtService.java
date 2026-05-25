@@ -41,6 +41,10 @@ public class JwtService {
         return generateToken(claims, user.getEmail());
     }
 
+    public long getExpirationMillis() {
+        return expiration.toMillis();
+    }
+
     public String extractUsername(String token) {
         return extractClaim(token, Claims::getSubject);
     }

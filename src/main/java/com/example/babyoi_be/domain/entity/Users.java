@@ -32,6 +32,15 @@ public class Users {
     @Column(name = "status", nullable = false)
     private Long status;
 
+    @Column(name = "email_verified", nullable = false)
+    private Boolean emailVerified;
+
+    @Column(name = "social_provider")
+    private String socialProvider;
+
+    @Column(name = "social_provider_id")
+    private String socialProviderId;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "roles_id", nullable = false)
     private Roles roles;

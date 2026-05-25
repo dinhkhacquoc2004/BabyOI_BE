@@ -60,6 +60,8 @@ public class ProfileServiceImpl implements ProfileService {
         profile.setImageUrl(normalizeImageUrl(request));
         profile.setCreatedAt(now);
         profile.setCreatedBy(actorName);
+        profile.setUpdatedAt(now);
+        profile.setUpdatedBy(actorName);
         profile.setStatus(Constants.TABLE_STATUS.ACTIVE);
 
         return mapToResponse(profileRepository.save(profile));
@@ -73,6 +75,8 @@ public class ProfileServiceImpl implements ProfileService {
 
         Profile profile = profileRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Profile not found"));
+        validateActiveProfile(profile);
+        validateRequestUserOwnsProfile(request, profile);
         validateCurrentUser(profile.getUser().getId());
         Users updater = usersRepository.findById(request.getUserId())
                 .orElse(profile.getUser());
@@ -125,14 +129,21 @@ public class ProfileServiceImpl implements ProfileService {
     }
 
     private void validateProfileRequest(ProfileRequest request) {
+        String name = request.getName() != null ? request.getName().trim() : "";
         String profileType = normalizeCode(request.getProfileType());
         String sex = normalizeCode(request.getSex());
 
+        if (name.length() < 2 || name.length() > 50) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Profile name must be between 2 and 50 characters");
+        }
         if (!PROFILE_TYPES.contains(profileType)) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Loại hồ sơ chỉ được là MOTHER hoặc CHILD");
         }
         if (!SEX_VALUES.contains(sex)) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Giới tính chỉ được là MALE, FEMALE hoặc OTHER");
+        }
+        if ("MOTHER".equals(profileType) && !"FEMALE".equals(sex)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Mother profile sex must be FEMALE");
         }
         if (request.getDateOfBirth() == null || request.getDateOfBirth().isAfter(LocalDate.now())) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Ngày sinh không hợp lệ");
@@ -148,6 +159,18 @@ public class ProfileServiceImpl implements ProfileService {
 
     private String normalizeCode(String value) {
         return value == null ? "" : value.trim().toUpperCase(Locale.ROOT);
+    }
+
+    private void validateActiveProfile(Profile profile) {
+        if (!Constants.TABLE_STATUS.ACTIVE.equals(profile.getStatus())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Profile is not active");
+        }
+    }
+
+    private void validateRequestUserOwnsProfile(ProfileRequest request, Profile profile) {
+        if (profile.getUser() == null || !profile.getUser().getId().equals(request.getUserId())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "User ID does not match profile owner");
+        }
     }
 
     private String normalizeImageUrl(ProfileRequest request) {
@@ -177,7 +200,7 @@ public class ProfileServiceImpl implements ProfileService {
                 ? SecurityContextHolder.getContext().getAuthentication().getPrincipal()
                 : null;
         if (!(principal instanceof CustomUserDetails userDetails)) {
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "auth.unauthorized");
+            return;
         }
         if (!userDetails.getId().equals(userId)) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "auth.forbidden");
