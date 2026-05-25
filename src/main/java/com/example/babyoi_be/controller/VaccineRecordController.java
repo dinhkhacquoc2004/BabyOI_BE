@@ -43,8 +43,9 @@ public class VaccineRecordController {
     @GetMapping("/profile/{profileId}")
     public List<VaccineRecordResponse> getByStatus(
             @PathVariable Long profileId,
-            @RequestParam Long status) {
-        return vaccineRecordService.getVaccineRecordsByStatus(profileId, status);
+            @RequestParam Long status,
+            @RequestParam(required = false) Integer limit) {
+        return vaccineRecordService.getVaccineRecordsByStatus(profileId, status, limit);
     }
 
     @GetMapping("/profile/{profileId}/count")

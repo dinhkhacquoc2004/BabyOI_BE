@@ -11,6 +11,7 @@ public interface VaccineRecordService {
     void deleteVaccineRecord(Long id);
     VaccineRecordResponse getVaccineRecordById(Long id);
     List<VaccineRecordResponse> getVaccineRecordsByStatus(Long profileId, Long status);
+    List<VaccineRecordResponse> getVaccineRecordsByStatus(Long profileId, Long status, Integer limit);
     long countVaccineRecordsByStatus(Long profileId, Long status);
     Map<String, Long> getVaccineStatistics(Long profileId);
 }
