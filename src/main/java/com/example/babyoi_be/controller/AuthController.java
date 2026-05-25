@@ -6,6 +6,7 @@ import com.example.babyoi_be.domain.dto.RegisterRequest;
 import com.example.babyoi_be.service.AuthService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.*;
@@ -14,7 +15,6 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
 public class   AuthController {
-
     private final AuthService authService;
 
     @PostMapping("/register")

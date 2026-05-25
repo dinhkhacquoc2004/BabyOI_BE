@@ -2,7 +2,9 @@ package com.example.babyoi_be.controller;
 
 import com.example.babyoi_be.common.utils.MessageUtils;
 import com.example.babyoi_be.domain.message.ResponseMessage;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
@@ -18,12 +20,13 @@ import static com.example.babyoi_be.common.Constants.API_RESPONSE.*;
 
 @RestControllerAdvice
 @RequiredArgsConstructor
+@Slf4j
 public class GlobalExceptionHandler extends CommonController {
 
     private final MessageUtils messageUtils;
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<ResponseMessage<Object>> handleValidation(MethodArgumentNotValidException exception) {
+    public ResponseEntity<ResponseMessage<Object>> handleValidation(MethodArgumentNotValidException exception, HttpServletRequest request) {
         Map<String, String> errors = new LinkedHashMap<>();
 
         for (FieldError fieldError : exception.getBindingResult().getFieldErrors()) {
@@ -31,6 +34,8 @@ public class GlobalExceptionHandler extends CommonController {
                 errors.put(fieldError.getField(), fieldError.getDefaultMessage());
             }
         }
+
+        log.error("Validation error at URI: {} - Errors: {}", request.getRequestURI(), errors);
 
         return toExceptionResult(
                 messageUtils.getMessage("common.validation.failed"),
@@ -41,8 +46,10 @@ public class GlobalExceptionHandler extends CommonController {
     }
 
     @ExceptionHandler(ResponseStatusException.class)
-    public ResponseEntity<ResponseMessage<Object>> handleResponseStatus(ResponseStatusException exception) {
+    public ResponseEntity<ResponseMessage<Object>> handleResponseStatus(ResponseStatusException exception, HttpServletRequest request) {
         HttpStatus status = HttpStatus.valueOf(exception.getStatusCode().value());
+        log.error("API error at URI: {} - Status: {}, Reason: {}", request.getRequestURI(), status, exception.getReason());
+        
         return toExceptionResult(
                 messageUtils.getMessage(exception.getReason()),
                 mapStatusCode(status),
@@ -52,7 +59,9 @@ public class GlobalExceptionHandler extends CommonController {
     }
 
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<ResponseMessage<Object>> handleOtherExceptions(Exception exception) {
+    public ResponseEntity<ResponseMessage<Object>> handleOtherExceptions(Exception exception, HttpServletRequest request) {
+        log.error("Unexpected error occurred at URI: {} - Message: {}", request.getRequestURI(), exception.getMessage(), exception);
+
         return toExceptionResult(
                 messageUtils.getMessage("common.error.internal"),
                 RETURN_CODE_ERROR,
