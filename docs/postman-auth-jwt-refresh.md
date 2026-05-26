@@ -50,7 +50,7 @@ Response thanh cong:
   "accessToken": "eyJhbGciOiJIUzI1NiJ9...",
   "refreshToken": "z5WbqFhU...",
   "tokenType": "Bearer",
-  "accessTokenExpiresInMillis": 432000000,
+  "accessTokenExpiresInMillis": 900000,
   "refreshTokenExpiresInMillis": 2592000000,
   "userId": 1,
   "userName": "mother",
@@ -63,7 +63,7 @@ Y nghia:
 
 - `accessToken`: JWT dung de goi cac API can dang nhap.
 - `refreshToken`: token dung de xin JWT moi khi JWT cu gan het han hoac da het han.
-- `accessTokenExpiresInMillis`: thoi gian song cua JWT. Hien tai la `432000000`, tuong duong 5 ngay.
+- `accessTokenExpiresInMillis`: thoi gian song cua JWT. Hien tai la `900000`, tuong duong 15 phut.
 - `refreshTokenExpiresInMillis`: thoi gian song cua refresh token. Hien tai la `2592000000`, tuong duong 30 ngay.
 
 ## 3. Goi API bang JWT
@@ -121,7 +121,7 @@ Response thanh cong:
   "accessToken": "eyJhbGciOiJIUzI1NiJ9...",
   "refreshToken": "refresh_token_moi",
   "tokenType": "Bearer",
-  "accessTokenExpiresInMillis": 432000000,
+  "accessTokenExpiresInMillis": 900000,
   "refreshTokenExpiresInMillis": 2592000000,
   "userId": 1,
   "userName": "mother",
@@ -145,6 +145,15 @@ Quan trong:
 5. Goi `POST /api/auth/refresh-token`.
 6. Lay `accessToken` moi de goi API.
 7. Lay `refreshToken` moi de refresh lan sau.
+8. Khi logout, gui `refreshToken` hien tai de BE thu hoi token do.
+
+Logout body:
+
+```json
+{
+  "refreshToken": "refreshToken_hien_tai"
+}
+```
 
 ## 6. Cac loi thuong gap
 
@@ -193,7 +202,7 @@ Trong `application.yaml`:
 app:
   jwt:
     secret: ${JWT_SECRET:VGhpcy1pcy1CYWJ5T0ktZGV2LWp3dC1zZWNyZXQtMzItYnl0ZXMhISE=}
-    expiration-millis: 432000000
+    expiration-millis: 900000
     refresh-expiration-millis: 2592000000
 ```
 
@@ -202,6 +211,7 @@ Y nghia:
 - `secret`: khoa ky JWT. Local co fallback de de chay.
 - `expiration-millis`: han cua access token.
 - `refresh-expiration-millis`: han cua refresh token.
+- Moi lan refresh thanh cong, BE se cap refresh token moi voi han moi tinh tu thoi diem refresh. Vi du dang nhap ngay 25/6 thi han den 25/7; neu ngay 26/6 app refresh thanh cong thi refresh token moi se han den 26/7.
 
 Khi deploy production, nen doi thanh:
 
