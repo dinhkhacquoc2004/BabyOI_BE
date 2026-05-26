@@ -1,5 +1,5 @@
 server:
- port: ${PORT:8085}
+  port: ${PORT:8085}
 
 spring:
   application:
@@ -16,8 +16,8 @@ spring:
   mail:
     host: smtp.gmail.com
     port: 587
-    username: motherandbaby2026@gmail.com
-    password: "ztokbiorruoakgxr"
+    username: ${MAIL_USERNAME}
+    password: ${MAIL_PASSWORD}
     properties:
       mail:
         debug: true
@@ -33,11 +33,11 @@ spring:
 
 app:
   jwt:
-    secret: ${JWT_SECRET:VGhpcy1pcy1CYWJ5T0ktZGV2LWp3dC1zZWNyZXQtMzItYnl0ZXMhISE=}
-    expiration-millis: 900000
+    secret: ${JWT_SECRET}
+    expiration-millis: 432000000
     refresh-expiration-millis: 2592000000
   mail:
-    from: motherandbaby2026@gmail.com
+    from: ${MAIL_FROM}
   oauth:
     google:
       client-id: 795446588674-54v3f5u19t9tii8hu5vp9763i78g8dpd.apps.googleusercontent.com,795446588674-55cfglrm1lf78s46j09ghhif31lu5ni5.apps.googleusercontent.com
