@@ -29,5 +29,3 @@ databaseChangeLog:
       file: db/changelog/changes/014_social_login_user_fields.sql
   - include:
       file: db/changelog/changes/015_auth_refresh_token.sql
-  - include:
-      file: db/changelog/changes/016_update_ingredient_cloudinary_image_paths.sql

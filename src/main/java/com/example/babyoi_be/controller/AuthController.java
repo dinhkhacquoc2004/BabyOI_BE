@@ -83,10 +83,7 @@ public class   AuthController {
 
     @PostMapping("/logout")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void logout(
-            @RequestHeader("Authorization") String authorizationHeader,
-            @RequestBody(required = false) RefreshTokenRequest request
-    ) {
-        authService.logout(authorizationHeader, request);
+    public void logout(@RequestHeader("Authorization") String authorizationHeader) {
+        authService.logout(authorizationHeader);
     }
 }
