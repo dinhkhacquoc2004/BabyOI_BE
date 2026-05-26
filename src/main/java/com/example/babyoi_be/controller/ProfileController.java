@@ -1,11 +1,15 @@
 package com.example.babyoi_be.controller;
 
 import com.example.babyoi_be.domain.dto.request.ProfileRequest;
+import com.example.babyoi_be.domain.dto.request.ProfileAvatarUpdateRequest;
+import com.example.babyoi_be.domain.dto.respone.ProfileAvatarUploadResponse;
 import com.example.babyoi_be.domain.dto.respone.ProfileResponse;
+import com.example.babyoi_be.service.ProfileAvatarStorageService;
 import com.example.babyoi_be.service.ProfileService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -14,9 +18,11 @@ import java.util.List;
 public class ProfileController {
 
     private final ProfileService profileService;
+    private final ProfileAvatarStorageService profileAvatarStorageService;
 
-    public ProfileController(ProfileService profileService) {
+    public ProfileController(ProfileService profileService, ProfileAvatarStorageService profileAvatarStorageService) {
         this.profileService = profileService;
+        this.profileAvatarStorageService = profileAvatarStorageService;
     }
 
     @PostMapping
@@ -28,6 +34,16 @@ public class ProfileController {
     @PutMapping("/{id}")
     public ProfileResponse updateProfile(@PathVariable Long id, @Valid @RequestBody ProfileRequest request) {
         return profileService.updateProfile(id, request);
+    }
+
+    @PostMapping("/avatar")
+    public ProfileAvatarUploadResponse uploadProfileAvatar(@RequestParam("file") MultipartFile file) {
+        return new ProfileAvatarUploadResponse(profileAvatarStorageService.uploadAvatar(file));
+    }
+
+    @PatchMapping("/{id}/avatar")
+    public ProfileResponse updateProfileAvatar(@PathVariable Long id, @Valid @RequestBody ProfileAvatarUpdateRequest request) {
+        return profileService.updateProfileAvatar(id, request.getImageUrl());
     }
 
     @DeleteMapping("/{id}")

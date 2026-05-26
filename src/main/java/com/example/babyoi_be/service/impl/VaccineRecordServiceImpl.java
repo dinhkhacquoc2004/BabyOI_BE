@@ -28,6 +28,7 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class VaccineRecordServiceImpl implements VaccineRecordService {
 
     private static final List<Long> DUPLICATE_CHECK_STATUSES = List.of(

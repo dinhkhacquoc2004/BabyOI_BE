@@ -130,3 +130,18 @@ UPDATE "food_ingredients" fi
 SET "image_url" = s.image_url
 FROM ingredient_image_seed s
 WHERE fi."id" = s.id;
+
+-- changeset codex:047
+UPDATE "food_ingredients"
+SET "image_url" = NULL,
+    "updated_at" = now(),
+    "updated_by" = 'system'
+WHERE "image_url" LIKE '/Ingredient/%';
+
+-- changeset codex:048
+UPDATE "food_library"
+SET "image_url" = NULL,
+    "updated_at" = now(),
+    "updated_by" = 'system'
+WHERE "image_url" LIKE '/Food/%'
+   OR "image_url" LIKE 'https://images.unsplash.com/%';
