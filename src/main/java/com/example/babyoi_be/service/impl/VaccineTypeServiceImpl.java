@@ -1,5 +1,6 @@
 package com.example.babyoi_be.service.impl;
 
+import com.example.babyoi_be.common.Constants;
 import com.example.babyoi_be.domain.dto.respone.VaccineTypeResponse;
 import com.example.babyoi_be.domain.entity.VaccineType;
 import com.example.babyoi_be.repository.VaccineTypeRepository;
@@ -20,7 +21,7 @@ public class VaccineTypeServiceImpl implements VaccineTypeService {
 
     @Override
     public List<VaccineTypeResponse> getVaccineTypes(String keyword) {
-        List<VaccineType> allTypes = vaccineTypeRepository.findByStatus(1L);
+        List<VaccineType> allTypes = vaccineTypeRepository.findByStatus(Constants.TABLE_STATUS.ACTIVE);
         
         if (keyword == null || keyword.trim().isEmpty()) {
             return allTypes.stream().map(this::mapToResponse).collect(Collectors.toList());
@@ -54,3 +55,4 @@ public class VaccineTypeServiceImpl implements VaccineTypeService {
                 .build();
     }
 }
+

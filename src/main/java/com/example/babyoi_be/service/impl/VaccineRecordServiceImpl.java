@@ -2,6 +2,7 @@ package com.example.babyoi_be.service.impl;
 
 import com.example.babyoi_be.common.Constants;
 import com.example.babyoi_be.domain.dto.request.VaccineRecordRequest;
+import com.example.babyoi_be.domain.dto.respone.PageResponse;
 import com.example.babyoi_be.domain.dto.respone.VaccineRecordResponse;
 import com.example.babyoi_be.domain.entity.Profile;
 import com.example.babyoi_be.domain.entity.VaccineRecord;
@@ -12,6 +13,7 @@ import com.example.babyoi_be.repository.VaccineTypeRepository;
 import com.example.babyoi_be.security.CustomUserDetails;
 import com.example.babyoi_be.service.VaccineRecordService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
@@ -148,21 +150,41 @@ public class VaccineRecordServiceImpl implements VaccineRecordService {
         validateProfileOwnership(profileId);
 
         if (limit == null || limit <= 0) {
-            return vaccineRecordRepository.findByProfileIdAndStatus(profileId, status, Sort.by("injectionDate").ascending())
+            return vaccineRecordRepository.findByProfileIdAndStatus(profileId, status, getSortForStatus(status))
                     .stream()
                     .map(this::mapToResponse)
                     .collect(Collectors.toList());
         }
 
-        Sort sort = Constants.TABLE_STATUS.SUCCESS.equals(status)
-                ? Sort.by(Sort.Direction.DESC, "injectionDate")
-                : Sort.by(Sort.Direction.ASC, "injectionDate");
-
-        return vaccineRecordRepository.findByProfileIdAndStatus(profileId, status, PageRequest.of(0, limit, sort))
+        return vaccineRecordRepository.findByProfileIdAndStatus(profileId, status, PageRequest.of(0, limit, getSortForStatus(status)))
                 .getContent()
                 .stream()
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());
+    }
+
+    @Override
+    public PageResponse<VaccineRecordResponse> getVaccineRecordsPage(Long profileId, Long status, Integer page, Integer size) {
+        validateProfileOwnership(profileId);
+
+        int pageIndex = page != null && page >= 0 ? page : 0;
+        int pageSize = size != null && size > 0 ? Math.min(size, 50) : 5;
+
+        Page<VaccineRecord> vaccineRecordPage = vaccineRecordRepository.findByProfileIdAndStatus(
+                profileId,
+                status,
+                PageRequest.of(pageIndex, pageSize, getSortForStatus(status))
+        );
+
+        return PageResponse.<VaccineRecordResponse>builder()
+                .content(vaccineRecordPage.getContent().stream().map(this::mapToResponse).collect(Collectors.toList()))
+                .page(vaccineRecordPage.getNumber())
+                .size(vaccineRecordPage.getSize())
+                .totalElements(vaccineRecordPage.getTotalElements())
+                .totalPages(vaccineRecordPage.getTotalPages())
+                .first(vaccineRecordPage.isFirst())
+                .last(vaccineRecordPage.isLast())
+                .build();
     }
 
     @Override
@@ -196,5 +218,11 @@ public class VaccineRecordServiceImpl implements VaccineRecordService {
                 .note(record.getNote())
                 .status(record.getStatus())
                 .build();
+    }
+
+    private Sort getSortForStatus(Long status) {
+        return Constants.TABLE_STATUS.SUCCESS.equals(status)
+                ? Sort.by(Sort.Direction.DESC, "injectionDate").and(Sort.by(Sort.Direction.DESC, "id"))
+                : Sort.by(Sort.Direction.ASC, "injectionDate").and(Sort.by(Sort.Direction.ASC, "id"));
     }
 }
