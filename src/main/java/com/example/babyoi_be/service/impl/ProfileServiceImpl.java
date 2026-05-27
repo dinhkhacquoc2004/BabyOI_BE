@@ -8,8 +8,10 @@ import com.example.babyoi_be.domain.entity.Users;
 import com.example.babyoi_be.repository.ProfileRepository;
 import com.example.babyoi_be.repository.UsersRepository;
 import com.example.babyoi_be.security.CustomUserDetails;
+import com.example.babyoi_be.service.ProfileAvatarStorageService;
 import com.example.babyoi_be.service.ProfileService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -26,10 +28,12 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class ProfileServiceImpl implements ProfileService {
 
     private final ProfileRepository profileRepository;
     private final UsersRepository usersRepository;
+    private final ProfileAvatarStorageService profileAvatarStorageService;
 
     private static final Set<String> PROFILE_TYPES = Set.of("MOTHER", "CHILD");
     private static final Set<String> SEX_VALUES = Set.of("MALE", "FEMALE", "OTHER");
@@ -85,11 +89,39 @@ public class ProfileServiceImpl implements ProfileService {
         
         profile.setProfileType(normalizeCode(request.getProfileType()));
         profile.setSex(Profile.Sex.valueOf(normalizeCode(request.getSex())));
-        profile.setImageUrl(normalizeImageUrl(request));
+        String oldImageUrl = profile.getImageUrl();
+        String newImageUrl = normalizeImageUrl(request);
+        profile.setImageUrl(newImageUrl);
         profile.setUpdatedAt(LocalDateTime.now());
         profile.setUpdatedBy(resolveAuditName(updater));
 
-        return mapToResponse(profileRepository.save(profile));
+        Profile savedProfile = profileRepository.save(profile);
+        deleteOldAvatarIfChanged(oldImageUrl, newImageUrl);
+        return mapToResponse(savedProfile);
+    }
+
+    @Override
+    @Transactional
+    public ProfileResponse updateProfileAvatar(Long id, String imageUrl) {
+        Profile profile = profileRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Profile not found"));
+        validateActiveProfile(profile);
+        validateCurrentUser(profile.getUser().getId());
+
+        String normalizedImageUrl = normalizeRemoteImageUrl(imageUrl);
+        if (normalizedImageUrl == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Avatar URL không hợp lệ");
+        }
+
+        String oldImageUrl = profile.getImageUrl();
+        profile.setImageUrl(normalizedImageUrl);
+        profile.setUpdatedAt(LocalDateTime.now());
+        profile.setUpdatedBy(resolveAuditName(profile.getUser()));
+
+        Profile savedProfile = profileRepository.save(profile);
+        deleteOldAvatarIfChanged(oldImageUrl, normalizedImageUrl);
+        log.info("Profile {} avatar updated", savedProfile.getId());
+        return mapToResponse(savedProfile);
     }
 
     @Override
@@ -174,12 +206,36 @@ public class ProfileServiceImpl implements ProfileService {
     }
 
     private String normalizeImageUrl(ProfileRequest request) {
-        if (request.getImageUrl() != null && !request.getImageUrl().isBlank()) {
-            return request.getImageUrl().trim();
+        String normalizedImageUrl = normalizeRemoteImageUrl(request.getImageUrl());
+        if (normalizedImageUrl != null) {
+            return normalizedImageUrl;
         }
         return "MOTHER".equals(normalizeCode(request.getProfileType()))
                 ? "https://cdn-icons-png.flaticon.com/512/4140/4140047.png"
                 : "https://cdn-icons-png.flaticon.com/512/4140/4140048.png";
+    }
+
+    private String normalizeRemoteImageUrl(String imageUrl) {
+        if (imageUrl == null || imageUrl.isBlank()) {
+            return null;
+        }
+
+        String normalizedImageUrl = imageUrl.trim();
+        if (normalizedImageUrl.startsWith("http://") || normalizedImageUrl.startsWith("https://")) {
+            return normalizedImageUrl;
+        }
+
+        return null;
+    }
+
+    private void deleteOldAvatarIfChanged(String oldImageUrl, String newImageUrl) {
+        if (oldImageUrl == null || oldImageUrl.isBlank()) {
+            return;
+        }
+        if (newImageUrl != null && oldImageUrl.trim().equals(newImageUrl.trim())) {
+            return;
+        }
+        profileAvatarStorageService.deleteAvatar(oldImageUrl);
     }
 
     private String resolveAuditName(Users user) {

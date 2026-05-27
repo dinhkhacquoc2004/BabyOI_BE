@@ -8,10 +8,6 @@ databaseChangeLog:
   - include:
       file: db/changelog/changes/004_add_food_goal_catalog.sql
   - include:
-      file: db/changelog/changes/005_add_food_images.sql
-  - include:
-      file: db/changelog/changes/006_update_food_image_paths.sql
-  - include:
       file: db/changelog/changes/007_enrich_food_ingredients.sql
   - include:
       file: db/changelog/changes/008_add_restricted_food_and_filters.sql
@@ -29,3 +25,5 @@ databaseChangeLog:
       file: db/changelog/changes/014_social_login_user_fields.sql
   - include:
       file: db/changelog/changes/015_auth_refresh_token.sql
+  - include:
+      file: db/changelog/changes/016_update_ingredient_cloudinary_image_paths.sql

@@ -7,6 +7,7 @@ import java.util.List;
 public interface ProfileService {
     ProfileResponse createProfile(ProfileRequest request);
     ProfileResponse updateProfile(Long id, ProfileRequest request);
+    ProfileResponse updateProfileAvatar(Long id, String imageUrl);
     void deleteProfile(Long id);
     ProfileResponse getProfileById(Long id);
     List<ProfileResponse> getProfilesByUserId(Long userId);

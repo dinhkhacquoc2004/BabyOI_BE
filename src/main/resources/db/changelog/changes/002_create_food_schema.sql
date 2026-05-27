@@ -10,6 +10,7 @@ CREATE TABLE IF NOT EXISTS "food_library" (
     "updated_at" TIMESTAMP(6),
     "created_by" VARCHAR(255),
     "updated_by" VARCHAR(255),
+    "image_url" TEXT,
     "status" BIGINT
 );
 
@@ -21,6 +22,7 @@ CREATE TABLE IF NOT EXISTS "food_ingredients" (
     "created_by" VARCHAR(255),
     "updated_by" VARCHAR(255),
     "updated_at" TIMESTAMP(6),
+    "image_url" TEXT,
     "status" BIGINT
 );
 

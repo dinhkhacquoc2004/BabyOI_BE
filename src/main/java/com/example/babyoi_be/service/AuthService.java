@@ -34,7 +34,7 @@ public interface AuthService {
 
     void resetPassword(ResetPasswordRequest request);
 
-    void logout(String authorizationHeader);
+    void logout(String authorizationHeader, RefreshTokenRequest request);
 
     UserProfileResponse getCurrentUser();
 }
