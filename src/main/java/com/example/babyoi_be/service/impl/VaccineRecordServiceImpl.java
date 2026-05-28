@@ -13,9 +13,6 @@ import com.example.babyoi_be.repository.VaccineTypeRepository;
 import com.example.babyoi_be.security.CustomUserDetails;
 import com.example.babyoi_be.service.VaccineRecordService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -23,6 +20,8 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -149,16 +148,9 @@ public class VaccineRecordServiceImpl implements VaccineRecordService {
     public List<VaccineRecordResponse> getVaccineRecordsByStatus(Long profileId, Long status, Integer limit) {
         validateProfileOwnership(profileId);
 
-        if (limit == null || limit <= 0) {
-            return vaccineRecordRepository.findByProfileIdAndStatus(profileId, status, getSortForStatus(status))
-                    .stream()
-                    .map(this::mapToResponse)
-                    .collect(Collectors.toList());
-        }
-
-        return vaccineRecordRepository.findByProfileIdAndStatus(profileId, status, PageRequest.of(0, limit, getSortForStatus(status)))
-                .getContent()
+        return sortByNearestToday(vaccineRecordRepository.findByProfileIdAndStatus(profileId, status))
                 .stream()
+                .limit(limit != null && limit > 0 ? limit : Long.MAX_VALUE)
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());
     }
@@ -169,21 +161,20 @@ public class VaccineRecordServiceImpl implements VaccineRecordService {
 
         int pageIndex = page != null && page >= 0 ? page : 0;
         int pageSize = size != null && size > 0 ? Math.min(size, 50) : 5;
-
-        Page<VaccineRecord> vaccineRecordPage = vaccineRecordRepository.findByProfileIdAndStatus(
-                profileId,
-                status,
-                PageRequest.of(pageIndex, pageSize, getSortForStatus(status))
-        );
+        List<VaccineRecord> sortedRecords = sortByNearestToday(vaccineRecordRepository.findByProfileIdAndStatus(profileId, status));
+        int totalElements = sortedRecords.size();
+        int totalPages = totalElements == 0 ? 0 : (int) Math.ceil((double) totalElements / pageSize);
+        int fromIndex = Math.min(pageIndex * pageSize, totalElements);
+        int toIndex = Math.min(fromIndex + pageSize, totalElements);
 
         return PageResponse.<VaccineRecordResponse>builder()
-                .content(vaccineRecordPage.getContent().stream().map(this::mapToResponse).collect(Collectors.toList()))
-                .page(vaccineRecordPage.getNumber())
-                .size(vaccineRecordPage.getSize())
-                .totalElements(vaccineRecordPage.getTotalElements())
-                .totalPages(vaccineRecordPage.getTotalPages())
-                .first(vaccineRecordPage.isFirst())
-                .last(vaccineRecordPage.isLast())
+                .content(sortedRecords.subList(fromIndex, toIndex).stream().map(this::mapToResponse).collect(Collectors.toList()))
+                .page(pageIndex)
+                .size(pageSize)
+                .totalElements(totalElements)
+                .totalPages(totalPages)
+                .first(pageIndex == 0)
+                .last(totalPages == 0 || pageIndex >= totalPages - 1)
                 .build();
     }
 
@@ -220,9 +211,21 @@ public class VaccineRecordServiceImpl implements VaccineRecordService {
                 .build();
     }
 
-    private Sort getSortForStatus(Long status) {
-        return Constants.TABLE_STATUS.SUCCESS.equals(status)
-                ? Sort.by(Sort.Direction.DESC, "injectionDate").and(Sort.by(Sort.Direction.DESC, "id"))
-                : Sort.by(Sort.Direction.ASC, "injectionDate").and(Sort.by(Sort.Direction.ASC, "id"));
+    private List<VaccineRecord> sortByNearestToday(List<VaccineRecord> records) {
+        LocalDate today = LocalDate.now();
+        return records.stream()
+                .sorted(Comparator
+                        .comparingLong((VaccineRecord record) -> getDaysFromToday(record, today))
+                        .thenComparing(VaccineRecord::getInjectionDate, Comparator.nullsLast(Comparator.naturalOrder()))
+                        .thenComparing(VaccineRecord::getId))
+                .collect(Collectors.toList());
+    }
+
+    private long getDaysFromToday(VaccineRecord record, LocalDate today) {
+        if (record.getInjectionDate() == null) {
+            return Long.MAX_VALUE;
+        }
+
+        return Math.abs(ChronoUnit.DAYS.between(today, record.getInjectionDate()));
     }
 }
