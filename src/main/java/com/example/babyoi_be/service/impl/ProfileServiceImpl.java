@@ -47,20 +47,17 @@ public class ProfileServiceImpl implements ProfileService {
         Users user = usersRepository.findById(request.getUserId())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
 
-        long activeProfileCount = profileRepository.countByUserIdAndStatusIn(user.getId(), List.of(Constants.TABLE_STATUS.ACTIVE));
-        
-        if (activeProfileCount >= 3) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Mỗi tài khoản chỉ được tạo tối đa 3 hồ sơ đang hoạt động");
-        }
+        String profileType = normalizeCode(request.getProfileType());
+        validateProfileLimit(user.getId(), profileType, null);
 
         Profile profile = new Profile();
         BeanUtils.copyProperties(request, profile);
         LocalDateTime now = LocalDateTime.now();
         String actorName = resolveAuditName(user);
-        
+
         profile.setUser(user);
-        profile.setProfileType(normalizeCode(request.getProfileType()));
-        profile.setSex(Profile.Sex.valueOf(normalizeCode(request.getSex())));
+        profile.setProfileType(profileType);
+        profile.setSex(Profile.Sex.valueOf(resolveSex(profileType, request.getSex())));
         profile.setImageUrl(normalizeImageUrl(request));
         profile.setCreatedAt(now);
         profile.setCreatedBy(actorName);
@@ -85,10 +82,13 @@ public class ProfileServiceImpl implements ProfileService {
         Users updater = usersRepository.findById(request.getUserId())
                 .orElse(profile.getUser());
 
+        String profileType = normalizeCode(request.getProfileType());
+        validateProfileLimit(profile.getUser().getId(), profileType, profile.getId());
+
         BeanUtils.copyProperties(request, profile, "id", "userId", "sex");
-        
-        profile.setProfileType(normalizeCode(request.getProfileType()));
-        profile.setSex(Profile.Sex.valueOf(normalizeCode(request.getSex())));
+
+        profile.setProfileType(profileType);
+        profile.setSex(Profile.Sex.valueOf(resolveSex(profileType, request.getSex())));
         String oldImageUrl = profile.getImageUrl();
         String newImageUrl = normalizeImageUrl(request);
         profile.setImageUrl(newImageUrl);
@@ -129,9 +129,9 @@ public class ProfileServiceImpl implements ProfileService {
     public void deleteProfile(Long id) {
         Profile profile = profileRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Profile not found"));
+        validateActiveProfile(profile);
         validateCurrentUser(profile.getUser().getId());
-        
-        // Soft delete: change status to INACTIVE
+
         profile.setStatus(Constants.TABLE_STATUS.INACTIVE);
         profile.setUpdatedAt(LocalDateTime.now());
         profile.setUpdatedBy(resolveAuditName(profile.getUser()));
@@ -163,10 +163,10 @@ public class ProfileServiceImpl implements ProfileService {
     private void validateProfileRequest(ProfileRequest request) {
         String name = request.getName() != null ? request.getName().trim() : "";
         String profileType = normalizeCode(request.getProfileType());
-        String sex = normalizeCode(request.getSex());
+        String sex = resolveSex(profileType, request.getSex());
 
         if (name.length() < 2 || name.length() > 50) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Profile name must be between 2 and 50 characters");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Tên hồ sơ cần từ 2 đến 50 ký tự");
         }
         if (!PROFILE_TYPES.contains(profileType)) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Loại hồ sơ chỉ được là MOTHER hoặc CHILD");
@@ -175,7 +175,7 @@ public class ProfileServiceImpl implements ProfileService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Giới tính chỉ được là MALE, FEMALE hoặc OTHER");
         }
         if ("MOTHER".equals(profileType) && !"FEMALE".equals(sex)) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Mother profile sex must be FEMALE");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Hồ sơ mẹ mặc định là FEMALE");
         }
         if (request.getDateOfBirth() == null || request.getDateOfBirth().isAfter(LocalDate.now())) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Ngày sinh không hợp lệ");
@@ -187,6 +187,27 @@ public class ProfileServiceImpl implements ProfileService {
         if ("MOTHER".equals(profileType) && request.getDateOfBirth().isAfter(LocalDate.now().minusYears(13))) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Hồ sơ mẹ cần có tuổi phù hợp");
         }
+    }
+
+    private void validateProfileLimit(Long userId, String profileType, Long excludedProfileId) {
+        long currentActiveCount = excludedProfileId == null
+                ? profileRepository.countByUserIdAndProfileTypeAndStatus(userId, profileType, Constants.TABLE_STATUS.ACTIVE)
+                : profileRepository.countByUserIdAndProfileTypeAndStatusAndIdNot(userId, profileType, Constants.TABLE_STATUS.ACTIVE, excludedProfileId);
+        long limit = "MOTHER".equals(profileType) ? 1 : 2;
+
+        if (currentActiveCount >= limit) {
+            String message = "MOTHER".equals(profileType)
+                    ? "Mỗi tài khoản chỉ được tạo tối đa 1 hồ sơ mẹ đang hoạt động"
+                    : "Mỗi tài khoản chỉ được tạo tối đa 2 hồ sơ bé đang hoạt động";
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, message);
+        }
+    }
+
+    private String resolveSex(String profileType, String sex) {
+        if ("MOTHER".equals(profileType) && (sex == null || sex.isBlank())) {
+            return "FEMALE";
+        }
+        return normalizeCode(sex);
     }
 
     private String normalizeCode(String value) {
@@ -266,14 +287,14 @@ public class ProfileServiceImpl implements ProfileService {
     private ProfileResponse mapToResponse(Profile profile) {
         ProfileResponse response = new ProfileResponse();
         BeanUtils.copyProperties(profile, response, "userId", "sex");
-        
+
         if (profile.getUser() != null) {
             response.setUserId(profile.getUser().getId());
         }
         if (profile.getSex() != null) {
             response.setSex(profile.getSex().name());
         }
-        
+
         return response;
     }
 }

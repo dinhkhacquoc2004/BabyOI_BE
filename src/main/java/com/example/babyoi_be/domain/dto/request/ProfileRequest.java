@@ -25,7 +25,6 @@ public class ProfileRequest {
     @JsonFormat(pattern = "MM/dd/yyyy")
     private LocalDate dateOfBirth;
 
-    @NotBlank(message = "Sex is required")
     private String sex; // MALE, FEMALE, OTHER
 
     @NotBlank(message = "Profile type is required")
