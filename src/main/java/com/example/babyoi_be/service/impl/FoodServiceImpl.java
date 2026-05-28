@@ -1,6 +1,7 @@
 package com.example.babyoi_be.service.impl;
 
 import com.example.babyoi_be.common.Constants;
+import com.example.babyoi_be.common.utils.TextSearchUtils;
 import com.example.babyoi_be.domain.dto.respone.FavoriteFoodResponse;
 import com.example.babyoi_be.domain.dto.respone.FoodIngredientResponse;
 import com.example.babyoi_be.domain.dto.respone.FoodNutritionResponse;
@@ -16,6 +17,7 @@ import com.example.babyoi_be.repository.ProfileRepository;
 import com.example.babyoi_be.repository.RestrictedFoodRepository;
 import com.example.babyoi_be.security.CustomUserDetails;
 import com.example.babyoi_be.service.FoodService;
+import com.example.babyoi_be.service.TypeValueService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -27,6 +29,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -41,6 +44,7 @@ public class FoodServiceImpl implements FoodService {
     private final RestrictedFoodRepository restrictedFoodRepository;
     private final FoodLibraryIngredientRepository foodLibraryIngredientRepository;
     private final ProfileRepository profileRepository;
+    private final TypeValueService typeValueService;
 
     @Override
     public List<FoodResponse> getFoods() {
@@ -57,26 +61,20 @@ public class FoodServiceImpl implements FoodService {
         String keyword = search != null ? search.trim() : "";
         String targetAdvanceFor = advanceFor != null ? advanceFor.trim() : "";
         Pageable pageable = PageRequest.of(pageIndex, pageSize, Sort.by(Sort.Direction.ASC, "id"));
+        validateFoodFilters(functionCode, targetAdvanceFor);
+
+        if (!keyword.isBlank()) {
+            return searchFoodsInMemory(pageIndex, pageSize, functionCode, targetAdvanceFor, keyword);
+        }
 
         Page<FoodLibrary> foodPage;
-        if (functionCode != null && !targetAdvanceFor.isBlank() && !keyword.isBlank()) {
-            foodPage = foodLibraryRepository.findByStatusAndFunctionCodeAndAdvanceForAndNameContainingIgnoreCase(
-                    Constants.TABLE_STATUS.ACTIVE, functionCode, targetAdvanceFor, keyword, pageable);
-        } else if (functionCode != null && !targetAdvanceFor.isBlank()) {
+        if (functionCode != null && !targetAdvanceFor.isBlank()) {
             foodPage = foodLibraryRepository.findByStatusAndFunctionCodeAndAdvanceFor(
                     Constants.TABLE_STATUS.ACTIVE, functionCode, targetAdvanceFor, pageable);
-        } else if (!targetAdvanceFor.isBlank() && !keyword.isBlank()) {
-            foodPage = foodLibraryRepository.findByStatusAndAdvanceForAndNameContainingIgnoreCase(
-                    Constants.TABLE_STATUS.ACTIVE, targetAdvanceFor, keyword, pageable);
         } else if (!targetAdvanceFor.isBlank()) {
             foodPage = foodLibraryRepository.findByStatusAndAdvanceFor(Constants.TABLE_STATUS.ACTIVE, targetAdvanceFor, pageable);
-        } else if (functionCode != null && !keyword.isBlank()) {
-            foodPage = foodLibraryRepository.findByStatusAndFunctionCodeAndNameContainingIgnoreCase(
-                    Constants.TABLE_STATUS.ACTIVE, functionCode, keyword, pageable);
         } else if (functionCode != null) {
             foodPage = foodLibraryRepository.findByStatusAndFunctionCode(Constants.TABLE_STATUS.ACTIVE, functionCode, pageable);
-        } else if (!keyword.isBlank()) {
-            foodPage = foodLibraryRepository.findByStatusAndNameContainingIgnoreCase(Constants.TABLE_STATUS.ACTIVE, keyword, pageable);
         } else {
             foodPage = foodLibraryRepository.findByStatus(Constants.TABLE_STATUS.ACTIVE, pageable);
         }
@@ -89,6 +87,36 @@ public class FoodServiceImpl implements FoodService {
                 .totalPages(foodPage.getTotalPages())
                 .first(foodPage.isFirst())
                 .last(foodPage.isLast())
+                .build();
+    }
+
+    private PageResponse<FoodResponse> searchFoodsInMemory(
+            int pageIndex,
+            int pageSize,
+            Long functionCode,
+            String advanceFor,
+            String keyword) {
+        List<FoodResponse> matchedFoods = foodLibraryRepository.findByStatus(Constants.TABLE_STATUS.ACTIVE)
+                .stream()
+                .filter(food -> functionCode == null || functionCode.equals(food.getFunctionCode()))
+                .filter(food -> advanceFor == null || advanceFor.isBlank() || advanceFor.equals(food.getAdvanceFor()))
+                .filter(food -> TextSearchUtils.contains(food.getName(), keyword))
+                .map(this::mapToFoodResponse)
+                .collect(Collectors.toList());
+
+        int totalElements = matchedFoods.size();
+        int totalPages = totalElements == 0 ? 0 : (int) Math.ceil((double) totalElements / pageSize);
+        int fromIndex = Math.min(pageIndex * pageSize, totalElements);
+        int toIndex = Math.min(fromIndex + pageSize, totalElements);
+
+        return PageResponse.<FoodResponse>builder()
+                .content(matchedFoods.subList(fromIndex, toIndex))
+                .page(pageIndex)
+                .size(pageSize)
+                .totalElements(totalElements)
+                .totalPages(totalPages)
+                .first(pageIndex == 0)
+                .last(totalPages == 0 || pageIndex >= totalPages - 1)
                 .build();
     }
 
@@ -175,6 +203,19 @@ public class FoodServiceImpl implements FoodService {
 
     private FoodResponse mapToFoodResponse(FoodLibrary foodLibrary) {
         return mapToFoodResponse(foodLibrary, false);
+    }
+
+    private void validateFoodFilters(Long functionCode, String advanceFor) {
+        if (functionCode != null
+                && !typeValueService.existsValueNumber("FOOD_FUNCTION_CODE", BigDecimal.valueOf(functionCode))) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Food function code không hợp lệ");
+        }
+        if (advanceFor != null
+                && !advanceFor.isBlank()
+                && !typeValueService.existsValueText("FOOD_ADVICE_FOR", advanceFor)
+                && !typeValueService.existsValueCode("FOOD_ADVICE_FOR", advanceFor)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Food advanceFor không hợp lệ");
+        }
     }
 
     private FoodResponse mapToFoodResponse(FoodLibrary foodLibrary, boolean includeIngredients) {

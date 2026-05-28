@@ -41,3 +41,12 @@ app:
   oauth:
     google:
       client-id: 795446588674-54v3f5u19t9tii8hu5vp9763i78g8dpd.apps.googleusercontent.com,795446588674-55cfglrm1lf78s46j09ghhif31lu5ni5.apps.googleusercontent.com
+  cloudinary:
+    cloud-name: "dkerzsvan"
+    api-key: "971539119585796"
+    api-secret: "QzNdx5bPsKb3mDyzPh-1sxlSAHo"
+    user-avatar-folder: "userAvatar"
+  admin-dashboard:
+    enabled: ${ADMIN_DASHBOARD_ENABLED:true}
+    port: ${ADMIN_PORT:8090}
+    path: ${ADMIN_DASHBOARD_PATH:admin-dashboard}

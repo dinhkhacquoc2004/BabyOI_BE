@@ -10,6 +10,7 @@ import com.example.babyoi_be.repository.UsersRepository;
 import com.example.babyoi_be.security.CustomUserDetails;
 import com.example.babyoi_be.service.ProfileAvatarStorageService;
 import com.example.babyoi_be.service.ProfileService;
+import com.example.babyoi_be.service.TypeValueService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
@@ -23,7 +24,6 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Locale;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -34,9 +34,7 @@ public class ProfileServiceImpl implements ProfileService {
     private final ProfileRepository profileRepository;
     private final UsersRepository usersRepository;
     private final ProfileAvatarStorageService profileAvatarStorageService;
-
-    private static final Set<String> PROFILE_TYPES = Set.of("MOTHER", "CHILD");
-    private static final Set<String> SEX_VALUES = Set.of("MALE", "FEMALE", "OTHER");
+    private final TypeValueService typeValueService;
 
     @Override
     @Transactional
@@ -168,10 +166,10 @@ public class ProfileServiceImpl implements ProfileService {
         if (name.length() < 2 || name.length() > 50) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Tên hồ sơ cần từ 2 đến 50 ký tự");
         }
-        if (!PROFILE_TYPES.contains(profileType)) {
+        if (!typeValueService.existsValueCode("PROFILE_TYPE", profileType)) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Loại hồ sơ chỉ được là MOTHER hoặc CHILD");
         }
-        if (!SEX_VALUES.contains(sex)) {
+        if (!typeValueService.existsValueCode("SEX", sex)) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Giới tính chỉ được là MALE, FEMALE hoặc OTHER");
         }
         if ("MOTHER".equals(profileType) && !"FEMALE".equals(sex)) {

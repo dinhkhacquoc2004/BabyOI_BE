@@ -4,12 +4,15 @@ import com.example.babyoi_be.domain.dto.respone.FoodIngredientResponse;
 import com.example.babyoi_be.domain.dto.respone.FoodResponse;
 import com.example.babyoi_be.domain.dto.respone.FavoriteFoodResponse;
 import com.example.babyoi_be.domain.dto.respone.PageResponse;
+import com.example.babyoi_be.domain.dto.respone.TypeValueResponse;
 import com.example.babyoi_be.service.FoodService;
+import com.example.babyoi_be.service.TypeValueService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/foods")
@@ -17,10 +20,16 @@ import java.util.List;
 public class FoodController {
 
     private final FoodService foodService;
+    private final TypeValueService typeValueService;
 
     @GetMapping
     public List<FoodResponse> getFoods() {
         return foodService.getFoods();
+    }
+
+    @GetMapping("/filter-options")
+    public Map<String, List<TypeValueResponse>> getFilterOptions() {
+        return typeValueService.getValuesByCodes(List.of("FOOD_FUNCTION_CODE", "FOOD_ADVICE_FOR"));
     }
 
     @GetMapping("/page")

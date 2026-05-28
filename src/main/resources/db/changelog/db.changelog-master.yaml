@@ -33,3 +33,7 @@ databaseChangeLog:
       file: db/changelog/changes/018_seed_ai_lesson_progress.sql
   - include:
       file: db/changelog/changes/019_create_handbook.sql
+  - include:
+      file: db/changelog/changes/020_create_type_catalog.sql
+  - include:
+      file: db/changelog/changes/021_seed_vaccine_type.sql

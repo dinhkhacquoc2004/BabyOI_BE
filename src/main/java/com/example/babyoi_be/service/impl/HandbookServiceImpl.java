@@ -1,6 +1,7 @@
 package com.example.babyoi_be.service.impl;
 
 import com.example.babyoi_be.common.Constants;
+import com.example.babyoi_be.common.utils.TextSearchUtils;
 import com.example.babyoi_be.domain.dto.request.HandbookCommentRequest;
 import com.example.babyoi_be.domain.dto.respone.HandbookCommentResponse;
 import com.example.babyoi_be.domain.dto.respone.HandbookPostResponse;
@@ -34,20 +35,16 @@ public class HandbookServiceImpl implements HandbookService {
     public List<HandbookPostResponse> getPosts(String category, String search) {
         String targetCategory = category != null ? category.trim() : "";
         String keyword = search != null ? search.trim() : "";
-        List<HandbookPost> posts;
 
-        if (!targetCategory.isBlank() && !keyword.isBlank()) {
-            posts = handbookPostRepository.findByStatusAndCategoryAndTitleContainingIgnoreCaseOrderByPublishedAtDescIdDesc(
-                    Constants.TABLE_STATUS.ACTIVE, targetCategory, keyword);
-        } else if (!targetCategory.isBlank()) {
-            posts = handbookPostRepository.findByStatusAndCategoryOrderByPublishedAtDescIdDesc(Constants.TABLE_STATUS.ACTIVE, targetCategory);
-        } else if (!keyword.isBlank()) {
-            posts = handbookPostRepository.findByStatusAndTitleContainingIgnoreCaseOrderByPublishedAtDescIdDesc(Constants.TABLE_STATUS.ACTIVE, keyword);
-        } else {
-            posts = handbookPostRepository.findByStatusOrderByPublishedAtDescIdDesc(Constants.TABLE_STATUS.ACTIVE);
-        }
-
-        return posts.stream().map(this::mapToPostResponse).collect(Collectors.toList());
+        return handbookPostRepository.findByStatusOrderByPublishedAtDescIdDesc(Constants.TABLE_STATUS.ACTIVE)
+                .stream()
+                .filter(post -> targetCategory.isBlank() || targetCategory.equals(post.getCategory()))
+                .filter(post -> keyword.isBlank()
+                        || TextSearchUtils.contains(post.getTitle(), keyword)
+                        || TextSearchUtils.contains(post.getSnippet(), keyword)
+                        || TextSearchUtils.contains(post.getContent(), keyword))
+                .map(this::mapToPostResponse)
+                .collect(Collectors.toList());
     }
 
     @Override
