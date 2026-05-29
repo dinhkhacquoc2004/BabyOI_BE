@@ -15,6 +15,7 @@ import java.nio.file.Path;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 @Component
 @Slf4j
@@ -28,6 +29,15 @@ public class AdminDashboardProcessManager {
 
     @Value("${app.admin-dashboard.path:admin-dashboard}")
     private String dashboardPath;
+
+    @Value("${spring.datasource.url:}")
+    private String datasourceUrl;
+
+    @Value("${spring.datasource.username:}")
+    private String datasourceUsername;
+
+    @Value("${spring.datasource.password:}")
+    private String datasourcePassword;
 
     private Process process;
 
@@ -59,6 +69,7 @@ public class AdminDashboardProcessManager {
 
             ProcessBuilder builder = new ProcessBuilder(buildNodeCommand());
             builder.directory(adminDir.toFile());
+            configureDatabaseEnvironment(builder.environment());
             builder.redirectOutput(ProcessBuilder.Redirect.appendTo(outLog.toFile()));
             builder.redirectError(ProcessBuilder.Redirect.appendTo(errLog.toFile()));
 
@@ -94,6 +105,33 @@ public class AdminDashboardProcessManager {
         command.add("node");
         command.add("src/index.js");
         return command;
+    }
+
+    private void configureDatabaseEnvironment(Map<String, String> environment) {
+        if (datasourceUrl == null || datasourceUrl.isBlank()) {
+            return;
+        }
+
+        environment.put("SPRING_DATASOURCE_URL", datasourceUrl);
+        environment.put("SPRING_DATASOURCE_USERNAME", datasourceUsername);
+        environment.put("SPRING_DATASOURCE_PASSWORD", datasourcePassword);
+
+        String normalizedUrl = datasourceUrl.replaceFirst("^jdbc:", "");
+        try {
+            java.net.URI uri = java.net.URI.create(normalizedUrl);
+            java.net.URI uriWithCredentials = new java.net.URI(
+                    uri.getScheme(),
+                    datasourceUsername + ":" + datasourcePassword,
+                    uri.getHost(),
+                    uri.getPort(),
+                    uri.getPath(),
+                    uri.getQuery(),
+                    uri.getFragment()
+            );
+            environment.put("DATABASE_URL", uriWithCredentials.toString());
+        } catch (Exception exception) {
+            log.warn("Could not convert Spring datasource URL for AdminJS: {}", datasourceUrl, exception);
+        }
     }
 
     private void ensureEnvFile(Path adminDir) {
