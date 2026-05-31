@@ -37,3 +37,17 @@ databaseChangeLog:
       file: db/changelog/changes/020_create_type_catalog.sql
   - include:
       file: db/changelog/changes/021_seed_vaccine_type.sql
+  - include:
+      file: db/changelog/changes/022_create_notification.sql
+  - include:
+      file: db/changelog/changes/023_seed_notification_user_2.sql
+  - include:
+      file: db/changelog/changes/024_fix_vaccine_record_identity.sql
+  - include:
+      file: db/changelog/changes/025_seed_vaccine_script_18.sql
+  - include:
+      file: db/changelog/changes/026_seed_profiles_user_2.sql
+  - include:
+      file: db/changelog/changes/027_fix_vaccine_vietnamese_text.sql
+  - include:
+      file: db/changelog/changes/028_fix_notification_vietnamese_text.sql
