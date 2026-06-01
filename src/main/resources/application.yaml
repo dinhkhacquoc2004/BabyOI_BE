@@ -10,21 +10,24 @@ spring:
       ddl-auto: update
     show-sql: false
     open-in-view: false
+
   liquibase:
     enabled: true
     change-log: classpath:/db/changelog/db.changelog-master.yaml
+
   servlet:
     multipart:
       max-file-size: 5MB
       max-request-size: 6MB
+
   mail:
     host: smtp.gmail.com
     port: 587
-    username: motherandbaby2026@gmail.com
-    password: "ztokbiorruoakgxr"
+    username: ${MAIL_USERNAME}
+    password: ${MAIL_PASSWORD}
     properties:
       mail:
-        debug: true
+        debug: ${MAIL_DEBUG:false}
         smtp:
           auth: true
           connectiontimeout: 10000
@@ -37,19 +40,23 @@ spring:
 
 app:
   jwt:
-    secret: ${JWT_SECRET:VGhpcy1pcy1CYWJ5T0ktZGV2LWp3dC1zZWNyZXQtMzItYnl0ZXMhISE=}
-    expiration-millis: 432000000
-    refresh-expiration-millis: 2592000000
+    secret: ${JWT_SECRET}
+    expiration-millis: ${JWT_EXPIRATION_MILLIS:432000000}
+    refresh-expiration-millis: ${JWT_REFRESH_EXPIRATION_MILLIS:2592000000}
+
   mail:
-    from: motherandbaby2026@gmail.com
+    from: ${MAIL_FROM:${MAIL_USERNAME}}
+
   oauth:
     google:
-      client-id: 795446588674-54v3f5u19t9tii8hu5vp9763i78g8dpd.apps.googleusercontent.com,795446588674-55cfglrm1lf78s46j09ghhif31lu5ni5.apps.googleusercontent.com
+      client-id: ${GOOGLE_CLIENT_IDS}
+
   cloudinary:
-    cloud-name: "dkerzsvan"
-    api-key: "971539119585796"
-    api-secret: "QzNdx5bPsKb3mDyzPh-1sxlSAHo"
-    user-avatar-folder: "userAvatar"
+    cloud-name: ${CLOUDINARY_CLOUD_NAME}
+    api-key: ${CLOUDINARY_API_KEY}
+    api-secret: ${CLOUDINARY_API_SECRET}
+    user-avatar-folder: ${CLOUDINARY_USER_AVATAR_FOLDER:userAvatar}
+
   admin-dashboard:
     enabled: ${ADMIN_DASHBOARD_ENABLED:true}
     port: ${ADMIN_PORT:8090}
