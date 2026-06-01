@@ -18,6 +18,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.TimeUnit;
+import java.util.Map;
 
 @Component
 @Slf4j
@@ -37,6 +38,15 @@ public class AdminDashboardProcessManager {
 
     @Value("${app.admin-dashboard.start-timeout-seconds:25}")
     private long startTimeoutSeconds;
+
+    @Value("${spring.datasource.url:}")
+    private String datasourceUrl;
+
+    @Value("${spring.datasource.username:}")
+    private String datasourceUsername;
+
+    @Value("${spring.datasource.password:}")
+    private String datasourcePassword;
 
     private Process process;
 
@@ -77,10 +87,12 @@ public class AdminDashboardProcessManager {
             ProcessBuilder builder = new ProcessBuilder(findExecutable("node"), "src/index.js");
             builder.directory(adminDir.toFile());
             builder.environment().putIfAbsent("ADMIN_PORT", String.valueOf(port));
+            configureDatabaseEnvironment(builder.environment());
             builder.redirectOutput(ProcessBuilder.Redirect.appendTo(outLog.toFile()));
             builder.redirectError(ProcessBuilder.Redirect.appendTo(errLog.toFile()));
 
             process = builder.start();
+            log.info("Starting AdminJS dashboard at http://localhost:{}/admin, pid={}", port, process.pid());
             log.info("AdminJS logs: {} and {}", outLog, errLog);
             if (waitForPort(port, Duration.ofSeconds(startTimeoutSeconds))) {
                 log.info("AdminJS dashboard started at http://localhost:{}/admin, pid={}", port, process.pid());
@@ -107,13 +119,47 @@ public class AdminDashboardProcessManager {
         log.info("Stopping AdminJS dashboard, pid={}", process.pid());
         process.destroy();
         try {
-            boolean stopped = process.waitFor(Duration.ofSeconds(5).toMillis(), TimeUnit.MILLISECONDS);
+            boolean stopped = process.waitFor(Duration.ofSeconds(5).toMillis(), java.util.concurrent.TimeUnit.MILLISECONDS);
             if (!stopped) {
                 process.destroyForcibly();
             }
         } catch (InterruptedException exception) {
             Thread.currentThread().interrupt();
             process.destroyForcibly();
+        }
+    }
+
+    private List<String> buildNodeCommand() {
+        List<String> command = new ArrayList<>();
+        command.add("node");
+        command.add("src/index.js");
+        return command;
+    }
+
+    private void configureDatabaseEnvironment(Map<String, String> environment) {
+        if (datasourceUrl == null || datasourceUrl.isBlank()) {
+            return;
+        }
+
+        environment.put("SPRING_DATASOURCE_URL", datasourceUrl);
+        environment.put("SPRING_DATASOURCE_USERNAME", datasourceUsername);
+        environment.put("SPRING_DATASOURCE_PASSWORD", datasourcePassword);
+
+        String normalizedUrl = datasourceUrl.replaceFirst("^jdbc:", "");
+        try {
+            java.net.URI uri = java.net.URI.create(normalizedUrl);
+            java.net.URI uriWithCredentials = new java.net.URI(
+                    uri.getScheme(),
+                    datasourceUsername + ":" + datasourcePassword,
+                    uri.getHost(),
+                    uri.getPort(),
+                    uri.getPath(),
+                    uri.getQuery(),
+                    uri.getFragment()
+            );
+            environment.put("DATABASE_URL", uriWithCredentials.toString());
+        } catch (Exception exception) {
+            log.warn("Could not convert Spring datasource URL for AdminJS: {}", datasourceUrl, exception);
         }
     }
 

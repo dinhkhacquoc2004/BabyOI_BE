@@ -11,6 +11,7 @@ import com.example.babyoi_be.repository.ProfileRepository;
 import com.example.babyoi_be.repository.VaccineRecordRepository;
 import com.example.babyoi_be.repository.VaccineTypeRepository;
 import com.example.babyoi_be.security.CustomUserDetails;
+import com.example.babyoi_be.service.NotificationService;
 import com.example.babyoi_be.service.VaccineRecordService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -40,6 +41,7 @@ public class VaccineRecordServiceImpl implements VaccineRecordService {
     private final VaccineRecordRepository vaccineRecordRepository;
     private final VaccineTypeRepository vaccineTypeRepository;
     private final ProfileRepository profileRepository;
+    private final NotificationService notificationService;
 
     private void validateProfileOwnership(Long profileId) {
         Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
@@ -83,7 +85,9 @@ public class VaccineRecordServiceImpl implements VaccineRecordService {
                 .createdAt(LocalDate.now())
                 .build();
 
-        return mapToResponse(vaccineRecordRepository.save(record));
+        VaccineRecord savedRecord = vaccineRecordRepository.save(record);
+        createVaccineNotification(savedRecord);
+        return mapToResponse(savedRecord);
     }
 
     @Override
@@ -112,7 +116,9 @@ public class VaccineRecordServiceImpl implements VaccineRecordService {
         record.setStatus(request.getStatus());
         record.setUpdatedAt(LocalDate.now());
 
-        return mapToResponse(vaccineRecordRepository.save(record));
+        VaccineRecord savedRecord = vaccineRecordRepository.save(record);
+        createVaccineNotification(savedRecord);
+        return mapToResponse(savedRecord);
     }
 
     @Override
@@ -219,6 +225,42 @@ public class VaccineRecordServiceImpl implements VaccineRecordService {
                         .thenComparing(VaccineRecord::getInjectionDate, Comparator.nullsLast(Comparator.naturalOrder()))
                         .thenComparing(VaccineRecord::getId))
                 .collect(Collectors.toList());
+    }
+
+    private void createVaccineNotification(VaccineRecord record) {
+        if (!Constants.TABLE_STATUS.PENDING.equals(record.getStatus()) || record.getInjectionDate() == null) {
+            return;
+        }
+
+        Profile profile = profileRepository.findById(record.getProfileId()).orElse(null);
+        if (profile == null || profile.getUser() == null) {
+            return;
+        }
+
+        String vaccineName = record.getVaccineType() != null ? record.getVaccineType().getName() : "vaccine";
+        String profileName = profile.getName() != null ? profile.getName() : "bé";
+        boolean isToday = LocalDate.now().equals(record.getInjectionDate());
+        String title = isToday ? "Lịch tiêm hôm nay" : "Nhắc lịch tiêm";
+        String body = isToday
+                ? "Bé " + profileName + " có lịch tiêm hôm nay: mũi " + vaccineName + "."
+                : "Bé " + profileName + " sắp có lịch tiêm ngày " + record.getInjectionDate() + ": mũi " + vaccineName + ".";
+        String dataJson = String.format(
+                "{\"screen\":\"VaccineRecordDetail\",\"recordId\":%d,\"profileId\":%d}",
+                record.getId(),
+                record.getProfileId()
+        );
+
+        notificationService.createNotification(
+                profile.getUser().getId(),
+                Constants.NOTIFICATION_TYPE.VACCINE_REMINDER,
+                title,
+                body,
+                dataJson,
+                Constants.NOTIFICATION_PRIORITY.HIGH,
+                "VACCINE_RECORD",
+                record.getId(),
+                true
+        );
     }
 
     private long getDaysFromToday(VaccineRecord record, LocalDate today) {
