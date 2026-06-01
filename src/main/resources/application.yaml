@@ -1,78 +1,87 @@
-server:
-  port: ${PORT:8085}
-  tomcat:
-    threads:
-      max: ${TOMCAT_MAX_THREADS:200}
-      min-spare: ${TOMCAT_MIN_SPARE_THREADS:25}
-    accept-count: ${TOMCAT_ACCEPT_COUNT:300}
-    max-connections: ${TOMCAT_MAX_CONNECTIONS:8192}
 
-spring:
-  application:
-    name: BabyOI_BE
+  server:
+    port: ${PORT:8085}
+    tomcat:
+      threads:
+        max: ${TOMCAT_MAX_THREADS:200}
+        min-spare: ${TOMCAT_MIN_SPARE_THREADS:25}
+      accept-count: ${TOMCAT_ACCEPT_COUNT:300}
+      max-connections: ${TOMCAT_MAX_CONNECTIONS:8192}
 
-  task:
-    execution:
-      pool:
-        core-size: ${APP_ASYNC_CORE_SIZE:8}
-        max-size: ${APP_ASYNC_MAX_SIZE:32}
-        queue-capacity: ${APP_ASYNC_QUEUE_CAPACITY:500}
-      thread-name-prefix: babyoi-async-
+  spring:
+    application:
+      name: BabyOI_BE
 
-  jpa:
-    hibernate:
-      ddl-auto: update
-    show-sql: false
-    open-in-view: false
-  datasource:
-    hikari:
-      maximum-pool-size: ${DB_POOL_MAX_SIZE:20}
-      minimum-idle: ${DB_POOL_MIN_IDLE:5}
-      connection-timeout: ${DB_CONNECTION_TIMEOUT_MS:30000}
-      validation-timeout: ${DB_VALIDATION_TIMEOUT_MS:5000}
-      idle-timeout: ${DB_IDLE_TIMEOUT_MS:600000}
-      max-lifetime: ${DB_MAX_LIFETIME_MS:1800000}
-  liquibase:
-    enabled: true
-    change-log: classpath:/db/changelog/db.changelog-master.yaml
-  servlet:
-    multipart:
-      max-file-size: 5MB
-      max-request-size: 6MB
-  mail:
-    host: smtp.gmail.com
-    port: 587
-    username: motherandbaby2026@gmail.com
-    password: "ztokbiorruoakgxr"
-    properties:
-      mail:
-        debug: ${MAIL_DEBUG:false}
-        smtp:
-          auth: true
-          connectiontimeout: 10000
-          timeout: 10000
-          writetimeout: 10000
-          ssl:
-            trust: smtp.gmail.com
-          starttls:
-            enable: true
+    task:
+      execution:
+        pool:
+          core-size: ${APP_ASYNC_CORE_SIZE:8}
+          max-size: ${APP_ASYNC_MAX_SIZE:32}
+          queue-capacity: ${APP_ASYNC_QUEUE_CAPACITY:500}
+        thread-name-prefix: babyoi-async-
 
-app:
-  jwt:
-    secret: ${JWT_SECRET:VGhpcy1pcy1CYWJ5T0ktZGV2LWp3dC1zZWNyZXQtMzItYnl0ZXMhISE=}
-    expiration-millis: 432000000
-    refresh-expiration-millis: 2592000000
-  mail:
-    from: motherandbaby2026@gmail.com
-  oauth:
-    google:
-      client-id: 795446588674-54v3f5u19t9tii8hu5vp9763i78g8dpd.apps.googleusercontent.com,795446588674-55cfglrm1lf78s46j09ghhif31lu5ni5.apps.googleusercontent.com
-  cloudinary:
-    cloud-name: "dkerzsvan"
-    api-key: "971539119585796"
-    api-secret: "QzNdx5bPsKb3mDyzPh-1sxlSAHo"
-    user-avatar-folder: "userAvatar"
-  admin-dashboard:
-    enabled: ${ADMIN_DASHBOARD_ENABLED:true}
-    port: ${ADMIN_PORT:8090}
-    path: ${ADMIN_DASHBOARD_PATH:admin-dashboard}
+    jpa:
+      hibernate:
+        ddl-auto: update
+      show-sql: false
+      open-in-view: false
+
+    datasource:
+      hikari:
+        maximum-pool-size: ${DB_POOL_MAX_SIZE:20}
+        minimum-idle: ${DB_POOL_MIN_IDLE:5}
+        connection-timeout: ${DB_CONNECTION_TIMEOUT_MS:30000}
+        validation-timeout: ${DB_VALIDATION_TIMEOUT_MS:5000}
+        idle-timeout: ${DB_IDLE_TIMEOUT_MS:600000}
+        max-lifetime: ${DB_MAX_LIFETIME_MS:1800000}
+
+    liquibase:
+      enabled: true
+      change-log: classpath:/db/changelog/db.changelog-master.yaml
+
+    servlet:
+      multipart:
+        max-file-size: ${MAX_FILE_SIZE:5MB}
+        max-request-size: ${MAX_REQUEST_SIZE:6MB}
+
+    mail:
+      host: ${MAIL_HOST:smtp.gmail.com}
+      port: ${MAIL_PORT:587}
+      username: ${MAIL_USERNAME}
+      password: ${MAIL_PASSWORD}
+      properties:
+        mail:
+          debug: ${MAIL_DEBUG:false}
+          smtp:
+            auth: true
+            connectiontimeout: ${MAIL_CONNECTION_TIMEOUT_MS:10000}
+            timeout: ${MAIL_TIMEOUT_MS:10000}
+            writetimeout: ${MAIL_WRITE_TIMEOUT_MS:10000}
+            ssl:
+              trust: ${MAIL_SSL_TRUST:smtp.gmail.com}
+            starttls:
+              enable: true
+
+  app:
+    jwt:
+      secret: ${JWT_SECRET}
+      expiration-millis: ${JWT_EXPIRATION_MILLIS:432000000}
+      refresh-expiration-millis: ${JWT_REFRESH_EXPIRATION_MILLIS:2592000000}
+
+    mail:
+      from: ${MAIL_FROM:${MAIL_USERNAME}}
+
+    oauth:
+      google:
+        client-id: ${GOOGLE_CLIENT_IDS}
+
+    cloudinary:
+      cloud-name: ${CLOUDINARY_CLOUD_NAME}
+      api-key: ${CLOUDINARY_API_KEY}
+      api-secret: ${CLOUDINARY_API_SECRET}
+      user-avatar-folder: ${CLOUDINARY_USER_AVATAR_FOLDER:userAvatar}
+
+    admin-dashboard:
+      enabled: ${ADMIN_DASHBOARD_ENABLED:true}
+      port: ${ADMIN_PORT:8090}
+      path: ${ADMIN_DASHBOARD_PATH:admin-dashboard}
