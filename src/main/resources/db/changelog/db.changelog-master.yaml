@@ -55,3 +55,5 @@ databaseChangeLog:
       file: db/changelog/changes/022_update_food_cloudinary_image_paths.sql
   - include:
       file: db/changelog/changes/023_optimize_food_queries.sql
+  - include:
+      file: db/changelog/changes/029_create_health_tracking.sql

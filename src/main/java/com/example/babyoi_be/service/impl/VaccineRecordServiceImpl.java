@@ -15,6 +15,7 @@ import com.example.babyoi_be.service.NotificationService;
 import com.example.babyoi_be.service.VaccineRecordService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -44,14 +45,16 @@ public class VaccineRecordServiceImpl implements VaccineRecordService {
     private final NotificationService notificationService;
 
     private void validateProfileOwnership(Long profileId) {
-        Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        if (principal instanceof CustomUserDetails userDetails) {
-            Long currentUserId = userDetails.getId();
-            Profile profile = profileRepository.findById(profileId)
-                    .orElseThrow(() -> new RuntimeException("Profile not found"));
-            if (!profile.getUser().getId().equals(currentUserId)) {
-                throw new RuntimeException("You do not have permission to access this profile's records");
-            }
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        Object principal = authentication != null ? authentication.getPrincipal() : null;
+        if (!(principal instanceof CustomUserDetails userDetails)) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "auth.unauthorized");
+        }
+
+        Profile profile = profileRepository.findById(profileId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Profile not found"));
+        if (!profile.getUser().getId().equals(userDetails.getId())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "auth.forbidden");
         }
     }
 
@@ -72,7 +75,7 @@ public class VaccineRecordServiceImpl implements VaccineRecordService {
         validateUniqueVaccineType(request.getProfileId(), request.getVaccineTypeId(), null);
 
         VaccineType vaccineType = vaccineTypeRepository.findById(request.getVaccineTypeId())
-                .orElseThrow(() -> new RuntimeException("Vaccine type not found"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Vaccine type not found"));
 
         VaccineRecord record = VaccineRecord.builder()
                 .profileId(request.getProfileId())
@@ -94,7 +97,7 @@ public class VaccineRecordServiceImpl implements VaccineRecordService {
     @Transactional
     public VaccineRecordResponse updateVaccineRecord(Long id, VaccineRecordRequest request) {
         VaccineRecord record = vaccineRecordRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Vaccine record not found"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Vaccine record not found"));
 
         validateProfileOwnership(record.getProfileId());
         // Also validate if the new profileId in request (if different) is owned by the user
@@ -105,7 +108,7 @@ public class VaccineRecordServiceImpl implements VaccineRecordService {
         validateUniqueVaccineType(request.getProfileId(), request.getVaccineTypeId(), id);
 
         VaccineType vaccineType = vaccineTypeRepository.findById(request.getVaccineTypeId())
-                .orElseThrow(() -> new RuntimeException("Vaccine type not found"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Vaccine type not found"));
 
         record.setProfileId(request.getProfileId());
         record.setVaccineType(vaccineType);
@@ -125,7 +128,7 @@ public class VaccineRecordServiceImpl implements VaccineRecordService {
     @Transactional
     public void deleteVaccineRecord(Long id) {
         VaccineRecord record = vaccineRecordRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Vaccine record not found"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Vaccine record not found"));
         
         validateProfileOwnership(record.getProfileId());
 
@@ -138,7 +141,7 @@ public class VaccineRecordServiceImpl implements VaccineRecordService {
     @Override
     public VaccineRecordResponse getVaccineRecordById(Long id) {
         VaccineRecord record = vaccineRecordRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Vaccine record not found"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Vaccine record not found"));
         
         validateProfileOwnership(record.getProfileId());
         

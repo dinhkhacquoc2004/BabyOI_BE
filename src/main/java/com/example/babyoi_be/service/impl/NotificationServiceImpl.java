@@ -17,19 +17,24 @@ import com.example.babyoi_be.repository.UsersRepository;
 import com.example.babyoi_be.security.CustomUserDetails;
 import com.example.babyoi_be.service.NotificationService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Executor;
 
 @Service
 @RequiredArgsConstructor
@@ -41,6 +46,8 @@ public class NotificationServiceImpl implements NotificationService {
     private final NotificationSettingRepository notificationSettingRepository;
     private final UsersRepository usersRepository;
     private final WebClient.Builder webClientBuilder;
+    @Qualifier("applicationTaskExecutor")
+    private final Executor applicationTaskExecutor;
 
     @Override
     public PageResponse<NotificationResponse> getNotifications(Integer page, Integer size) {
@@ -173,8 +180,22 @@ public class NotificationServiceImpl implements NotificationService {
                 .build());
 
         if (push && shouldSendPush(user.getId(), type)) {
-            sendPush(user.getId(), notification);
+            schedulePush(user.getId(), notification.getId());
         }
+    }
+
+    private void schedulePush(Long userId, Long notificationId) {
+        Runnable task = () -> sendPush(userId, notificationId);
+        if (TransactionSynchronizationManager.isSynchronizationActive()) {
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    applicationTaskExecutor.execute(task);
+                }
+            });
+            return;
+        }
+        applicationTaskExecutor.execute(task);
     }
 
     private boolean shouldSendPush(Long userId, String type) {
@@ -191,7 +212,12 @@ public class NotificationServiceImpl implements NotificationService {
         return Boolean.TRUE.equals(setting.getSystemEnabled());
     }
 
-    private void sendPush(Long userId, Notification notification) {
+    private void sendPush(Long userId, Long notificationId) {
+        Notification notification = notificationRepository.findById(notificationId).orElse(null);
+        if (notification == null) {
+            return;
+        }
+
         List<DeviceToken> tokens = deviceTokenRepository.findByUserIdAndStatus(userId, Constants.TABLE_STATUS.ACTIVE);
         if (tokens.isEmpty()) {
             return;
@@ -216,6 +242,7 @@ public class NotificationServiceImpl implements NotificationService {
                         .bodyValue(payload)
                         .retrieve()
                         .bodyToMono(String.class)
+                        .timeout(Duration.ofSeconds(5))
                         .block();
                 token.setLastUsedAt(LocalDateTime.now());
                 deviceTokenRepository.save(token);

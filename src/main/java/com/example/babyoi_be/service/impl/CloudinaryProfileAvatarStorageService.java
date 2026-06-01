@@ -18,6 +18,7 @@ import org.springframework.web.server.ResponseStatusException;
 import java.nio.charset.StandardCharsets;
 import java.net.URLDecoder;
 import java.security.MessageDigest;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.HexFormat;
 import java.util.LinkedHashMap;
@@ -86,6 +87,7 @@ public class CloudinaryProfileAvatarStorageService implements ProfileAvatarStora
                                     })
                     )
                     .bodyToMono(Map.class)
+                    .timeout(Duration.ofSeconds(10))
                     .block();
 
             Object secureUrl = response != null ? response.get("secure_url") : null;
@@ -132,6 +134,7 @@ public class CloudinaryProfileAvatarStorageService implements ProfileAvatarStora
                     .retrieve()
                     .bodyToMono(Map.class)
                     .doOnNext(response -> log.info("Deleted old profile avatar {} from Cloudinary with result {}", publicId, response.get("result")))
+                    .timeout(Duration.ofSeconds(5))
                     .block();
         } catch (Exception exception) {
             log.warn("Could not delete old profile avatar from Cloudinary: {}", publicId, exception);
