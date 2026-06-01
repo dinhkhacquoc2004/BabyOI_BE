@@ -60,6 +60,7 @@ export const ADMIN_BRANDING = {
 
 export const ADMIN_ASSETS = {
   styles: ['/admin-assets/admin.css'],
+  scripts: ['/admin-assets/admin-return.js'],
 }
 
 export const ADMIN_LOCALE = {
@@ -114,6 +115,15 @@ export const ADMIN_LOCALE = {
         errorFetchingRecords: 'Không tải được dữ liệu.',
         errorFetchingRecord: 'Không tải được bản ghi.',
         noRecords: 'Chưa có dữ liệu.',
+      },
+      resources: {
+        profile: {
+          properties: {
+            user_id: 'Email',
+            profile_type: 'Loại hồ sơ',
+            sex: 'Giới tính',
+          },
+        },
       },
     },
   },

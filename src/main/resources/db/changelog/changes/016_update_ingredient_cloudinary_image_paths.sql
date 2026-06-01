@@ -145,3 +145,72 @@ SET "image_url" = NULL,
     "updated_by" = 'system'
 WHERE "image_url" LIKE '/Food/%'
    OR "image_url" LIKE 'https://images.unsplash.com/%';
+
+-- changeset codex:049
+WITH extra_ingredient_image_seed(name, image_url) AS (
+    VALUES
+        ('Bá»™t nÄƒng', 'https://res.cloudinary.com/dkerzsvan/image/upload/f_jpg,q_auto/Ingredient/ingredient_bot-nang.jpg'),
+        ('Dáº§u Äƒn dáº·m', 'https://res.cloudinary.com/dkerzsvan/image/upload/f_jpg,q_auto/Ingredient/ingredient_dau-an-dam.jpg'),
+        ('Dáº§u mÃ¨', 'https://res.cloudinary.com/dkerzsvan/image/upload/f_jpg,q_auto/Ingredient/ingredient_dau-me.jpg'),
+        ('Dáº§u Ã´ liu', 'https://res.cloudinary.com/dkerzsvan/image/upload/f_jpg,q_auto/Ingredient/ingredient_dau-o-liu.jpg'),
+        ('Gá»«ng', 'https://res.cloudinary.com/dkerzsvan/image/upload/f_jpg,q_auto/Ingredient/ingredient_gung.jpg'),
+        ('HÃ nh lÃ¡', 'https://res.cloudinary.com/dkerzsvan/image/upload/f_jpg,q_auto/Ingredient/ingredient_hanh-la.jpg'),
+        ('HÃ nh tÃ­m', 'https://res.cloudinary.com/dkerzsvan/image/upload/f_jpg,q_auto/Ingredient/ingredient_hanh-tim.jpg'),
+        ('MÃ¨ rang', 'https://res.cloudinary.com/dkerzsvan/image/upload/f_jpg,q_auto/Ingredient/ingredient_me-rang.jpg'),
+        ('Muá»‘i i-á»‘t', 'https://res.cloudinary.com/dkerzsvan/image/upload/f_jpg,q_auto/Ingredient/ingredient_muoi-iot.jpg'),
+        ('NÆ°á»›c cá»‘t chanh', 'https://res.cloudinary.com/dkerzsvan/image/upload/f_jpg,q_auto/Ingredient/ingredient_nuoc-cot-chanh.jpg'),
+        ('NÆ°á»›c dÃ¹ng nháº¡t', 'https://res.cloudinary.com/dkerzsvan/image/upload/f_jpg,q_auto/Ingredient/ingredient_nuoc-dung-nhat.jpg'),
+        ('NÆ°á»›c lá»c', 'https://res.cloudinary.com/dkerzsvan/image/upload/f_jpg,q_auto/Ingredient/ingredient_nuoc-loc.jpg'),
+        ('NÆ°á»›c luá»™c rau cá»§', 'https://res.cloudinary.com/dkerzsvan/image/upload/f_jpg,q_auto/Ingredient/ingredient_nuoc-luoc-rau-cu.jpg'),
+        ('Rau mÃ¹i', 'https://res.cloudinary.com/dkerzsvan/image/upload/f_jpg,q_auto/Ingredient/ingredient_rau-mui.jpg'),
+        ('Sá»¯a tÆ°Æ¡i khÃ´ng Ä‘Æ°á»ng', 'https://res.cloudinary.com/dkerzsvan/image/upload/f_jpg,q_auto/Ingredient/ingredient_sua-tuoi-khong-duong.jpg'),
+        ('TiÃªu xay', 'https://res.cloudinary.com/dkerzsvan/image/upload/f_jpg,q_auto/Ingredient/ingredient_tieu-xay.jpg'),
+        ('Tá»i', 'https://res.cloudinary.com/dkerzsvan/image/upload/f_jpg,q_auto/Ingredient/ingredient_toi.jpg')
+)
+UPDATE "food_ingredients" fi
+SET "image_url" = s.image_url,
+    "updated_at" = now(),
+    "updated_by" = 'system'
+FROM extra_ingredient_image_seed s
+WHERE fi."name_ingredients" = s.name
+  AND (
+      fi."image_url" IS NULL
+      OR BTRIM(fi."image_url") = ''
+      OR fi."image_url" LIKE '/Ingredient/%'
+      OR fi."image_url" LIKE 'https://res.cloudinary.com/dkerzsvan/image/upload/%/Ingredient/Ingredient_%'
+  );
+
+-- changeset codex:050
+WITH ingredient_image_by_id_seed(id, image_url) AS (
+    VALUES
+        (45, 'https://res.cloudinary.com/dkerzsvan/image/upload/f_jpg,q_auto/Ingredient/ingredient_rong-bien.jpg'),
+        (65, 'https://res.cloudinary.com/dkerzsvan/image/upload/f_jpg,q_auto/Ingredient/ingredient_toi.jpg'),
+        (66, 'https://res.cloudinary.com/dkerzsvan/image/upload/f_jpg,q_auto/Ingredient/ingredient_gung.jpg'),
+        (84, 'https://res.cloudinary.com/dkerzsvan/image/upload/f_jpg,q_auto/Ingredient/ingredient_dau-o-liu.jpg'),
+        (85, 'https://res.cloudinary.com/dkerzsvan/image/upload/f_jpg,q_auto/Ingredient/ingredient_dau-me.jpg'),
+        (90, 'https://res.cloudinary.com/dkerzsvan/image/upload/f_jpg,q_auto/Ingredient/ingredient_hanh-la.jpg'),
+        (119, 'https://res.cloudinary.com/dkerzsvan/image/upload/f_jpg,q_auto/Ingredient/ingredient_sua-tuoi-khong-duong.jpg'),
+        (123, 'https://res.cloudinary.com/dkerzsvan/image/upload/f_jpg,q_auto/Ingredient/ingredient_nuoc-loc.jpg'),
+        (124, 'https://res.cloudinary.com/dkerzsvan/image/upload/f_jpg,q_auto/Ingredient/ingredient_hanh-tim.jpg'),
+        (125, 'https://res.cloudinary.com/dkerzsvan/image/upload/f_jpg,q_auto/Ingredient/ingredient_nuoc-dung-nhat.jpg'),
+        (126, 'https://res.cloudinary.com/dkerzsvan/image/upload/f_jpg,q_auto/Ingredient/ingredient_dau-an-dam.jpg'),
+        (127, 'https://res.cloudinary.com/dkerzsvan/image/upload/f_jpg,q_auto/Ingredient/ingredient_rau-mui.jpg'),
+        (128, 'https://res.cloudinary.com/dkerzsvan/image/upload/f_jpg,q_auto/Ingredient/ingredient_nuoc-cot-chanh.jpg'),
+        (129, 'https://res.cloudinary.com/dkerzsvan/image/upload/f_jpg,q_auto/Ingredient/ingredient_nuoc-luoc-rau-cu.jpg'),
+        (130, 'https://res.cloudinary.com/dkerzsvan/image/upload/f_jpg,q_auto/Ingredient/ingredient_me-rang.jpg'),
+        (131, 'https://res.cloudinary.com/dkerzsvan/image/upload/f_jpg,q_auto/Ingredient/ingredient_bot-nang.jpg'),
+        (132, 'https://res.cloudinary.com/dkerzsvan/image/upload/f_jpg,q_auto/Ingredient/ingredient_muoi-iot.jpg'),
+        (133, 'https://res.cloudinary.com/dkerzsvan/image/upload/f_jpg,q_auto/Ingredient/ingredient_tieu-xay.jpg')
+)
+UPDATE "food_ingredients" fi
+SET "image_url" = s.image_url,
+    "updated_at" = now(),
+    "updated_by" = 'system'
+FROM ingredient_image_by_id_seed s
+WHERE fi."id" = s.id
+  AND (
+      fi."image_url" IS NULL
+      OR BTRIM(fi."image_url") = ''
+      OR fi."image_url" LIKE '/Ingredient/%'
+      OR fi."image_url" LIKE '%/f_auto,q_auto/%'
+  );

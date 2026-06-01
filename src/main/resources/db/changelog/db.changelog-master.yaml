@@ -37,3 +37,7 @@ databaseChangeLog:
       file: db/changelog/changes/020_create_type_catalog.sql
   - include:
       file: db/changelog/changes/021_seed_vaccine_type.sql
+  - include:
+      file: db/changelog/changes/022_update_food_cloudinary_image_paths.sql
+  - include:
+      file: db/changelog/changes/023_optimize_food_queries.sql

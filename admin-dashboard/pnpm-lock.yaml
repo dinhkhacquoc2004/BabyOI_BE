@@ -50,6 +50,10 @@ importers:
       pg:
         specifier: ^8.13.1
         version: 8.21.0
+    devDependencies:
+      '@babel/plugin-syntax-import-assertions':
+        specifier: ^7.29.7
+        version: 7.29.7(@babel/core@7.29.7)
 
 packages:
 

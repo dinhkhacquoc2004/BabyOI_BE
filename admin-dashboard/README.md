@@ -6,17 +6,50 @@ AdminJS is a Node.js admin panel. This project runs next to the Spring Boot API 
 
 ## Run
 
+Requires Node.js 20.10 or newer. AdminJS dependencies use modern JSON import attributes that fail on older Node 18 releases.
+
+### Ubuntu / Linux / macOS
+
+```bash
+cd admin-dashboard
+cp .env.example .env
+corepack enable
+pnpm install --frozen-lockfile
+pnpm run dev
+```
+
+If you use `nvm`:
+
+```bash
+cd admin-dashboard
+nvm install
+nvm use
+corepack enable
+pnpm install --frozen-lockfile
+pnpm run dev
+```
+
+### Windows PowerShell
+
 ```powershell
 cd admin-dashboard
 copy .env.example .env
-npm install
-npm run dev
+corepack enable
+pnpm install --frozen-lockfile
+pnpm run dev
 ```
 
-Or run it together with the Spring Boot backend from the repository root:
+On Windows, you can run it together with the Spring Boot backend from the repository root:
 
 ```powershell
 .\scripts\run-backend-with-admin.ps1
+```
+
+On Ubuntu / Linux / macOS, run both services from the repository root:
+
+```bash
+chmod +x scripts/run-backend-with-admin.sh
+./scripts/run-backend-with-admin.sh quoc
 ```
 
 The Spring Boot app also auto-starts this dashboard by default when the backend is ready.

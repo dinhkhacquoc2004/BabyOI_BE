@@ -57,6 +57,11 @@ public class FoodController {
         return foodService.getFavoriteFoodsByProfileId(profileId);
     }
 
+    @GetMapping("/favorites/profile/{profileId}/ids")
+    public List<Long> getFavoriteFoodIdsByProfileId(@PathVariable Long profileId) {
+        return foodService.getFavoriteFoodIdsByProfileId(profileId);
+    }
+
     @PostMapping("/favorites/profile/{profileId}/food/{foodId}")
     @ResponseStatus(HttpStatus.CREATED)
     public FavoriteFoodResponse addFavoriteFood(
@@ -76,6 +81,11 @@ public class FoodController {
     @GetMapping("/restricted/profile/{profileId}")
     public List<FoodResponse> getRestrictedFoodsByProfileId(@PathVariable Long profileId) {
         return foodService.getRestrictedFoodsByProfileId(profileId);
+    }
+
+    @GetMapping("/restricted/profile/{profileId}/ids")
+    public List<Long> getRestrictedFoodIdsByProfileId(@PathVariable Long profileId) {
+        return foodService.getRestrictedFoodIdsByProfileId(profileId);
     }
 
     @PostMapping("/restricted/profile/{profileId}/food/{foodId}")
