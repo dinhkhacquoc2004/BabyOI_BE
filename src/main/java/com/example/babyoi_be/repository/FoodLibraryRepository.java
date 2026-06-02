@@ -12,47 +12,72 @@ import java.util.Optional;
 
 @Repository
 public interface FoodLibraryRepository extends JpaRepository<FoodLibrary, Long> {
-    @EntityGraph(attributePaths = {"nutritionSummary", "recommendation"})
+    @EntityGraph(attributePaths = "nutritionSummary")
     List<FoodLibrary> findByStatus(Long status);
 
-    @EntityGraph(attributePaths = {"nutritionSummary", "recommendation"})
+    @EntityGraph(attributePaths = "nutritionSummary")
     Page<FoodLibrary> findByStatus(Long status, Pageable pageable);
 
-    @EntityGraph(attributePaths = {"nutritionSummary", "recommendation"})
+    @EntityGraph(attributePaths = "nutritionSummary")
     Page<FoodLibrary> findByStatusAndFunctionCode(Long status, Long functionCode, Pageable pageable);
 
-    @EntityGraph(attributePaths = {"nutritionSummary", "recommendation"})
+    @EntityGraph(attributePaths = "nutritionSummary")
     Page<FoodLibrary> findByStatusAndNameContainingIgnoreCase(Long status, String name, Pageable pageable);
 
-    @EntityGraph(attributePaths = {"nutritionSummary", "recommendation"})
+    @EntityGraph(attributePaths = "nutritionSummary")
     Page<FoodLibrary> findByStatusAndAdvanceFor(Long status, String advanceFor, Pageable pageable);
 
-    @EntityGraph(attributePaths = {"nutritionSummary", "recommendation"})
+    @EntityGraph(attributePaths = "nutritionSummary")
+    Page<FoodLibrary> findByStatusAndAdvanceForIn(Long status, List<String> advanceFor, Pageable pageable);
+
+    @EntityGraph(attributePaths = "nutritionSummary")
     Page<FoodLibrary> findByStatusAndFunctionCodeAndNameContainingIgnoreCase(
             Long status,
             Long functionCode,
             String name,
             Pageable pageable);
 
-    @EntityGraph(attributePaths = {"nutritionSummary", "recommendation"})
+    @EntityGraph(attributePaths = "nutritionSummary")
     Page<FoodLibrary> findByStatusAndFunctionCodeAndAdvanceFor(
             Long status,
             Long functionCode,
             String advanceFor,
             Pageable pageable);
 
-    @EntityGraph(attributePaths = {"nutritionSummary", "recommendation"})
+    @EntityGraph(attributePaths = "nutritionSummary")
+    Page<FoodLibrary> findByStatusAndFunctionCodeAndAdvanceForIn(
+            Long status,
+            Long functionCode,
+            List<String> advanceFor,
+            Pageable pageable);
+
+    @EntityGraph(attributePaths = "nutritionSummary")
     Page<FoodLibrary> findByStatusAndAdvanceForAndNameContainingIgnoreCase(
             Long status,
             String advanceFor,
             String name,
             Pageable pageable);
 
-    @EntityGraph(attributePaths = {"nutritionSummary", "recommendation"})
+    @EntityGraph(attributePaths = "nutritionSummary")
+    Page<FoodLibrary> findByStatusAndAdvanceForInAndNameContainingIgnoreCase(
+            Long status,
+            List<String> advanceFor,
+            String name,
+            Pageable pageable);
+
+    @EntityGraph(attributePaths = "nutritionSummary")
     Page<FoodLibrary> findByStatusAndFunctionCodeAndAdvanceForAndNameContainingIgnoreCase(
             Long status,
             Long functionCode,
             String advanceFor,
+            String name,
+            Pageable pageable);
+
+    @EntityGraph(attributePaths = "nutritionSummary")
+    Page<FoodLibrary> findByStatusAndFunctionCodeAndAdvanceForInAndNameContainingIgnoreCase(
+            Long status,
+            Long functionCode,
+            List<String> advanceFor,
             String name,
             Pageable pageable);
 

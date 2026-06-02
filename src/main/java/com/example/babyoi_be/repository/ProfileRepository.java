@@ -15,5 +15,7 @@ public interface ProfileRepository extends JpaRepository<Profile, Long> {
     List<Profile> findByProfileType(String profileType);
     
     long countByUserIdAndStatusIn(Long userId, Collection<Long> statuses);
+    long countByUserIdAndProfileTypeAndStatus(Long userId, String profileType, Long status);
+    long countByUserIdAndProfileTypeAndStatusAndIdNot(Long userId, String profileType, Long status, Long id);
     boolean existsByUserIdAndStatusIn(Long userId, Collection<Long> statuses);
 }

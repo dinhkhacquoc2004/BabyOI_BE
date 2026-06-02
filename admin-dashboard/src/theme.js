@@ -1,0 +1,130 @@
+export const ADMIN_BRANDING = {
+  companyName: 'BabyOi Admin',
+  logo: '/admin-assets/babyoi-logo.png',
+  favicon: '/admin-assets/favicon.png',
+  withMadeWithLove: false,
+  theme: {
+    colors: {
+      primary100: '#ff8fab',
+      primary80: '#ffa2b2',
+      primary60: '#ffb6c1',
+      primary40: '#ffd5dd',
+      primary20: '#ffeaf0',
+      accent: '#5c7a8a',
+      love: '#ff8fab',
+      grey100: '#334650',
+      grey80: '#5c7a8a',
+      grey60: '#7c91a0',
+      grey40: '#d8e1e7',
+      grey20: '#fef9f3',
+      white: '#ffffff',
+      black: '#11181c',
+      border: '#f0d7df',
+      separator: '#f0d7df',
+      inputBorder: '#f0d7df',
+      bg: '#fef9f3',
+      filterBg: '#5c7a8a',
+      container: '#ffffff',
+      sidebar: '#fff7fa',
+      highlight: '#fff1f5',
+      success: '#4caf50',
+      successDark: '#2e7d32',
+      successLight: '#e8f9ed',
+      warning: '#ffb74d',
+      warningDark: '#ff9800',
+      warningLight: '#fff4d6',
+      error: '#f44336',
+      errorDark: '#d64545',
+      errorLight: '#ffebee',
+      info: '#64b5f6',
+      infoDark: '#2196f3',
+      infoLight: '#e3f2fd',
+    },
+    font: "'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, sans-serif",
+    shadows: {
+      login: '0 24px 60px rgba(255, 143, 171, 0.22)',
+      card: '0 10px 28px rgba(255, 182, 193, 0.22)',
+      cardHover: '0 14px 34px rgba(255, 143, 171, 0.28)',
+      drawer: '-2px 0 18px rgba(255, 182, 193, 0.2)',
+      inputFocus: '0 0 0 4px rgba(255, 143, 171, 0.16)',
+      buttonFocus: '0 0 0 4px rgba(255, 143, 171, 0.22)',
+    },
+    borderWidths: {
+      default: '1px',
+    },
+    sizes: {
+      sidebarWidth: '300px',
+    },
+  },
+}
+
+export const ADMIN_ASSETS = {
+  styles: ['/admin-assets/admin.css'],
+  scripts: ['/admin-assets/admin-return.js'],
+}
+
+export const ADMIN_LOCALE = {
+  language: 'vi',
+  availableLanguages: ['vi'],
+  translations: {
+    vi: {
+      actions: {
+        new: 'Thêm mới',
+        edit: 'Chỉnh sửa',
+        show: 'Chi tiết',
+        delete: 'Xóa',
+        bulkDelete: 'Xóa đã chọn',
+        list: 'Danh sách',
+      },
+      buttons: {
+        save: 'Lưu',
+        addNewItem: 'Thêm dòng',
+        filter: 'Bộ lọc',
+        applyChanges: 'Áp dụng',
+        resetFilter: 'Đặt lại',
+        cancel: 'Hủy',
+        confirm: 'Xác nhận',
+        logout: 'Đăng xuất',
+        login: 'Đăng nhập',
+      },
+      labels: {
+        navigation: 'Quản trị',
+        dashboard: 'Tổng quan',
+        pages: 'Trang',
+        filters: 'Bộ lọc',
+      },
+      components: {
+        Login: {
+          welcomeHeader: 'BabyOi Admin',
+          welcomeMessage: 'Không gian quản trị dữ liệu BabyOi.',
+          properties: {
+            email: 'Tài khoản',
+            password: 'Mật khẩu',
+          },
+          loginButton: 'Đăng nhập',
+        },
+      },
+      messages: {
+        successfullyCreated: 'Tạo mới thành công.',
+        successfullyUpdated: 'Cập nhật thành công.',
+        successfullyDeleted: 'Xóa thành công.',
+        thereWereValidationErrors: 'Có lỗi dữ liệu, vui lòng kiểm tra lại.',
+        forbiddenError: 'Bạn không có quyền thực hiện thao tác này.',
+        anyForbiddenError: 'Bạn không có quyền thực hiện thao tác này.',
+        noRecordsSelected: 'Chưa chọn bản ghi nào.',
+        errorFetchingRecords: 'Không tải được dữ liệu.',
+        errorFetchingRecord: 'Không tải được bản ghi.',
+        noRecords: 'Chưa có dữ liệu.',
+      },
+      resources: {
+        profile: {
+          properties: {
+            user_id: 'Email',
+            profile_type: 'Loại hồ sơ',
+            sex: 'Giới tính',
+          },
+        },
+      },
+    },
+  },
+}

@@ -18,6 +18,25 @@ public interface Constants {
         public static final Long FAILED = -7L;
     }
 
+    final class NOTIFICATION_TYPE {
+        private NOTIFICATION_TYPE() {
+            throw new IllegalStateException("Utility class");
+        }
+
+        public static final String VACCINE_REMINDER = "VACCINE_REMINDER";
+        public static final String SYSTEM = "SYSTEM";
+    }
+
+    final class NOTIFICATION_PRIORITY {
+        private NOTIFICATION_PRIORITY() {
+            throw new IllegalStateException("Utility class");
+        }
+
+        public static final Long LOW = 1L;
+        public static final Long NORMAL = 2L;
+        public static final Long HIGH = 3L;
+    }
+
     final class API_RESPONSE {
         private API_RESPONSE() {
             throw new IllegalStateException("Utility class");

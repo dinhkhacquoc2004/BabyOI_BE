@@ -343,6 +343,7 @@ public class AuthServiceImpl implements AuthService {
                             .build())
                     .retrieve()
                     .bodyToMono(String.class)
+                    .timeout(Duration.ofSeconds(5))
                     .block();
 
             JsonNode payload = objectMapper.readTree(response);

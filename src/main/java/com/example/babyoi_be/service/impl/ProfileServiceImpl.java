@@ -8,8 +8,11 @@ import com.example.babyoi_be.domain.entity.Users;
 import com.example.babyoi_be.repository.ProfileRepository;
 import com.example.babyoi_be.repository.UsersRepository;
 import com.example.babyoi_be.security.CustomUserDetails;
+import com.example.babyoi_be.service.ProfileAvatarStorageService;
 import com.example.babyoi_be.service.ProfileService;
+import com.example.babyoi_be.service.TypeValueService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -21,18 +24,17 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Locale;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class ProfileServiceImpl implements ProfileService {
 
     private final ProfileRepository profileRepository;
     private final UsersRepository usersRepository;
-
-    private static final Set<String> PROFILE_TYPES = Set.of("MOTHER", "CHILD");
-    private static final Set<String> SEX_VALUES = Set.of("MALE", "FEMALE", "OTHER");
+    private final ProfileAvatarStorageService profileAvatarStorageService;
+    private final TypeValueService typeValueService;
 
     @Override
     @Transactional
@@ -43,20 +45,17 @@ public class ProfileServiceImpl implements ProfileService {
         Users user = usersRepository.findById(request.getUserId())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
 
-        long activeProfileCount = profileRepository.countByUserIdAndStatusIn(user.getId(), List.of(Constants.TABLE_STATUS.ACTIVE));
-        
-        if (activeProfileCount >= 3) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Mỗi tài khoản chỉ được tạo tối đa 3 hồ sơ đang hoạt động");
-        }
+        String profileType = normalizeCode(request.getProfileType());
+        validateProfileLimit(user.getId(), profileType, null);
 
         Profile profile = new Profile();
         BeanUtils.copyProperties(request, profile);
         LocalDateTime now = LocalDateTime.now();
         String actorName = resolveAuditName(user);
-        
+
         profile.setUser(user);
-        profile.setProfileType(normalizeCode(request.getProfileType()));
-        profile.setSex(Profile.Sex.valueOf(normalizeCode(request.getSex())));
+        profile.setProfileType(profileType);
+        profile.setSex(Profile.Sex.valueOf(resolveSex(profileType, request.getSex())));
         profile.setImageUrl(normalizeImageUrl(request));
         profile.setCreatedAt(now);
         profile.setCreatedBy(actorName);
@@ -81,15 +80,46 @@ public class ProfileServiceImpl implements ProfileService {
         Users updater = usersRepository.findById(request.getUserId())
                 .orElse(profile.getUser());
 
+        String profileType = normalizeCode(request.getProfileType());
+        validateProfileLimit(profile.getUser().getId(), profileType, profile.getId());
+
         BeanUtils.copyProperties(request, profile, "id", "userId", "sex");
-        
-        profile.setProfileType(normalizeCode(request.getProfileType()));
-        profile.setSex(Profile.Sex.valueOf(normalizeCode(request.getSex())));
-        profile.setImageUrl(normalizeImageUrl(request));
+
+        profile.setProfileType(profileType);
+        profile.setSex(Profile.Sex.valueOf(resolveSex(profileType, request.getSex())));
+        String oldImageUrl = profile.getImageUrl();
+        String newImageUrl = normalizeImageUrl(request);
+        profile.setImageUrl(newImageUrl);
         profile.setUpdatedAt(LocalDateTime.now());
         profile.setUpdatedBy(resolveAuditName(updater));
 
-        return mapToResponse(profileRepository.save(profile));
+        Profile savedProfile = profileRepository.save(profile);
+        deleteOldAvatarIfChanged(oldImageUrl, newImageUrl);
+        return mapToResponse(savedProfile);
+    }
+
+    @Override
+    @Transactional
+    public ProfileResponse updateProfileAvatar(Long id, String imageUrl) {
+        Profile profile = profileRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Profile not found"));
+        validateActiveProfile(profile);
+        validateCurrentUser(profile.getUser().getId());
+
+        String normalizedImageUrl = normalizeRemoteImageUrl(imageUrl);
+        if (normalizedImageUrl == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Avatar URL không hợp lệ");
+        }
+
+        String oldImageUrl = profile.getImageUrl();
+        profile.setImageUrl(normalizedImageUrl);
+        profile.setUpdatedAt(LocalDateTime.now());
+        profile.setUpdatedBy(resolveAuditName(profile.getUser()));
+
+        Profile savedProfile = profileRepository.save(profile);
+        deleteOldAvatarIfChanged(oldImageUrl, normalizedImageUrl);
+        log.info("Profile {} avatar updated", savedProfile.getId());
+        return mapToResponse(savedProfile);
     }
 
     @Override
@@ -97,9 +127,9 @@ public class ProfileServiceImpl implements ProfileService {
     public void deleteProfile(Long id) {
         Profile profile = profileRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Profile not found"));
+        validateActiveProfile(profile);
         validateCurrentUser(profile.getUser().getId());
-        
-        // Soft delete: change status to INACTIVE
+
         profile.setStatus(Constants.TABLE_STATUS.INACTIVE);
         profile.setUpdatedAt(LocalDateTime.now());
         profile.setUpdatedBy(resolveAuditName(profile.getUser()));
@@ -131,19 +161,19 @@ public class ProfileServiceImpl implements ProfileService {
     private void validateProfileRequest(ProfileRequest request) {
         String name = request.getName() != null ? request.getName().trim() : "";
         String profileType = normalizeCode(request.getProfileType());
-        String sex = normalizeCode(request.getSex());
+        String sex = resolveSex(profileType, request.getSex());
 
         if (name.length() < 2 || name.length() > 50) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Profile name must be between 2 and 50 characters");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Tên hồ sơ cần từ 2 đến 50 ký tự");
         }
-        if (!PROFILE_TYPES.contains(profileType)) {
+        if (!typeValueService.existsValueCode("PROFILE_TYPE", profileType)) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Loại hồ sơ chỉ được là MOTHER hoặc CHILD");
         }
-        if (!SEX_VALUES.contains(sex)) {
+        if (!typeValueService.existsValueCode("SEX", sex)) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Giới tính chỉ được là MALE, FEMALE hoặc OTHER");
         }
         if ("MOTHER".equals(profileType) && !"FEMALE".equals(sex)) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Mother profile sex must be FEMALE");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Hồ sơ mẹ mặc định là FEMALE");
         }
         if (request.getDateOfBirth() == null || request.getDateOfBirth().isAfter(LocalDate.now())) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Ngày sinh không hợp lệ");
@@ -155,6 +185,27 @@ public class ProfileServiceImpl implements ProfileService {
         if ("MOTHER".equals(profileType) && request.getDateOfBirth().isAfter(LocalDate.now().minusYears(13))) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Hồ sơ mẹ cần có tuổi phù hợp");
         }
+    }
+
+    private void validateProfileLimit(Long userId, String profileType, Long excludedProfileId) {
+        long currentActiveCount = excludedProfileId == null
+                ? profileRepository.countByUserIdAndProfileTypeAndStatus(userId, profileType, Constants.TABLE_STATUS.ACTIVE)
+                : profileRepository.countByUserIdAndProfileTypeAndStatusAndIdNot(userId, profileType, Constants.TABLE_STATUS.ACTIVE, excludedProfileId);
+        long limit = "MOTHER".equals(profileType) ? 1 : 2;
+
+        if (currentActiveCount >= limit) {
+            String message = "MOTHER".equals(profileType)
+                    ? "Mỗi tài khoản chỉ được tạo tối đa 1 hồ sơ mẹ đang hoạt động"
+                    : "Mỗi tài khoản chỉ được tạo tối đa 2 hồ sơ bé đang hoạt động";
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, message);
+        }
+    }
+
+    private String resolveSex(String profileType, String sex) {
+        if ("MOTHER".equals(profileType) && (sex == null || sex.isBlank())) {
+            return "FEMALE";
+        }
+        return normalizeCode(sex);
     }
 
     private String normalizeCode(String value) {
@@ -174,12 +225,36 @@ public class ProfileServiceImpl implements ProfileService {
     }
 
     private String normalizeImageUrl(ProfileRequest request) {
-        if (request.getImageUrl() != null && !request.getImageUrl().isBlank()) {
-            return request.getImageUrl().trim();
+        String normalizedImageUrl = normalizeRemoteImageUrl(request.getImageUrl());
+        if (normalizedImageUrl != null) {
+            return normalizedImageUrl;
         }
         return "MOTHER".equals(normalizeCode(request.getProfileType()))
                 ? "https://cdn-icons-png.flaticon.com/512/4140/4140047.png"
                 : "https://cdn-icons-png.flaticon.com/512/4140/4140048.png";
+    }
+
+    private String normalizeRemoteImageUrl(String imageUrl) {
+        if (imageUrl == null || imageUrl.isBlank()) {
+            return null;
+        }
+
+        String normalizedImageUrl = imageUrl.trim();
+        if (normalizedImageUrl.startsWith("http://") || normalizedImageUrl.startsWith("https://")) {
+            return normalizedImageUrl;
+        }
+
+        return null;
+    }
+
+    private void deleteOldAvatarIfChanged(String oldImageUrl, String newImageUrl) {
+        if (oldImageUrl == null || oldImageUrl.isBlank()) {
+            return;
+        }
+        if (newImageUrl != null && oldImageUrl.trim().equals(newImageUrl.trim())) {
+            return;
+        }
+        profileAvatarStorageService.deleteAvatar(oldImageUrl);
     }
 
     private String resolveAuditName(Users user) {
@@ -210,14 +285,14 @@ public class ProfileServiceImpl implements ProfileService {
     private ProfileResponse mapToResponse(Profile profile) {
         ProfileResponse response = new ProfileResponse();
         BeanUtils.copyProperties(profile, response, "userId", "sex");
-        
+
         if (profile.getUser() != null) {
             response.setUserId(profile.getUser().getId());
         }
         if (profile.getSex() != null) {
             response.setSex(profile.getSex().name());
         }
-        
+
         return response;
     }
 }

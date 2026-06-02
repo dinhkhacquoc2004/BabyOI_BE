@@ -16,11 +16,15 @@ public interface FoodService {
 
     List<FoodResponse> getFavoriteFoodsByProfileId(Long profileId);
 
+    List<Long> getFavoriteFoodIdsByProfileId(Long profileId);
+
     FavoriteFoodResponse addFavoriteFood(Long profileId, Long foodId);
 
     void deleteFavoriteFood(Long profileId, Long foodId);
 
     List<FoodResponse> getRestrictedFoodsByProfileId(Long profileId);
+
+    List<Long> getRestrictedFoodIdsByProfileId(Long profileId);
 
     FavoriteFoodResponse addRestrictedFood(Long profileId, Long foodId);
 

@@ -15,7 +15,7 @@ public interface VaccineTypeRepository extends JpaRepository<VaccineType, Long> 
     
     @Query("SELECT v FROM VaccineType v WHERE " +
            "(:keyword IS NULL OR LOWER(v.name) LIKE LOWER(CONCAT('%', :keyword, '%'))) " +
-           "AND v.status = 1")
+           "AND v.status = 2")
     List<VaccineType> searchByName(@Param("keyword") String keyword);
 
     List<VaccineType> findByForMotherTrue();

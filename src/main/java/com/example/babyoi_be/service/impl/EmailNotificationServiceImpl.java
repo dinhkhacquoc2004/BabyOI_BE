@@ -7,6 +7,7 @@ import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import jakarta.mail.internet.MimeMessage;
@@ -21,6 +22,7 @@ public class EmailNotificationServiceImpl implements EmailNotificationService {
     private String fromEmail;
 
     @Override
+    @Async("applicationTaskExecutor")
     public void sendOtp(String toEmail, String subject, String code, int expiresInMinutes) {
         log.warn("BabyOi OTP for {} is {}. It expires in {} minutes.", toEmail, code, expiresInMinutes);
 

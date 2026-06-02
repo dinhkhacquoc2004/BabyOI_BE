@@ -8,10 +8,6 @@ databaseChangeLog:
   - include:
       file: db/changelog/changes/004_add_food_goal_catalog.sql
   - include:
-      file: db/changelog/changes/005_add_food_images.sql
-  - include:
-      file: db/changelog/changes/006_update_food_image_paths.sql
-  - include:
       file: db/changelog/changes/007_enrich_food_ingredients.sql
   - include:
       file: db/changelog/changes/008_add_restricted_food_and_filters.sql
@@ -31,3 +27,33 @@ databaseChangeLog:
       file: db/changelog/changes/015_auth_refresh_token.sql
   - include:
       file: db/changelog/changes/016_update_ingredient_cloudinary_image_paths.sql
+  - include:
+      file: db/changelog/changes/017_seed_ai_teaching_lessons.sql
+  - include:
+      file: db/changelog/changes/018_seed_ai_lesson_progress.sql
+  - include:
+      file: db/changelog/changes/019_create_handbook.sql
+  - include:
+      file: db/changelog/changes/020_create_type_catalog.sql
+  - include:
+      file: db/changelog/changes/021_seed_vaccine_type.sql
+  - include:
+      file: db/changelog/changes/022_create_notification.sql
+  - include:
+      file: db/changelog/changes/023_seed_notification_user_2.sql
+  - include:
+      file: db/changelog/changes/024_fix_vaccine_record_identity.sql
+  - include:
+      file: db/changelog/changes/025_seed_vaccine_script_18.sql
+  - include:
+      file: db/changelog/changes/026_seed_profiles_user_2.sql
+  - include:
+      file: db/changelog/changes/027_fix_vaccine_vietnamese_text.sql
+  - include:
+      file: db/changelog/changes/028_fix_notification_vietnamese_text.sql
+  - include:
+      file: db/changelog/changes/022_update_food_cloudinary_image_paths.sql
+  - include:
+      file: db/changelog/changes/023_optimize_food_queries.sql
+  - include:
+      file: db/changelog/changes/029_create_health_tracking.sql

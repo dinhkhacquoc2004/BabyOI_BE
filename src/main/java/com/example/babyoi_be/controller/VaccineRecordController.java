@@ -1,6 +1,7 @@
 package com.example.babyoi_be.controller;
 
 import com.example.babyoi_be.domain.dto.request.VaccineRecordRequest;
+import com.example.babyoi_be.domain.dto.respone.PageResponse;
 import com.example.babyoi_be.domain.dto.respone.VaccineRecordResponse;
 import com.example.babyoi_be.service.VaccineRecordService;
 import jakarta.validation.Valid;
@@ -46,6 +47,15 @@ public class VaccineRecordController {
             @RequestParam Long status,
             @RequestParam(required = false) Integer limit) {
         return vaccineRecordService.getVaccineRecordsByStatus(profileId, status, limit);
+    }
+
+    @GetMapping("/profile/{profileId}/page")
+    public PageResponse<VaccineRecordResponse> getPageByStatus(
+            @PathVariable Long profileId,
+            @RequestParam Long status,
+            @RequestParam(defaultValue = "0") Integer page,
+            @RequestParam(defaultValue = "10") Integer size) {
+        return vaccineRecordService.getVaccineRecordsPage(profileId, status, page, size);
     }
 
     @GetMapping("/profile/{profileId}/count")

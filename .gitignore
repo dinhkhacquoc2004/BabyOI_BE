@@ -31,3 +31,8 @@ build/
 
 ### VS Code ###
 .vscode/
+
+### AdminJS dashboard ###
+admin-dashboard/node_modules/
+admin-dashboard/.env
+admin-dashboard/.adminjs/
