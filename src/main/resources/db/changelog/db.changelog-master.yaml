@@ -57,3 +57,5 @@ databaseChangeLog:
       file: db/changelog/changes/023_optimize_food_queries.sql
   - include:
       file: db/changelog/changes/029_create_health_tracking.sql
+  - include:
+      file: db/changelog/changes/030_create_diary_entry.sql
