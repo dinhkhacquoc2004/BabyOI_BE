@@ -1,8 +1,8 @@
 package com.example.babyoi_be.service.impl;
 
 import com.example.babyoi_be.common.Constants;
+import com.example.babyoi_be.common.VaccineRuleConstants;
 import com.example.babyoi_be.domain.dto.request.VaccineRecordRequest;
-import com.example.babyoi_be.domain.dto.respone.PageResponse;
 import com.example.babyoi_be.domain.dto.respone.VaccineRecordResponse;
 import com.example.babyoi_be.domain.entity.*;
 import com.example.babyoi_be.repository.*;
@@ -18,12 +18,9 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDate;
-import java.time.temporal.ChronoUnit;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -37,9 +34,7 @@ public class VaccineRecordServiceImpl implements VaccineRecordService {
 
     private final VaccineRecordRepository vaccineRecordRepository;
     private final VaccineRepository vaccineRepository;
-    private final LocationRepository locationRepository;
-    private final VaccinePackageRepository vaccinePackageRepository;
-    private final PackageStructureRepository packageStructureRepository;
+    private final ChildVaccineDiseaseRepository childVaccineDiseaseRepository;
     private final ProfileRepository profileRepository;
     private final NotificationService notificationService;
 
@@ -57,14 +52,14 @@ public class VaccineRecordServiceImpl implements VaccineRecordService {
         }
     }
 
-    private void validateUniqueVaccine(Long profileId, Long vaccineId, Long currentRecordId) {
-        if (vaccineId == null) {
+    private void validateUniqueVaccine(Long profileId, Long vaccineId, LocalDate injectionDate, Long currentRecordId) {
+        if (vaccineId == null || injectionDate == null) {
             return;
         }
 
         boolean exists = currentRecordId == null
-                ? vaccineRecordRepository.existsByProfileIdAndVaccineIdAndStatusIn(profileId, vaccineId, DUPLICATE_CHECK_STATUSES)
-                : vaccineRecordRepository.existsByProfileIdAndVaccineIdAndStatusInAndIdNot(profileId, vaccineId, DUPLICATE_CHECK_STATUSES, currentRecordId);
+                ? vaccineRecordRepository.existsByProfileIdAndVaccineIdAndInjectionDateAndStatusIn(profileId, vaccineId, injectionDate, DUPLICATE_CHECK_STATUSES)
+                : vaccineRecordRepository.existsByProfileIdAndVaccineIdAndInjectionDateAndStatusInAndIdNot(profileId, vaccineId, injectionDate, DUPLICATE_CHECK_STATUSES, currentRecordId);
 
         if (exists) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Vaccine này đã tồn tại cho hồ sơ này");
@@ -75,14 +70,14 @@ public class VaccineRecordServiceImpl implements VaccineRecordService {
     @Transactional
     public VaccineRecordResponse createVaccineRecord(VaccineRecordRequest request) {
         validateProfileOwnership(request.getProfileId());
-        validateUniqueVaccine(request.getProfileId(), request.getVaccineId(), null);
+        validateUniqueVaccine(request.getProfileId(), request.getVaccineId(), request.getInjectionDate(), null);
 
         VaccineRecord record = VaccineRecord.builder()
                 .profileId(request.getProfileId())
-                .location(resolveLocation(request.getLocationId()))
+                .disease(resolveDisease(request.getDiseaseId()))
+                .doseOrder(request.getDoseOrder())
+                .source(request.getSource() != null ? request.getSource() : VaccineRuleConstants.RECORD_SOURCE.CUSTOM)
                 .vaccine(resolveVaccine(request.getVaccineId()))
-                .vaccinePackage(resolvePackage(request.getPackageId()))
-                .packageStructure(resolvePackageStructure(request.getPackageStructureId()))
                 .injectionDate(request.getInjectionDate())
                 .actualInjectionDate(request.getActualInjectionDate())
                 .price(request.getPrice())
@@ -107,13 +102,13 @@ public class VaccineRecordServiceImpl implements VaccineRecordService {
             validateProfileOwnership(request.getProfileId());
         }
 
-        validateUniqueVaccine(request.getProfileId(), request.getVaccineId(), id);
+        validateUniqueVaccine(request.getProfileId(), request.getVaccineId(), request.getInjectionDate(), id);
 
         record.setProfileId(request.getProfileId());
-        record.setLocation(resolveLocation(request.getLocationId()));
+        record.setDisease(resolveDisease(request.getDiseaseId()));
+        record.setDoseOrder(request.getDoseOrder());
+        record.setSource(request.getSource() != null ? request.getSource() : record.getSource());
         record.setVaccine(resolveVaccine(request.getVaccineId()));
-        record.setVaccinePackage(resolvePackage(request.getPackageId()));
-        record.setPackageStructure(resolvePackageStructure(request.getPackageStructureId()));
         record.setInjectionDate(request.getInjectionDate());
         record.setActualInjectionDate(request.getActualInjectionDate());
         record.setPrice(request.getPrice());
@@ -127,19 +122,6 @@ public class VaccineRecordServiceImpl implements VaccineRecordService {
     }
 
     @Override
-    @Transactional
-    public void deleteVaccineRecord(Long id) {
-        VaccineRecord record = vaccineRecordRepository.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Vaccine record not found"));
-
-        validateProfileOwnership(record.getProfileId());
-
-        record.setStatus(Constants.TABLE_STATUS.DELETED);
-        record.setUpdatedAt(LocalDate.now());
-        vaccineRecordRepository.save(record);
-    }
-
-    @Override
     public VaccineRecordResponse getVaccineRecordById(Long id) {
         VaccineRecord record = vaccineRecordRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Vaccine record not found"));
@@ -149,48 +131,17 @@ public class VaccineRecordServiceImpl implements VaccineRecordService {
     }
 
     @Override
-    public List<VaccineRecordResponse> getVaccineRecordsByStatus(Long profileId, Long status) {
-        return getVaccineRecordsByStatus(profileId, status, null);
-    }
+    @Transactional
+    public void deleteCustomVaccineRecord(Long id) {
+        VaccineRecord record = vaccineRecordRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Vaccine record not found"));
 
-    @Override
-    public List<VaccineRecordResponse> getVaccineRecordsByStatus(Long profileId, Long status, Integer limit) {
-        validateProfileOwnership(profileId);
+        validateProfileOwnership(record.getProfileId());
+        if (!VaccineRuleConstants.RECORD_SOURCE.CUSTOM.equals(record.getSource())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Chỉ có thể xóa hẳn mũi tiêm được thêm riêng");
+        }
 
-        return sortByNearestToday(vaccineRecordRepository.findByProfileIdAndStatus(profileId, status))
-                .stream()
-                .limit(limit != null && limit > 0 ? limit : Long.MAX_VALUE)
-                .map(this::mapToResponse)
-                .collect(Collectors.toList());
-    }
-
-    @Override
-    public PageResponse<VaccineRecordResponse> getVaccineRecordsPage(Long profileId, Long status, Integer page, Integer size) {
-        validateProfileOwnership(profileId);
-
-        int pageIndex = page != null && page >= 0 ? page : 0;
-        int pageSize = size != null && size > 0 ? Math.min(size, 50) : 5;
-        List<VaccineRecord> sortedRecords = sortByNearestToday(vaccineRecordRepository.findByProfileIdAndStatus(profileId, status));
-        int totalElements = sortedRecords.size();
-        int totalPages = totalElements == 0 ? 0 : (int) Math.ceil((double) totalElements / pageSize);
-        int fromIndex = Math.min(pageIndex * pageSize, totalElements);
-        int toIndex = Math.min(fromIndex + pageSize, totalElements);
-
-        return PageResponse.<VaccineRecordResponse>builder()
-                .content(sortedRecords.subList(fromIndex, toIndex).stream().map(this::mapToResponse).collect(Collectors.toList()))
-                .page(pageIndex)
-                .size(pageSize)
-                .totalElements(totalElements)
-                .totalPages(totalPages)
-                .first(pageIndex == 0)
-                .last(totalPages == 0 || pageIndex >= totalPages - 1)
-                .build();
-    }
-
-    @Override
-    public long countVaccineRecordsByStatus(Long profileId, Long status) {
-        validateProfileOwnership(profileId);
-        return vaccineRecordRepository.countByProfileIdAndStatus(profileId, status);
+        vaccineRecordRepository.delete(record);
     }
 
     @Override
@@ -204,15 +155,6 @@ public class VaccineRecordServiceImpl implements VaccineRecordService {
         return stats;
     }
 
-    private Location resolveLocation(Long locationId) {
-        if (locationId == null) {
-            return null;
-        }
-
-        return locationRepository.findById(locationId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Location not found"));
-    }
-
     private Vaccine resolveVaccine(Long vaccineId) {
         if (vaccineId == null) {
             return null;
@@ -222,60 +164,37 @@ public class VaccineRecordServiceImpl implements VaccineRecordService {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Vaccine not found"));
     }
 
-    private VaccinePackage resolvePackage(Long packageId) {
-        if (packageId == null) {
+    private ChildVaccineDisease resolveDisease(Long diseaseId) {
+        if (diseaseId == null) {
             return null;
         }
 
-        return vaccinePackageRepository.findById(packageId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Vaccine package not found"));
-    }
-
-    private PackageStructure resolvePackageStructure(Long packageStructureId) {
-        if (packageStructureId == null) {
-            return null;
-        }
-
-        return packageStructureRepository.findById(packageStructureId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Package structure not found"));
+        return childVaccineDiseaseRepository.findById(diseaseId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Child vaccine disease not found"));
     }
 
     private VaccineRecordResponse mapToResponse(VaccineRecord record) {
-        Location location = record.getLocation();
         Vaccine vaccine = record.getVaccine();
-        VaccinePackage vaccinePackage = record.getVaccinePackage();
-        PackageStructure packageStructure = record.getPackageStructure();
+        ChildVaccineDisease disease = record.getDisease();
+        Long source = record.getSource() != null ? record.getSource() : VaccineRuleConstants.RECORD_SOURCE.STANDARD;
 
         return VaccineRecordResponse.builder()
                 .id(record.getId())
                 .profileId(record.getProfileId())
-                .locationId(location != null ? location.getId() : null)
-                .locationName(location != null ? location.getName() : null)
+                .locationName(null)
+                .diseaseId(disease != null ? disease.getId() : null)
+                .doseOrder(record.getDoseOrder())
+                .source(source)
+                .sourceCode(VaccineRuleConstants.RECORD_SOURCE.codeOf(source))
                 .vaccineId(vaccine != null ? vaccine.getId() : null)
                 .vaccineName(vaccine != null ? vaccine.getName() : null)
                 .vaccineDescription(vaccine != null ? vaccine.getDescription() : null)
-                .packageId(vaccinePackage != null ? vaccinePackage.getId() : null)
-                .packageName(vaccinePackage != null ? vaccinePackage.getName() : null)
-                .packageStructureId(packageStructure != null ? packageStructure.getId() : null)
-                .durationMonths(packageStructure != null ? packageStructure.getDurationMonths() : null)
-                .recommendedAgeMonths(packageStructure != null ? packageStructure.getRecommendedAgeMonths() : null)
-                .dosageOrder(packageStructure != null ? packageStructure.getDosageOrder() : null)
                 .injectionDate(record.getInjectionDate())
                 .actualInjectionDate(record.getActualInjectionDate())
                 .price(record.getPrice())
                 .note(record.getNote())
                 .status(record.getStatus())
                 .build();
-    }
-
-    private List<VaccineRecord> sortByNearestToday(List<VaccineRecord> records) {
-        LocalDate today = LocalDate.now();
-        return records.stream()
-                .sorted(Comparator
-                        .comparingLong((VaccineRecord record) -> getDaysFromToday(record, today))
-                        .thenComparing(VaccineRecord::getInjectionDate, Comparator.nullsLast(Comparator.naturalOrder()))
-                        .thenComparing(VaccineRecord::getId))
-                .collect(Collectors.toList());
     }
 
     private void createVaccineNotification(VaccineRecord record) {
@@ -314,11 +233,4 @@ public class VaccineRecordServiceImpl implements VaccineRecordService {
         );
     }
 
-    private long getDaysFromToday(VaccineRecord record, LocalDate today) {
-        if (record.getInjectionDate() == null) {
-            return Long.MAX_VALUE;
-        }
-
-        return Math.abs(ChronoUnit.DAYS.between(today, record.getInjectionDate()));
-    }
 }

@@ -7,10 +7,12 @@ import lombok.*;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class LocationResponse {
+public class ChildVaccineDiseaseResponse {
     private Long id;
+    private String code;
     private String name;
-    private String region;
-    private String address;
+    private String description;
+    private Boolean required;
+    private Integer displayOrder;
     private Long status;
 }

@@ -67,3 +67,17 @@ databaseChangeLog:
       file: db/changelog/changes/037_fix_vnvc_vaccine_text_hex.sql
   - include:
       file: db/changelog/changes/038_fix_vnvc_vaccine_text_hex_rerun.sql
+  - include:
+      file: db/changelog/changes/043_create_child_vaccine_disease_schema.sql
+  - include:
+      file: db/changelog/changes/044_create_child_disease_dose_vaccine_options.sql
+  - include:
+      file: db/changelog/changes/045_drop_legacy_vaccine_rule_tables.sql
+  - include:
+      file: db/changelog/changes/046_create_profile_vaccine_disease_status.sql
+  - include:
+      file: db/changelog/changes/047_drop_legacy_vaccine_package_location_schema.sql
+  - include:
+      file: db/changelog/changes/048_add_vaccine_record_dose_context.sql
+  - include:
+      file: db/changelog/changes/049_add_vaccine_record_source.sql

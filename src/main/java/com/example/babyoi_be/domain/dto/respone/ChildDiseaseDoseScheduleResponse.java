@@ -7,15 +7,15 @@ import lombok.*;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class PackageStructureResponse {
+public class ChildDiseaseDoseScheduleResponse {
     private Long id;
-    private Long packageId;
-    private String packageName;
-    private Integer durationMonths;
-    private Long vaccineId;
-    private String vaccineName;
+    private Long diseaseId;
+    private String diseaseCode;
+    private String diseaseName;
+    private Integer doseOrder;
     private Integer recommendedAgeMonths;
-    private Integer dosageOrder;
+    private Integer intervalDays;
     private String doseLabel;
     private String note;
+    private Long status;
 }

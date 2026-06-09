@@ -3,14 +3,13 @@ package com.example.babyoi_be.domain.entity;
 import jakarta.persistence.*;
 import lombok.*;
 
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Entity
 @Table(
-        name = "location_vaccine_prices",
+        name = "vaccine_disease_coverage",
         uniqueConstraints = {
-                @UniqueConstraint(name = "uk_location_vaccine_prices", columnNames = {"location_id", "vaccine_id"})
+                @UniqueConstraint(name = "uk_vaccine_disease_coverage", columnNames = {"vaccine_id", "disease_id"})
         }
 )
 @Getter
@@ -18,24 +17,24 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class LocationVaccinePrice {
+public class VaccineDiseaseCoverage {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "location_id", nullable = false)
-    private Location location;
-
-    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "vaccine_id", nullable = false)
     private Vaccine vaccine;
 
-    @Column(name = "retail_price", precision = 19, scale = 2, nullable = false)
-    private BigDecimal retailPrice;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "disease_id", nullable = false)
+    private ChildVaccineDisease disease;
 
-    @Column(name = "stock_status")
-    private Boolean stockStatus;
+    @Column(name = "product_family_code")
+    private String productFamilyCode;
+
+    @Column(name = "interchange_rule")
+    private Long interchangeRule;
 
     @Column(name = "status")
     private Long status;

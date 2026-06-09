@@ -13,39 +13,44 @@ import java.util.List;
 public class VaccineCatalogController {
     private final VaccineCatalogService vaccineCatalogService;
 
-    @GetMapping("/locations")
-    public List<LocationResponse> getLocations() {
-        return vaccineCatalogService.getLocations();
-    }
-
     @GetMapping("/vaccines")
     public List<VaccineResponse> getVaccines(@RequestParam(required = false) String keyword) {
         return vaccineCatalogService.getVaccines(keyword);
     }
 
-    @GetMapping("/locations/{locationId}/vaccines")
-    public List<LocationVaccinePriceResponse> getVaccinesByLocation(@PathVariable Long locationId) {
-        return vaccineCatalogService.getVaccinesByLocation(locationId);
+    @GetMapping("/child-diseases")
+    public List<ChildVaccineDiseaseResponse> getChildVaccineDiseases() {
+        return vaccineCatalogService.getChildVaccineDiseases();
     }
 
-    @GetMapping("/packages")
-    public List<VaccinePackageResponse> getPackages(@RequestParam(required = false) String keyword) {
-        return vaccineCatalogService.getPackages(keyword);
+    @GetMapping("/child-diseases/{diseaseId}/dose-vaccine-options")
+    public List<ChildDiseaseDoseVaccineOptionResponse> getChildDiseaseDoseVaccineOptions(@PathVariable Long diseaseId) {
+        return vaccineCatalogService.getChildDiseaseDoseVaccineOptions(diseaseId);
     }
 
-    @GetMapping("/packages/{packageId}/structures")
-    public List<PackageStructureResponse> getPackageStructures(
-            @PathVariable Long packageId,
-            @RequestParam(required = false) Integer durationMonths
+    @GetMapping("/child-diseases/{diseaseId}/plan")
+    public ChildDiseasePlanResponse getChildDiseasePlan(@PathVariable Long diseaseId) {
+        return vaccineCatalogService.getChildDiseasePlan(diseaseId);
+    }
+
+    @GetMapping("/profiles/{profileId}/progress")
+    public List<VaccineProgressResponse> getVaccineProgress(@PathVariable Long profileId) {
+        return vaccineCatalogService.getVaccineProgress(profileId);
+    }
+
+    @PatchMapping("/profiles/{profileId}/child-diseases/{diseaseId}/stop")
+    public VaccineProgressResponse stopProfileDiseaseSchedule(
+            @PathVariable Long profileId,
+            @PathVariable Long diseaseId
     ) {
-        return vaccineCatalogService.getPackageStructures(packageId, durationMonths);
+        return vaccineCatalogService.stopProfileDiseaseSchedule(profileId, diseaseId);
     }
 
-    @GetMapping("/locations/{locationId}/packages")
-    public List<LocationPackagePriceResponse> getPackagePricesByLocation(
-            @PathVariable Long locationId,
-            @RequestParam(required = false) Long packageId
+    @PatchMapping("/profiles/{profileId}/child-diseases/{diseaseId}/resume")
+    public VaccineProgressResponse resumeProfileDiseaseSchedule(
+            @PathVariable Long profileId,
+            @PathVariable Long diseaseId
     ) {
-        return vaccineCatalogService.getPackagePricesByLocation(locationId, packageId);
+        return vaccineCatalogService.resumeProfileDiseaseSchedule(profileId, diseaseId);
     }
 }

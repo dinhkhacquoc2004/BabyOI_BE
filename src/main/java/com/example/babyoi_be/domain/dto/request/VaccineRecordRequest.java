@@ -14,10 +14,10 @@ public class VaccineRecordRequest {
     @NotNull(message = "Profile ID is required")
     private Long profileId;
 
-    private Long locationId;
+    private Long diseaseId;
+    private Integer doseOrder;
+    private Long source;
     private Long vaccineId;
-    private Long packageId;
-    private Long packageStructureId;
 
     private LocalDate injectionDate;
     private LocalDate actualInjectionDate;

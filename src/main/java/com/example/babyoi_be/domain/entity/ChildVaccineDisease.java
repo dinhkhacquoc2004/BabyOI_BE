@@ -6,13 +6,13 @@ import lombok.*;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "vaccine_packages")
+@Table(name = "child_vaccine_diseases")
 @Getter
 @Setter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class VaccinePackage {
+public class ChildVaccineDisease {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -25,6 +25,12 @@ public class VaccinePackage {
 
     @Column(name = "description", columnDefinition = "TEXT")
     private String description;
+
+    @Column(name = "is_required")
+    private Boolean required;
+
+    @Column(name = "display_order")
+    private Integer displayOrder;
 
     @Column(name = "status")
     private Long status;

@@ -7,6 +7,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDate;
 import java.util.Collection;
 import java.util.List;
 
@@ -22,4 +23,6 @@ public interface VaccineRecordRepository extends JpaRepository<VaccineRecord, Lo
     long countByProfileIdAndStatus(Long profileId, Long status);
     boolean existsByProfileIdAndVaccineIdAndStatusIn(Long profileId, Long vaccineId, Collection<Long> statuses);
     boolean existsByProfileIdAndVaccineIdAndStatusInAndIdNot(Long profileId, Long vaccineId, Collection<Long> statuses, Long id);
+    boolean existsByProfileIdAndVaccineIdAndInjectionDateAndStatusIn(Long profileId, Long vaccineId, LocalDate injectionDate, Collection<Long> statuses);
+    boolean existsByProfileIdAndVaccineIdAndInjectionDateAndStatusInAndIdNot(Long profileId, Long vaccineId, LocalDate injectionDate, Collection<Long> statuses, Long id);
 }
