@@ -71,6 +71,8 @@ public class VaccineRecordServiceImpl implements VaccineRecordService {
     public VaccineRecordResponse createVaccineRecord(VaccineRecordRequest request) {
         validateProfileOwnership(request.getProfileId());
         validateUniqueVaccine(request.getProfileId(), request.getVaccineId(), request.getInjectionDate(), null);
+        Long resolvedStatus = resolveStatusByInjectionDate(request.getStatus(), request.getInjectionDate());
+        LocalDate resolvedActualInjectionDate = resolveActualInjectionDate(resolvedStatus, request.getActualInjectionDate(), request.getInjectionDate());
 
         VaccineRecord record = VaccineRecord.builder()
                 .profileId(request.getProfileId())
@@ -79,10 +81,10 @@ public class VaccineRecordServiceImpl implements VaccineRecordService {
                 .source(request.getSource() != null ? request.getSource() : VaccineRuleConstants.RECORD_SOURCE.CUSTOM)
                 .vaccine(resolveVaccine(request.getVaccineId()))
                 .injectionDate(request.getInjectionDate())
-                .actualInjectionDate(request.getActualInjectionDate())
+                .actualInjectionDate(resolvedActualInjectionDate)
                 .price(request.getPrice())
                 .note(request.getNote())
-                .status(request.getStatus() != null ? request.getStatus() : Constants.TABLE_STATUS.PENDING)
+                .status(resolvedStatus)
                 .createdAt(LocalDate.now())
                 .build();
 
@@ -103,6 +105,8 @@ public class VaccineRecordServiceImpl implements VaccineRecordService {
         }
 
         validateUniqueVaccine(request.getProfileId(), request.getVaccineId(), request.getInjectionDate(), id);
+        Long resolvedStatus = resolveStatusByInjectionDate(request.getStatus(), request.getInjectionDate());
+        LocalDate resolvedActualInjectionDate = resolveActualInjectionDate(resolvedStatus, request.getActualInjectionDate(), request.getInjectionDate());
 
         record.setProfileId(request.getProfileId());
         record.setDisease(resolveDisease(request.getDiseaseId()));
@@ -110,10 +114,10 @@ public class VaccineRecordServiceImpl implements VaccineRecordService {
         record.setSource(request.getSource() != null ? request.getSource() : record.getSource());
         record.setVaccine(resolveVaccine(request.getVaccineId()));
         record.setInjectionDate(request.getInjectionDate());
-        record.setActualInjectionDate(request.getActualInjectionDate());
+        record.setActualInjectionDate(resolvedActualInjectionDate);
         record.setPrice(request.getPrice());
         record.setNote(request.getNote());
-        record.setStatus(request.getStatus());
+        record.setStatus(resolvedStatus);
         record.setUpdatedAt(LocalDate.now());
 
         VaccineRecord savedRecord = vaccineRecordRepository.save(record);
@@ -171,6 +175,26 @@ public class VaccineRecordServiceImpl implements VaccineRecordService {
 
         return childVaccineDiseaseRepository.findById(diseaseId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Child vaccine disease not found"));
+    }
+
+    private Long resolveStatusByInjectionDate(Long requestedStatus, LocalDate injectionDate) {
+        Long status = requestedStatus != null ? requestedStatus : Constants.TABLE_STATUS.PENDING;
+        if (injectionDate != null && injectionDate.isAfter(LocalDate.now())) {
+            return Constants.TABLE_STATUS.PENDING;
+        }
+        return status;
+    }
+
+    private LocalDate resolveActualInjectionDate(Long status, LocalDate requestedActualInjectionDate, LocalDate injectionDate) {
+        if (!Constants.TABLE_STATUS.SUCCESS.equals(status)) {
+            return null;
+        }
+
+        LocalDate actualInjectionDate = requestedActualInjectionDate != null ? requestedActualInjectionDate : injectionDate;
+        if (actualInjectionDate != null && actualInjectionDate.isAfter(LocalDate.now())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Ngày tiêm thực tế không được ở tương lai");
+        }
+        return actualInjectionDate;
     }
 
     private VaccineRecordResponse mapToResponse(VaccineRecord record) {
