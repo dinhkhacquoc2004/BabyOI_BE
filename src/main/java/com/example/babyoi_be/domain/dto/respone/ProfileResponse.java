@@ -13,7 +13,7 @@ public class ProfileResponse {
     private Long id;
     private Long userId;
     private String name;
-    @JsonFormat(pattern = "MM/dd/yyyy")
+    @JsonFormat(pattern = "dd/MM/yyyy")
     private LocalDate dateOfBirth;
     private String sex;
     private String profileType;

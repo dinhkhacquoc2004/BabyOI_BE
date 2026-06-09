@@ -19,7 +19,6 @@ import java.nio.charset.StandardCharsets;
 import java.net.URLDecoder;
 import java.security.MessageDigest;
 import java.time.Duration;
-import java.time.Instant;
 import java.util.HexFormat;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -35,6 +34,7 @@ public class CloudinaryProfileAvatarStorageService implements ProfileAvatarStora
     private static final long MAX_FILE_SIZE_BYTES = 5L * 1024 * 1024;
 
     private final WebClient.Builder webClientBuilder;
+    private final CloudinaryTimestampService cloudinaryTimestampService;
 
     @Value("${app.cloudinary.cloud-name:}")
     private String cloudName;
@@ -54,7 +54,7 @@ public class CloudinaryProfileAvatarStorageService implements ProfileAvatarStora
         validateCloudinaryConfig();
 
         try {
-            long timestamp = Instant.now().getEpochSecond();
+            long timestamp = cloudinaryTimestampService.currentEpochSecond(cloudName);
             String publicId = "profile_" + UUID.randomUUID();
             Map<String, String> signedParams = new LinkedHashMap<>();
             signedParams.put("folder", userAvatarFolder);
@@ -115,7 +115,7 @@ public class CloudinaryProfileAvatarStorageService implements ProfileAvatarStora
         validateCloudinaryConfig();
 
         try {
-            long timestamp = Instant.now().getEpochSecond();
+            long timestamp = cloudinaryTimestampService.currentEpochSecond(cloudName);
             Map<String, String> signedParams = new LinkedHashMap<>();
             signedParams.put("public_id", publicId);
             signedParams.put("timestamp", String.valueOf(timestamp));

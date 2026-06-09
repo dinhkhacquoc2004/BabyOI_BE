@@ -35,7 +35,6 @@ import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.time.Duration;
-import java.time.Instant;
 import java.util.HexFormat;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -53,6 +52,7 @@ public class CloudinaryDiaryImageStorageService implements DiaryImageStorageServ
     private static final long MAX_FILE_SIZE_BYTES = 5L * 1024 * 1024;
 
     private final WebClient.Builder webClientBuilder;
+    private final CloudinaryTimestampService cloudinaryTimestampService;
 
     @Value("${app.cloudinary.cloud-name:}")
     private String cloudName;
@@ -89,7 +89,7 @@ public class CloudinaryDiaryImageStorageService implements DiaryImageStorageServ
         try {
             UploadImageContent uploadContent = prepareUploadContent(file);
             String targetFolder = resolveDiaryFolder();
-            long timestamp = Instant.now().getEpochSecond();
+            long timestamp = cloudinaryTimestampService.currentEpochSecond(cloudName);
             String publicId = "diary_" + UUID.randomUUID();
             Map<String, String> signedParams = new LinkedHashMap<>();
             signedParams.put("asset_folder", targetFolder);
@@ -153,7 +153,7 @@ public class CloudinaryDiaryImageStorageService implements DiaryImageStorageServ
         validateCloudinaryConfig();
 
         try {
-            long timestamp = Instant.now().getEpochSecond();
+            long timestamp = cloudinaryTimestampService.currentEpochSecond(cloudName);
             Map<String, String> signedParams = new LinkedHashMap<>();
             signedParams.put("public_id", publicId);
             signedParams.put("timestamp", String.valueOf(timestamp));
