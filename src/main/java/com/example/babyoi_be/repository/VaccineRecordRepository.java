@@ -13,13 +13,13 @@ import java.util.List;
 @Repository
 public interface VaccineRecordRepository extends JpaRepository<VaccineRecord, Long> {
     List<VaccineRecord> findByProfileId(Long profileId);
-    List<VaccineRecord> findByVaccineTypeId(Long vaccineTypeId);
+    List<VaccineRecord> findByVaccineId(Long vaccineId);
 
     List<VaccineRecord> findByProfileIdAndStatus(Long profileId, Long status);
     List<VaccineRecord> findByProfileIdAndStatus(Long profileId, Long status, Sort sort);
     Page<VaccineRecord> findByProfileIdAndStatus(Long profileId, Long status, Pageable pageable);
 
     long countByProfileIdAndStatus(Long profileId, Long status);
-    boolean existsByProfileIdAndVaccineTypeIdAndStatusIn(Long profileId, Long vaccineTypeId, Collection<Long> statuses);
-    boolean existsByProfileIdAndVaccineTypeIdAndStatusInAndIdNot(Long profileId, Long vaccineTypeId, Collection<Long> statuses, Long id);
+    boolean existsByProfileIdAndVaccineIdAndStatusIn(Long profileId, Long vaccineId, Collection<Long> statuses);
+    boolean existsByProfileIdAndVaccineIdAndStatusInAndIdNot(Long profileId, Long vaccineId, Collection<Long> statuses, Long id);
 }

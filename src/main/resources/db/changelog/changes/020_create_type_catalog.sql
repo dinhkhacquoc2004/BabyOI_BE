@@ -53,10 +53,10 @@ VALUES
     ('SEX', 'Sex', 'Sex values used by profile.sex.', 2, 'SYSTEM'),
     ('FOOD_FUNCTION_CODE', 'Food function code', 'Food function codes from Constants.FOOD_FUNCTION_CODE and food_library.function_code.', 2, 'SYSTEM'),
     ('FOOD_ADVICE_FOR', 'Food advice target', 'Food advice target values from Constants.FOOD_ADVICE_FOR and food_library.advance_for.', 2, 'SYSTEM'),
-    ('VACCINE_OFFSET_UNIT', 'Vaccine schedule offset unit', 'Offset units used by vaccine_schedule.offset_unit and Script-18.sql.', 2, 'SYSTEM'),
+    ('VACCINE_OFFSET_UNIT', 'Vaccine schedule offset unit', 'Offset units used by package_structures timing metadata.', 2, 'SYSTEM'),
     ('AI_LESSON_PROGRESS_STATUS', 'AI lesson progress status', 'Progress status values used by ai_lesson_progress.progress_status.', 2, 'SYSTEM'),
     ('HANDBOOK_CATEGORY', 'Handbook category', 'Handbook category values seeded in handbook_posts.', 2, 'SYSTEM'),
-    ('VACCINE_TYPE', 'Vaccine type', 'Vaccine type values gathered from Script-18.sql.', 2, 'SYSTEM')
+    ('VACCINE_TYPE', 'Vaccine catalog', 'Vaccine catalog values used by the current vaccine module.', 2, 'SYSTEM')
 ON CONFLICT ("code") DO UPDATE SET
     "name" = EXCLUDED."name",
     "description" = EXCLUDED."description",
@@ -95,11 +95,11 @@ FROM (
         ('TABLE_STATUS', 'DELETED', 'Deleted', NULL, -4, 'Constants.TABLE_STATUS.DELETED', 40, 2),
         ('TABLE_STATUS', 'UPDATING', 'Updating', NULL, -3, 'Constants.TABLE_STATUS.UPDATING', 50, 2),
         ('TABLE_STATUS', 'CANCELED', 'Canceled', NULL, -2, 'Constants.TABLE_STATUS.CANCELED', 60, 2),
-        ('TABLE_STATUS', 'PENDING', 'Pending', NULL, -1, 'Constants.TABLE_STATUS.PENDING; used by vaccine_record seeds in Script-18.sql.', 70, 2),
+        ('TABLE_STATUS', 'PENDING', 'Pending', NULL, -1, 'Constants.TABLE_STATUS.PENDING; used by vaccine records.', 70, 2),
         ('TABLE_STATUS', 'INACTIVE', 'Inactive', NULL, 0, 'Constants.TABLE_STATUS.INACTIVE', 80, 2),
         ('TABLE_STATUS', 'INITIATED', 'Initiated', NULL, 1, 'Constants.TABLE_STATUS.INITIATED', 90, 2),
-        ('TABLE_STATUS', 'ACTIVE', 'Active', NULL, 2, 'Constants.TABLE_STATUS.ACTIVE; used broadly across current migrations and Script-18.sql.', 100, 2),
-        ('TABLE_STATUS', 'SUCCESS', 'Success', NULL, 3, 'Constants.TABLE_STATUS.SUCCESS; used by vaccine_record and vaccination_center seeds in Script-18.sql.', 110, 2),
+        ('TABLE_STATUS', 'ACTIVE', 'Active', NULL, 2, 'Constants.TABLE_STATUS.ACTIVE; used broadly across current migrations.', 100, 2),
+        ('TABLE_STATUS', 'SUCCESS', 'Success', NULL, 3, 'Constants.TABLE_STATUS.SUCCESS; used by vaccine records.', 110, 2),
 
         ('API_RESPONSE_CODE', 'OK', 'OK', '200', 200, 'Constants.API_RESPONSE.RETURN_CODE_OK', 10, 2),
         ('API_RESPONSE_CODE', 'CREATED', 'Created', '201', 201, 'Constants.API_RESPONSE.RETURN_CODE_CREATED', 20, 2),
@@ -118,10 +118,10 @@ FROM (
         ('ROLE', 'FARTHER', 'Father', 'FARTHER', NULL, 'Existing role code is FARTHER in 001_init_auth_schema.sql.', 30, 2),
 
         ('PROFILE_TYPE', 'MOTHER', 'Mother', 'MOTHER', NULL, 'Used by profile.profile_type.', 10, 2),
-        ('PROFILE_TYPE', 'CHILD', 'Child', 'CHILD', NULL, 'Used by profile.profile_type and Script-18.sql profile seed.', 20, 2),
+        ('PROFILE_TYPE', 'CHILD', 'Child', 'CHILD', NULL, 'Used by profile.profile_type.', 20, 2),
 
         ('SEX', 'MALE', 'Male', 'MALE', NULL, 'Allowed by Profile.Sex.', 10, 2),
-        ('SEX', 'FEMALE', 'Female', 'FEMALE', NULL, 'Allowed by Profile.Sex and Script-18.sql profile seed.', 20, 2),
+        ('SEX', 'FEMALE', 'Female', 'FEMALE', NULL, 'Allowed by Profile.Sex.', 20, 2),
         ('SEX', 'OTHER', 'Other', 'OTHER', NULL, 'Allowed by Profile.Sex.', 30, 2),
 
         ('FOOD_FUNCTION_CODE', 'MOM', 'Mother', NULL, 1, 'Constants.FOOD_FUNCTION_CODE.MOM.', 10, 2),
@@ -143,9 +143,9 @@ FROM (
         ('FOOD_ADVICE_FOR', 'FOR_BABY_12_18_MONTHS_DEVELOPMENT', 'Baby 12-18 months development', 'FOR_BABY_12_18_MONTHS_DEVELOPMENT', NULL, 'Constants.FOOD_ADVICE_FOR.BABY_12_TO_18_MONTHS_DEVELOPMENT.', 140, 2),
         ('FOOD_ADVICE_FOR', 'FOR_BABY_19_24_MONTHS_DEVELOPMENT', 'Baby 19-24 months development', 'FOR_BABY_19_24_MONTHS_DEVELOPMENT', NULL, 'Constants.FOOD_ADVICE_FOR.BABY_19_TO_24_MONTHS_DEVELOPMENT.', 150, 2),
 
-        ('VACCINE_OFFSET_UNIT', 'DAY', 'Day', 'DAY', NULL, 'Used by VaccineSchedule.offsetUnit and Script-18.sql.', 10, 2),
-        ('VACCINE_OFFSET_UNIT', 'MONTH', 'Month', 'MONTH', NULL, 'Used by VaccineSchedule.offsetUnit and Script-18.sql.', 20, 2),
-        ('VACCINE_OFFSET_UNIT', 'YEAR', 'Year', 'YEAR', NULL, 'Documented by VaccineSchedule.offsetUnit comment.', 30, 2),
+        ('VACCINE_OFFSET_UNIT', 'DAY', 'Day', 'DAY', NULL, 'Used by package_structures timing metadata.', 10, 2),
+        ('VACCINE_OFFSET_UNIT', 'MONTH', 'Month', 'MONTH', NULL, 'Used by package_structures timing metadata.', 20, 2),
+        ('VACCINE_OFFSET_UNIT', 'YEAR', 'Year', 'YEAR', NULL, 'Used by package_structures timing metadata.', 30, 2),
 
         ('AI_LESSON_PROGRESS_STATUS', 'INITIATED', 'Initiated', NULL, 1, 'Seeded in 018_seed_ai_lesson_progress.sql.', 10, 2),
         ('AI_LESSON_PROGRESS_STATUS', 'ACTIVE', 'Active', NULL, 2, 'Seeded in 018_seed_ai_lesson_progress.sql.', 20, 2),
@@ -155,21 +155,21 @@ FROM (
         ('HANDBOOK_CATEGORY', 'SUC_KHOE', 'Sức khỏe', 'Sức khỏe', NULL, 'Seeded in 019_create_handbook.sql.', 20, 2),
         ('HANDBOOK_CATEGORY', 'GIAC_NGU', 'Giấc ngủ', 'Giấc ngủ', NULL, 'Seeded in 019_create_handbook.sql.', 30, 2),
 
-        ('VACCINE_TYPE', 'BCG', 'BCG', 'BCG', NULL, 'Vaccine phòng bệnh Lao. From Script-18.sql.', 10, 2),
-        ('VACCINE_TYPE', 'VIEM_GAN_B', 'Viêm gan B', 'Viêm gan B', NULL, 'Vaccine phòng bệnh Viêm gan B. From Script-18.sql.', 20, 2),
-        ('VACCINE_TYPE', 'INFANRIX_HEXA', '6 trong 1 (Infanrix hexa)', '6 trong 1 (Infanrix hexa)', NULL, 'Phòng Bạch hầu, Ho gà, Uốn ván, Bại liệt, Viêm gan B, Hib. From Script-18.sql.', 30, 2),
-        ('VACCINE_TYPE', 'CUM', 'Cúm', 'Cúm', NULL, 'Vaccine phòng bệnh Cúm mùa. From Script-18.sql.', 40, 2),
-        ('VACCINE_TYPE', 'MMR', 'Sởi - Quai bị - Rubella', 'Sởi - Quai bị - Rubella', NULL, 'Vaccine MMR II. From Script-18.sql.', 50, 2),
-        ('VACCINE_TYPE', 'SOI', 'Sởi', 'Sởi', NULL, 'Vắc xin phòng bệnh sởi. From Script-18.sql.', 60, 2),
-        ('VACCINE_TYPE', 'QUAI_BI', 'Quai bị', 'Quai bị', NULL, 'Vắc xin phòng bệnh quai bị. From Script-18.sql.', 70, 2),
-        ('VACCINE_TYPE', 'RUBELLA', 'Rubella', 'Rubella', NULL, 'Vắc xin phòng bệnh Rubella. From Script-18.sql.', 80, 2),
-        ('VACCINE_TYPE', 'THUY_DAU', 'Thủy đậu', 'Thủy đậu', NULL, 'Vắc xin phòng bệnh thủy đậu. From Script-18.sql.', 90, 2),
-        ('VACCINE_TYPE', 'VIEM_NAO_NHAT_BAN', 'Viêm não Nhật Bản', 'Viêm não Nhật Bản', NULL, 'Phòng bệnh viêm não Nhật Bản. From Script-18.sql.', 100, 2),
-        ('VACCINE_TYPE', 'CUM_MUA', 'Cúm mùa', 'Cúm', NULL, 'Vắc xin phòng cúm mùa. From Script-18.sql duplicate Cúm row.', 110, 2),
-        ('VACCINE_TYPE', 'VIEM_GAN_A', 'Viêm gan A', 'Viêm gan A', NULL, 'Vắc xin phòng viêm gan A. From Script-18.sql.', 120, 1),
-        ('VACCINE_TYPE', 'THUONG_HAN', 'Thương hàn', 'Thương hàn', NULL, 'Vắc xin phòng bệnh thương hàn. From Script-18.sql.', 130, 2),
-        ('VACCINE_TYPE', 'TA', 'Tả', 'Tả', NULL, 'Vắc xin phòng bệnh tả (uống). From Script-18.sql.', 140, 2),
-        ('VACCINE_TYPE', 'DAI', 'Dại', 'Dại', NULL, 'Vắc xin phòng bệnh dại. From Script-18.sql.', 150, 2)
+        ('VACCINE_TYPE', 'BCG', 'BCG', 'BCG', NULL, 'Vaccine phòng bệnh Lao..', 10, 2),
+        ('VACCINE_TYPE', 'VIEM_GAN_B', 'Viêm gan B', 'Viêm gan B', NULL, 'Vaccine phòng bệnh Viêm gan B..', 20, 2),
+        ('VACCINE_TYPE', 'INFANRIX_HEXA', '6 trong 1 (Infanrix hexa)', '6 trong 1 (Infanrix hexa)', NULL, 'Phòng Bạch hầu, Ho gà, Uốn ván, Bại liệt, Viêm gan B, Hib..', 30, 2),
+        ('VACCINE_TYPE', 'CUM', 'Cúm', 'Cúm', NULL, 'Vaccine phòng bệnh Cúm mùa..', 40, 2),
+        ('VACCINE_TYPE', 'MMR', 'Sởi - Quai bị - Rubella', 'Sởi - Quai bị - Rubella', NULL, 'Vaccine MMR II..', 50, 2),
+        ('VACCINE_TYPE', 'SOI', 'Sởi', 'Sởi', NULL, 'Vắc xin phòng bệnh sởi..', 60, 2),
+        ('VACCINE_TYPE', 'QUAI_BI', 'Quai bị', 'Quai bị', NULL, 'Vắc xin phòng bệnh quai bị..', 70, 2),
+        ('VACCINE_TYPE', 'RUBELLA', 'Rubella', 'Rubella', NULL, 'Vắc xin phòng bệnh Rubella..', 80, 2),
+        ('VACCINE_TYPE', 'THUY_DAU', 'Thủy đậu', 'Thủy đậu', NULL, 'Vắc xin phòng bệnh thủy đậu..', 90, 2),
+        ('VACCINE_TYPE', 'VIEM_NAO_NHAT_BAN', 'Viêm não Nhật Bản', 'Viêm não Nhật Bản', NULL, 'Phòng bệnh viêm não Nhật Bản..', 100, 2),
+        ('VACCINE_TYPE', 'CUM_MUA', 'Cúm mùa', 'Cúm', NULL, 'Vắc xin phòng cúm mùa..', 110, 2),
+        ('VACCINE_TYPE', 'VIEM_GAN_A', 'Viêm gan A', 'Viêm gan A', NULL, 'Vắc xin phòng viêm gan A..', 120, 1),
+        ('VACCINE_TYPE', 'THUONG_HAN', 'Thương hàn', 'Thương hàn', NULL, 'Vắc xin phòng bệnh thương hàn..', 130, 2),
+        ('VACCINE_TYPE', 'TA', 'Tả', 'Tả', NULL, 'Vắc xin phòng bệnh tả (uống)..', 140, 2),
+        ('VACCINE_TYPE', 'DAI', 'Dại', 'Dại', NULL, 'Vắc xin phòng bệnh dại..', 150, 2)
 ) AS seed (
     "type_code",
     "value_code",
@@ -190,3 +190,4 @@ ON CONFLICT ("type_code_id", "value_code") DO UPDATE SET
     "status" = EXCLUDED."status",
     "updated_at" = CURRENT_TIMESTAMP,
     "updated_by" = 'SYSTEM';
+

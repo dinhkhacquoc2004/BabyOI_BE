@@ -2,16 +2,17 @@ package com.example.babyoi_be.domain.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "vaccination_center")
+@Table(name = "vaccines")
 @Getter
 @Setter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class VaccinationCenter {
+public class Vaccine {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -19,11 +20,14 @@ public class VaccinationCenter {
     @Column(name = "name", nullable = false)
     private String name;
 
-    @Column(name = "address", nullable = false)
-    private String address;
+    @Column(name = "manufacturer")
+    private String manufacturer;
 
-    @Column(name = "distance")
-    private Double distance; // Distance from user in km
+    @Column(name = "origin")
+    private String origin;
+
+    @Column(name = "description", columnDefinition = "TEXT")
+    private String description;
 
     @Column(name = "status")
     private Long status;
