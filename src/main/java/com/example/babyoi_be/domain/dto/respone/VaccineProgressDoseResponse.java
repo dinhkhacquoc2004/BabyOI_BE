@@ -1,7 +1,7 @@
 package com.example.babyoi_be.domain.dto.respone;
 
 import lombok.*;
-import java.math.BigDecimal;
+
 import java.time.LocalDate;
 
 @Getter
@@ -9,20 +9,16 @@ import java.time.LocalDate;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class VaccineRecordResponse {
-    private Long id;
-    private Long profileId;
-    private String locationName;
-    private Long diseaseId;
+public class VaccineProgressDoseResponse {
+    private Long recordId;
     private Integer doseOrder;
     private Long source;
     private String sourceCode;
     private Long vaccineId;
     private String vaccineName;
-    private String vaccineDescription;
+    private String manufacturer;
     private LocalDate injectionDate;
     private LocalDate actualInjectionDate;
-    private BigDecimal price;
-    private String note;
     private Long status;
+    private String note;
 }

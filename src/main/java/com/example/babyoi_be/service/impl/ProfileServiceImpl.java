@@ -1,12 +1,16 @@
 package com.example.babyoi_be.service.impl;
 
 import com.example.babyoi_be.common.Constants;
+import com.example.babyoi_be.common.VaccineRuleConstants;
 import com.example.babyoi_be.domain.dto.request.ProfileRequest;
 import com.example.babyoi_be.domain.dto.respone.ProfileResponse;
 import com.example.babyoi_be.domain.entity.Profile;
 import com.example.babyoi_be.domain.entity.Users;
+import com.example.babyoi_be.domain.entity.VaccineRecord;
+import com.example.babyoi_be.repository.ChildDiseaseDoseScheduleRepository;
 import com.example.babyoi_be.repository.ProfileRepository;
 import com.example.babyoi_be.repository.UsersRepository;
+import com.example.babyoi_be.repository.VaccineRecordRepository;
 import com.example.babyoi_be.security.CustomUserDetails;
 import com.example.babyoi_be.service.ProfileAvatarStorageService;
 import com.example.babyoi_be.service.ProfileService;
@@ -22,6 +26,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Locale;
 import java.util.stream.Collectors;
@@ -33,6 +38,8 @@ public class ProfileServiceImpl implements ProfileService {
 
     private final ProfileRepository profileRepository;
     private final UsersRepository usersRepository;
+    private final ChildDiseaseDoseScheduleRepository childDiseaseDoseScheduleRepository;
+    private final VaccineRecordRepository vaccineRecordRepository;
     private final ProfileAvatarStorageService profileAvatarStorageService;
     private final TypeValueService typeValueService;
 
@@ -63,7 +70,9 @@ public class ProfileServiceImpl implements ProfileService {
         profile.setUpdatedBy(actorName);
         profile.setStatus(Constants.TABLE_STATUS.ACTIVE);
 
-        return mapToResponse(profileRepository.save(profile));
+        Profile savedProfile = profileRepository.save(profile);
+        seedEligibleChildVaccineRecords(savedProfile, user.getId());
+        return mapToResponse(savedProfile);
     }
 
     @Override
@@ -198,6 +207,39 @@ public class ProfileServiceImpl implements ProfileService {
                     ? "Mỗi tài khoản chỉ được tạo tối đa 1 hồ sơ mẹ đang hoạt động"
                     : "Mỗi tài khoản chỉ được tạo tối đa 2 hồ sơ bé đang hoạt động";
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, message);
+        }
+    }
+
+    private void seedEligibleChildVaccineRecords(Profile profile, Long actorId) {
+        if (profile == null || !"CHILD".equals(profile.getProfileType()) || profile.getDateOfBirth() == null) {
+            return;
+        }
+
+        long ageInCompletedMonths = ChronoUnit.MONTHS.between(profile.getDateOfBirth(), LocalDate.now());
+        if (ageInCompletedMonths < 0) {
+            return;
+        }
+
+        List<VaccineRecord> records = childDiseaseDoseScheduleRepository
+                .findByStatusOrderByDiseaseDisplayOrderAscDoseOrderAsc(Constants.TABLE_STATUS.ACTIVE)
+                .stream()
+                .filter(schedule -> schedule.getDisease() != null)
+                .filter(schedule -> schedule.getRecommendedAgeMonths() != null)
+                .filter(schedule -> schedule.getRecommendedAgeMonths() <= ageInCompletedMonths)
+                .map(schedule -> VaccineRecord.builder()
+                        .profileId(profile.getId())
+                        .disease(schedule.getDisease())
+                        .doseOrder(schedule.getDoseOrder())
+                        .source(VaccineRuleConstants.RECORD_SOURCE.STANDARD)
+                        .injectionDate(profile.getDateOfBirth().plusMonths(schedule.getRecommendedAgeMonths()))
+                        .status(Constants.TABLE_STATUS.PENDING)
+                        .createdAt(LocalDate.now())
+                        .createdBy(actorId)
+                        .build())
+                .collect(Collectors.toList());
+
+        if (!records.isEmpty()) {
+            vaccineRecordRepository.saveAll(records);
         }
     }
 

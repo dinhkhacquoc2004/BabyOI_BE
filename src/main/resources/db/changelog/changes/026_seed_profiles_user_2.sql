@@ -27,8 +27,8 @@ SELECT
     seed."profile_code"
 FROM (
     VALUES
-        (1::BIGINT, 'Be Thu Nhat', '2023-10-01', 'FEMALE', 'CHILD', 'PRF001'),
-        (2::BIGINT, 'Be Thu Hai', '2024-01-15', 'FEMALE', 'CHILD', 'PRF002')
+        (1::BIGINT, 'B? Th? Nh?t', '2025-06-09', 'FEMALE', 'CHILD', 'PRF001'),
+        (2::BIGINT, 'B? Th? Hai', '2026-02-09', 'FEMALE', 'CHILD', 'PRF002')
 ) AS seed (
     "id",
     "name",

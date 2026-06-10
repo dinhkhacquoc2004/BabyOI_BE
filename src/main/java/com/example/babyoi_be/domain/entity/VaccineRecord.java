@@ -21,13 +21,24 @@ public class VaccineRecord {
     private Long profileId;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "vaccine_type_id")
-    private VaccineType vaccineType;
+    @JoinColumn(name = "disease_id")
+    private ChildVaccineDisease disease;
+
+    @Column(name = "dose_order")
+    private Integer doseOrder;
+
+    @Column(name = "source")
+    private Long source;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "vaccine_id")
+    private Vaccine vaccine;
 
     @Column(name = "injection_date")
     private LocalDate injectionDate;
 
-    private String location;
+    @Column(name = "actual_injection_date")
+    private LocalDate actualInjectionDate;
 
     private BigDecimal price;
 

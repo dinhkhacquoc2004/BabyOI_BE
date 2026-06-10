@@ -7,9 +7,11 @@ import lombok.*;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class VaccineTypeResponse {
+public class VaccineResponse {
     private Long id;
     private String name;
+    private String manufacturer;
+    private String origin;
     private String description;
-    private String requiredAge;
+    private Long status;
 }
