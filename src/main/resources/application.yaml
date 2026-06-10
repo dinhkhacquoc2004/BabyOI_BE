@@ -27,6 +27,10 @@
       open-in-view: false
 
     datasource:
+      url: ${SPRING_DATASOURCE_URL}
+      driver-class-name: org.postgresql.Driver
+      username: ${SPRING_DATASOURCE_USERNAME}
+      password: ${SPRING_DATASOURCE_PASSWORD}
       hikari:
         maximum-pool-size: ${DB_POOL_MAX_SIZE:20}
         minimum-idle: ${DB_POOL_MIN_IDLE:5}
@@ -69,7 +73,7 @@
       refresh-expiration-millis: ${JWT_REFRESH_EXPIRATION_MILLIS:2592000000}
 
     mail:
-      from: ${MAIL_FROM:${MAIL_USERNAME}}
+      from: ${MAIL_FROM}
 
     oauth:
       google:
@@ -80,6 +84,12 @@
       api-key: ${CLOUDINARY_API_KEY}
       api-secret: ${CLOUDINARY_API_SECRET}
       user-avatar-folder: ${CLOUDINARY_USER_AVATAR_FOLDER:userAvatar}
+      diary-folder: ${CLOUDINARY_DIARY_FOLDER:Diary}
+      diary-upload-timeout-seconds: ${CLOUDINARY_DIARY_UPLOAD_TIMEOUT_SECONDS:45}
+      diary-image-max-width: ${CLOUDINARY_DIARY_IMAGE_MAX_WIDTH:1080}
+      diary-image-max-height: ${CLOUDINARY_DIARY_IMAGE_MAX_HEIGHT:1080}
+      diary-image-quality: ${CLOUDINARY_DIARY_IMAGE_QUALITY:0.72}
+      diary-compression-min-bytes: ${CLOUDINARY_DIARY_COMPRESSION_MIN_BYTES:180000}
 
     admin-dashboard:
       enabled: ${ADMIN_DASHBOARD_ENABLED:true}
