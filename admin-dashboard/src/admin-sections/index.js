@@ -335,7 +335,12 @@ function actionsFor(tableName, components) {
   if (tableName === 'food_library') {
     return {
       ...actions,
-      ...foodLibraryFullFormActions(components.FoodLibraryForm, components.connectionString),
+      ...foodLibraryFullFormActions(
+        components.FoodLibraryForm,
+        components.IngredientFoodSuggestion,
+        components.connectionString,
+        components.apiBaseUrl,
+      ),
     }
   }
 

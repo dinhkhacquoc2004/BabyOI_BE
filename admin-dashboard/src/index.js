@@ -1,3 +1,4 @@
+import { rm } from 'node:fs/promises'
 import { fileURLToPath } from 'node:url'
 import AdminJS, { ComponentLoader } from 'adminjs'
 import AdminJSExpress from '@adminjs/express'
@@ -5,7 +6,7 @@ import { Database, Resource } from '@adminjs/sql'
 import dotenv from 'dotenv'
 import express from 'express'
 import { authenticate } from './auth.js'
-import { ADMIN_PUBLIC_DIR, buildConnectionConfig, PORT, ROOT_PATH } from './config.js'
+import { ADMIN_PUBLIC_DIR, buildConnectionConfig, PORT, ROOT_PATH, SPRING_API_BASE_URL } from './config.js'
 import { existingTables, initAdminDatabase } from './database.js'
 import { buildResources } from './admin-sections/index.js'
 import { ADMIN_ASSETS, ADMIN_BRANDING, ADMIN_LOCALE } from './theme.js'
@@ -25,6 +26,11 @@ const FoodLibraryForm = componentLoader.add(
   'FoodLibraryForm',
   fileURLToPath(new URL('./components/FoodLibraryForm.js', import.meta.url)),
 )
+const IngredientFoodSuggestion = componentLoader.add(
+  'IngredientFoodSuggestion',
+  fileURLToPath(new URL('./components/IngredientFoodSuggestion.js', import.meta.url)),
+)
+const ADMINJS_BUNDLE_CACHE_DIR = fileURLToPath(new URL('../.adminjs', import.meta.url))
 
 AdminJS.registerAdapter({
   Database,
@@ -39,8 +45,12 @@ async function start() {
   const resources = buildResources(db, tableNames, {
     ProfileSegmentProperty,
     FoodLibraryForm,
+    IngredientFoodSuggestion,
     connectionString: connectionConfig.connectionString,
+    apiBaseUrl: SPRING_API_BASE_URL,
   })
+
+  await clearAdminBundleCache()
 
   const admin = new AdminJS({
     rootPath: ROOT_PATH,
@@ -88,6 +98,10 @@ async function start() {
   app.listen(PORT, () => {
     console.log(`BabyOI AdminJS running at http://localhost:${PORT}${ROOT_PATH}`)
   })
+}
+
+async function clearAdminBundleCache() {
+  await rm(ADMINJS_BUNDLE_CACHE_DIR, { recursive: true, force: true })
 }
 
 start().catch((error) => {

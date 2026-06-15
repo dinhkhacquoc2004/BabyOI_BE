@@ -12,12 +12,12 @@ const SUMMARY_UNITS = {
   total_sodium_unit: 'mg',
 }
 
-export function foodLibraryFullFormActions(component, connectionString) {
+export function foodLibraryFullFormActions(component, suggestionComponent, connectionString, apiBaseUrl) {
   if (!component || !connectionString) {
     return {}
   }
 
-  return {
+  const actions = {
     new: {
       component,
       handler: foodLibraryNewHandler(connectionString),
@@ -27,6 +27,27 @@ export function foodLibraryFullFormActions(component, connectionString) {
       handler: foodLibraryEditHandler(connectionString),
     },
   }
+
+  if (suggestionComponent) {
+    actions.ingredientSuggestion = {
+      actionType: 'resource',
+      icon: 'Camera',
+      label: 'AI goi y mon',
+      component: suggestionComponent,
+      handler: ingredientSuggestionHandler(connectionString, apiBaseUrl),
+    }
+  }
+
+  return actions
+}
+
+function ingredientSuggestionHandler(connectionString, apiBaseUrl) {
+  return async () => ({
+    data: {
+      apiBaseUrl: apiBaseUrl || 'http://localhost:8085',
+      profiles: await loadProfiles(connectionString),
+    },
+  })
 }
 
 function foodLibraryNewHandler(connectionString) {
@@ -198,6 +219,29 @@ async function loadFood(connectionString, foodId) {
         description: row.description || '',
       })),
     }
+  } finally {
+    await client.end()
+  }
+}
+
+async function loadProfiles(connectionString) {
+  const client = new pg.Client({ connectionString })
+  await client.connect()
+  try {
+    const result = await client.query(`
+      SELECT id, name, date_of_birth, profile_type
+      FROM profile
+      WHERE status IS NULL OR status <> -4
+      ORDER BY id DESC
+      LIMIT 100
+    `)
+
+    return result.rows.map((row) => ({
+      id: Number(row.id),
+      name: row.name || '',
+      dateOfBirth: row.date_of_birth,
+      profileType: row.profile_type || '',
+    }))
   } finally {
     await client.end()
   }
