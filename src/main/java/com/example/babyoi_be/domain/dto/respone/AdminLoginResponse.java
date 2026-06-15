@@ -12,4 +12,5 @@ public class AdminLoginResponse {
     private String email;
     private String userName;
     private String role;
+    private String accessToken;
 }

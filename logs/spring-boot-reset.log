@@ -1,0 +1,638 @@
+[INFO] Scanning for projects...
+Downloading from central: https://repo.maven.apache.org/maven2/io/github/git-commit-id/maven-metadata.xml
+Downloading from central: https://repo.maven.apache.org/maven2/org/cyclonedx/maven-metadata.xml
+Downloading from central: https://repo.maven.apache.org/maven2/org/springframework/boot/maven-metadata.xml
+Downloading from central: https://repo.maven.apache.org/maven2/org/flywaydb/maven-metadata.xml
+Progress (1): 243 BProgress (2): 243 B | 234 B                           Downloaded from central: https://repo.maven.apache.org/maven2/org/flywaydb/maven-metadata.xml (234 B at 357 B/s)
+Downloaded from central: https://repo.maven.apache.org/maven2/org/cyclonedx/maven-metadata.xml (243 B at 370 B/s)
+Downloading from central: https://repo.maven.apache.org/maven2/org/jetbrains/kotlin/maven-metadata.xml
+Downloading from central: https://repo.maven.apache.org/maven2/org/jooq/maven-metadata.xml
+Progress (1): 249 BProgress (2): 249 B | 255 B                           Downloaded from central: https://repo.maven.apache.org/maven2/io/github/git-commit-id/maven-metadata.xml (255 B at 384 B/s)
+Downloaded from central: https://repo.maven.apache.org/maven2/org/springframework/boot/maven-metadata.xml (249 B at 375 B/s)
+Downloading from central: https://repo.maven.apache.org/maven2/org/liquibase/maven-metadata.xml
+Downloading from central: https://repo.maven.apache.org/maven2/org/graalvm/buildtools/maven-metadata.xml
+Progress (1): 375 BProgress (2): 375 B | 398 B                           Downloaded from central: https://repo.maven.apache.org/maven2/org/jooq/maven-metadata.xml (398 B at 5.9 kB/s)
+Downloaded from central: https://repo.maven.apache.org/maven2/org/jetbrains/kotlin/maven-metadata.xml (375 B at 5.4 kB/s)
+Downloading from central: https://repo.maven.apache.org/maven2/org/codehaus/mojo/maven-metadata.xml
+Downloading from central: https://repo.maven.apache.org/maven2/org/apache/maven/plugins/maven-metadata.xml
+Progress (1): 394 BProgress (2): 394 B | 242 B                           Downloaded from central: https://repo.maven.apache.org/maven2/org/liquibase/maven-metadata.xml (394 B at 3.8 kB/s)
+Downloaded from central: https://repo.maven.apache.org/maven2/org/graalvm/buildtools/maven-metadata.xml (242 B at 2.3 kB/s)
+Progress (1): 3.1 kBProgress (2): 3.1 kB | 4.6 kBProgress (2): 7.7 kB | 4.6 kBProgress (2): 7.7 kB | 9.7 kBProgress (2): 7.7 kB | 14 kB Progress (2): 12 kB | 14 kB Progress (2): 17 kB | 14 kBProgress (2): 20 kB | 14 kBProgress (2): 21 kB | 14 kB                           Downloaded from central: https://repo.maven.apache.org/maven2/org/apache/maven/plugins/maven-metadata.xml (14 kB at 176 kB/s)
+Downloaded from central: https://repo.maven.apache.org/maven2/org/codehaus/mojo/maven-metadata.xml (21 kB at 121 kB/s)
+[INFO] 
+[INFO] -----------------------< com.example:BabyOI_BE >------------------------
+[INFO] Building BabyOI_BE 0.0.1-SNAPSHOT
+[INFO]   from pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] >>> spring-boot:4.0.6:run (default-cli) > test-compile @ BabyOI_BE >>>
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ BabyOI_BE ---
+[INFO] Copying 3 resources from src\main\resources to target\classes
+[INFO] Copying 46 resources from src\main\resources to target\classes
+[INFO] 
+[INFO] --- compiler:3.14.1:compile (default-compile) @ BabyOI_BE ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ BabyOI_BE ---
+[INFO] Copying 0 resource from src\test\resources to target\test-classes
+[INFO] 
+[INFO] --- compiler:3.14.1:testCompile (default-testCompile) @ BabyOI_BE ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] <<< spring-boot:4.0.6:run (default-cli) < test-compile @ BabyOI_BE <<<
+[INFO] 
+[INFO] 
+[INFO] --- spring-boot:4.0.6:run (default-cli) @ BabyOI_BE ---
+[INFO] Attaching agents: []
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+
+ :: Spring Boot ::                (v4.0.6)
+
+2026-06-10T08:10:21.360+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] c.example.babyoi_be.BabyOiBeApplication  : Starting BabyOiBeApplication using Java 17.0.16 with PID 24252 (C:\Users\Admin\IdeaProjects\BabyOI_BE\target\classes started by Admin in C:\Users\Admin\IdeaProjects\BabyOI_BE)
+2026-06-10T08:10:21.362+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] c.example.babyoi_be.BabyOiBeApplication  : The following 1 profile is active: "dang"
+2026-06-10T08:10:21.398+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] .e.DevToolsPropertyDefaultsPostProcessor : Devtools property defaults active! Set 'spring.devtools.add-properties' to 'false' to disable
+2026-06-10T08:10:21.398+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] .e.DevToolsPropertyDefaultsPostProcessor : For additional web related logging consider setting the 'logging.level.web' property to 'DEBUG'
+2026-06-10T08:10:22.024+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2026-06-10T08:10:22.178+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 148 ms. Found 27 JPA repository interfaces.
+2026-06-10T08:10:22.744+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] o.s.boot.tomcat.TomcatWebServer          : Tomcat initialized with port 8085 (http)
+2026-06-10T08:10:22.757+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2026-06-10T08:10:22.757+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/11.0.21]
+2026-06-10T08:10:22.805+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] b.w.c.s.WebApplicationContextInitializer : Root WebApplicationContext: initialization completed in 1405 ms
+2026-06-10T08:10:22.905+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Starting...
+2026-06-10T08:10:23.062+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Added connection org.postgresql.jdbc.PgConnection@3a41cd5c
+2026-06-10T08:10:23.064+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Start completed.
+2026-06-10T08:10:23.188+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.database                       : Set default schema name to public
+2026-06-10T08:10:24.829+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : Creating database changelog table with name: public.databasechangelog
+2026-06-10T08:10:24.865+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : Reading from public.databasechangelog
+2026-06-10T08:10:25.352+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.snapshot                       : Creating snapshot
+2026-06-10T08:10:25.409+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.lockservice                    : Successfully acquired change log lock
+2026-06-10T08:10:25.409+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.command                        : Using deploymentId: 1053822892
+2026-06-10T08:10:25.410+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : Reading from public.databasechangelog
+2026-06-10T08:10:25.728+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.ui                             : Running Changeset: db/changelog/changes/001_init_auth_schema.sql::001::codex
+2026-06-10T08:10:25.742+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : Custom SQL executed
+2026-06-10T08:10:25.743+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : ChangeSet db/changelog/changes/001_init_auth_schema.sql::001::codex ran successfully in 13ms
+2026-06-10T08:10:25.749+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.ui                             : Running Changeset: db/changelog/changes/001_init_auth_schema.sql::002::codex
+2026-06-10T08:10:25.759+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : Custom SQL executed
+2026-06-10T08:10:25.760+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : ChangeSet db/changelog/changes/001_init_auth_schema.sql::002::codex ran successfully in 11ms
+2026-06-10T08:10:25.762+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.ui                             : Running Changeset: db/changelog/changes/001_init_auth_schema.sql::003::codex
+2026-06-10T08:10:25.765+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : Custom SQL executed
+2026-06-10T08:10:25.765+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : ChangeSet db/changelog/changes/001_init_auth_schema.sql::003::codex ran successfully in 3ms
+2026-06-10T08:10:25.766+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.ui                             : Running Changeset: db/changelog/changes/001_init_auth_schema.sql::004::codex
+2026-06-10T08:10:25.769+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : Custom SQL executed
+2026-06-10T08:10:25.769+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : ChangeSet db/changelog/changes/001_init_auth_schema.sql::004::codex ran successfully in 2ms
+2026-06-10T08:10:25.771+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.ui                             : Running Changeset: db/changelog/changes/001_init_auth_schema.sql::005::codex
+2026-06-10T08:10:25.772+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : Custom SQL executed
+2026-06-10T08:10:25.772+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : ChangeSet db/changelog/changes/001_init_auth_schema.sql::005::codex ran successfully in 1ms
+2026-06-10T08:10:25.773+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.ui                             : Running Changeset: db/changelog/changes/001_init_auth_schema.sql::006::codex
+2026-06-10T08:10:25.775+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : Custom SQL executed
+2026-06-10T08:10:25.775+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : ChangeSet db/changelog/changes/001_init_auth_schema.sql::006::codex ran successfully in 2ms
+2026-06-10T08:10:25.777+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.ui                             : Running Changeset: db/changelog/changes/001_init_auth_schema.sql::007::codex
+2026-06-10T08:10:25.782+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : Custom SQL executed
+2026-06-10T08:10:25.782+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : ChangeSet db/changelog/changes/001_init_auth_schema.sql::007::codex ran successfully in 5ms
+2026-06-10T08:10:25.783+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.ui                             : Running Changeset: db/changelog/changes/001_init_auth_schema.sql::008::codex
+2026-06-10T08:10:25.785+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : Custom SQL executed
+2026-06-10T08:10:25.785+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : ChangeSet db/changelog/changes/001_init_auth_schema.sql::008::codex ran successfully in 1ms
+2026-06-10T08:10:25.787+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.ui                             : Running Changeset: db/changelog/changes/002_create_food_schema.sql::009::codex
+2026-06-10T08:10:25.791+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : Custom SQL executed
+2026-06-10T08:10:25.791+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : ChangeSet db/changelog/changes/002_create_food_schema.sql::009::codex ran successfully in 4ms
+2026-06-10T08:10:25.792+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.ui                             : Running Changeset: db/changelog/changes/002_create_food_schema.sql::010::codex
+2026-06-10T08:10:25.797+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : Custom SQL executed
+2026-06-10T08:10:25.797+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : ChangeSet db/changelog/changes/002_create_food_schema.sql::010::codex ran successfully in 5ms
+2026-06-10T08:10:25.798+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.ui                             : Running Changeset: db/changelog/changes/002_create_food_schema.sql::011::codex
+2026-06-10T08:10:25.803+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : Custom SQL executed
+2026-06-10T08:10:25.803+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : ChangeSet db/changelog/changes/002_create_food_schema.sql::011::codex ran successfully in 5ms
+2026-06-10T08:10:25.805+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.ui                             : Running Changeset: db/changelog/changes/002_create_food_schema.sql::012::codex
+2026-06-10T08:10:25.812+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : Custom SQL executed
+2026-06-10T08:10:25.812+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : ChangeSet db/changelog/changes/002_create_food_schema.sql::012::codex ran successfully in 7ms
+2026-06-10T08:10:25.814+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.ui                             : Running Changeset: db/changelog/changes/002_create_food_schema.sql::013::codex
+2026-06-10T08:10:25.818+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : Custom SQL executed
+2026-06-10T08:10:25.818+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : ChangeSet db/changelog/changes/002_create_food_schema.sql::013::codex ran successfully in 4ms
+2026-06-10T08:10:25.819+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.ui                             : Running Changeset: db/changelog/changes/002_create_food_schema.sql::014::codex
+2026-06-10T08:10:25.823+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : Custom SQL executed
+2026-06-10T08:10:25.825+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : ChangeSet db/changelog/changes/002_create_food_schema.sql::014::codex ran successfully in 5ms
+2026-06-10T08:10:25.826+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.ui                             : Running Changeset: db/changelog/changes/002_create_food_schema.sql::015::codex
+2026-06-10T08:10:25.830+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : Custom SQL executed
+2026-06-10T08:10:25.830+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : ChangeSet db/changelog/changes/002_create_food_schema.sql::015::codex ran successfully in 4ms
+2026-06-10T08:10:25.832+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.ui                             : Running Changeset: db/changelog/changes/003_seed_food_catalog.sql::015::codex
+2026-06-10T08:10:25.869+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : Custom SQL executed
+2026-06-10T08:10:25.869+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : ChangeSet db/changelog/changes/003_seed_food_catalog.sql::015::codex ran successfully in 37ms
+2026-06-10T08:10:25.872+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.ui                             : Running Changeset: db/changelog/changes/003_seed_food_catalog.sql::016::codex
+2026-06-10T08:10:25.914+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.ui                             : table "seed_food_recipe" does not exist, skipping
+2026-06-10T08:10:25.951+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : Custom SQL executed
+2026-06-10T08:10:25.955+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : ChangeSet db/changelog/changes/003_seed_food_catalog.sql::016::codex ran successfully in 83ms
+2026-06-10T08:10:25.965+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.ui                             : Running Changeset: db/changelog/changes/004_add_food_goal_catalog.sql::018::codex
+2026-06-10T08:10:26.096+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : Custom SQL executed
+2026-06-10T08:10:26.097+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : ChangeSet db/changelog/changes/004_add_food_goal_catalog.sql::018::codex ran successfully in 131ms
+2026-06-10T08:10:26.342+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.ui                             : Running Changeset: db/changelog/changes/004_add_food_goal_catalog.sql::019::codex
+2026-06-10T08:10:29.713+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : Custom SQL executed
+2026-06-10T08:10:29.718+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : ChangeSet db/changelog/changes/004_add_food_goal_catalog.sql::019::codex ran successfully in 3376ms
+2026-06-10T08:10:29.725+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.ui                             : Running Changeset: db/changelog/changes/007_enrich_food_ingredients.sql::025::codex
+2026-06-10T08:10:29.728+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : Custom SQL executed
+2026-06-10T08:10:29.729+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : ChangeSet db/changelog/changes/007_enrich_food_ingredients.sql::025::codex ran successfully in 4ms
+2026-06-10T08:10:29.731+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.ui                             : Running Changeset: db/changelog/changes/007_enrich_food_ingredients.sql::026::codex
+2026-06-10T08:10:29.736+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : Custom SQL executed
+2026-06-10T08:10:29.737+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : ChangeSet db/changelog/changes/007_enrich_food_ingredients.sql::026::codex ran successfully in 6ms
+2026-06-10T08:10:29.738+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.ui                             : Running Changeset: db/changelog/changes/007_enrich_food_ingredients.sql::027::codex
+2026-06-10T08:10:29.890+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : Custom SQL executed
+2026-06-10T08:10:29.892+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : ChangeSet db/changelog/changes/007_enrich_food_ingredients.sql::027::codex ran successfully in 154ms
+2026-06-10T08:10:29.893+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.ui                             : Running Changeset: db/changelog/changes/007_enrich_food_ingredients.sql::028::codex
+2026-06-10T08:10:29.986+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : Custom SQL executed
+2026-06-10T08:10:29.990+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : ChangeSet db/changelog/changes/007_enrich_food_ingredients.sql::028::codex ran successfully in 95ms
+2026-06-10T08:10:29.991+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.ui                             : Running Changeset: db/changelog/changes/007_enrich_food_ingredients.sql::029::codex
+2026-06-10T08:10:29.993+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : Custom SQL executed
+2026-06-10T08:10:29.995+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : ChangeSet db/changelog/changes/007_enrich_food_ingredients.sql::029::codex ran successfully in 4ms
+2026-06-10T08:10:29.996+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.ui                             : Running Changeset: db/changelog/changes/007_enrich_food_ingredients.sql::030::codex
+2026-06-10T08:10:29.999+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : Custom SQL executed
+2026-06-10T08:10:29.999+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : ChangeSet db/changelog/changes/007_enrich_food_ingredients.sql::030::codex ran successfully in 3ms
+2026-06-10T08:10:30.001+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.ui                             : Running Changeset: db/changelog/changes/007_enrich_food_ingredients.sql::031::codex
+2026-06-10T08:10:30.082+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : Custom SQL executed
+2026-06-10T08:10:30.083+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : ChangeSet db/changelog/changes/007_enrich_food_ingredients.sql::031::codex ran successfully in 82ms
+2026-06-10T08:10:30.086+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.ui                             : Running Changeset: db/changelog/changes/007_enrich_food_ingredients.sql::032::codex
+2026-06-10T08:10:30.236+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : Custom SQL executed
+2026-06-10T08:10:30.240+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : ChangeSet db/changelog/changes/007_enrich_food_ingredients.sql::032::codex ran successfully in 154ms
+2026-06-10T08:10:30.242+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.ui                             : Running Changeset: db/changelog/changes/008_add_restricted_food_and_filters.sql::033::codex
+2026-06-10T08:10:30.247+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : Custom SQL executed
+2026-06-10T08:10:30.248+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : ChangeSet db/changelog/changes/008_add_restricted_food_and_filters.sql::033::codex ran successfully in 6ms
+2026-06-10T08:10:30.249+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.ui                             : Running Changeset: db/changelog/changes/008_add_restricted_food_and_filters.sql::034::codex
+2026-06-10T08:10:30.252+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : Custom SQL executed
+2026-06-10T08:10:30.252+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : ChangeSet db/changelog/changes/008_add_restricted_food_and_filters.sql::034::codex ran successfully in 3ms
+2026-06-10T08:10:30.253+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.ui                             : Running Changeset: db/changelog/changes/009_profile_image_and_status.sql::027::codex
+2026-06-10T08:10:30.258+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : Custom SQL executed
+2026-06-10T08:10:30.259+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : ChangeSet db/changelog/changes/009_profile_image_and_status.sql::027::codex ran successfully in 6ms
+2026-06-10T08:10:30.260+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.ui                             : Running Changeset: db/changelog/changes/009_profile_image_and_status.sql::028::codex
+2026-06-10T08:10:30.262+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.ui                             : column "image_url" of relation "profile" already exists, skipping
+2026-06-10T08:10:30.262+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : Custom SQL executed
+2026-06-10T08:10:30.262+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : ChangeSet db/changelog/changes/009_profile_image_and_status.sql::028::codex ran successfully in 2ms
+2026-06-10T08:10:30.263+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.ui                             : Running Changeset: db/changelog/changes/009_profile_image_and_status.sql::029::codex
+2026-06-10T08:10:30.265+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : Custom SQL executed
+2026-06-10T08:10:30.265+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : ChangeSet db/changelog/changes/009_profile_image_and_status.sql::029::codex ran successfully in 2ms
+2026-06-10T08:10:30.266+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.ui                             : Running Changeset: db/changelog/changes/009_profile_image_and_status.sql::030::codex
+2026-06-10T08:10:30.267+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : Custom SQL executed
+2026-06-10T08:10:30.267+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : ChangeSet db/changelog/changes/009_profile_image_and_status.sql::030::codex ran successfully in 1ms
+2026-06-10T08:10:30.268+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.ui                             : Running Changeset: db/changelog/changes/009_profile_image_and_status.sql::031::codex
+2026-06-10T08:10:30.269+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : Custom SQL executed
+2026-06-10T08:10:30.270+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : ChangeSet db/changelog/changes/009_profile_image_and_status.sql::031::codex ran successfully in 2ms
+2026-06-10T08:10:30.271+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.ui                             : Running Changeset: db/changelog/changes/010_profile_audit_fields.sql::032::codex
+2026-06-10T08:10:30.272+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.ui                             : column "updated_by" of relation "profile" already exists, skipping
+2026-06-10T08:10:30.272+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : Custom SQL executed
+2026-06-10T08:10:30.272+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : ChangeSet db/changelog/changes/010_profile_audit_fields.sql::032::codex ran successfully in 1ms
+2026-06-10T08:10:30.273+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.ui                             : Running Changeset: db/changelog/changes/010_profile_audit_fields.sql::033::codex
+2026-06-10T08:10:30.275+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.ui                             : column "updated_at" of relation "profile" already exists, skipping
+2026-06-10T08:10:30.275+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : Custom SQL executed
+2026-06-10T08:10:30.276+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : ChangeSet db/changelog/changes/010_profile_audit_fields.sql::033::codex ran successfully in 3ms
+2026-06-10T08:10:30.277+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.ui                             : Running Changeset: db/changelog/changes/010_profile_audit_fields.sql::034::codex
+2026-06-10T08:10:30.303+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : Custom SQL executed
+2026-06-10T08:10:30.304+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : ChangeSet db/changelog/changes/010_profile_audit_fields.sql::034::codex ran successfully in 27ms
+2026-06-10T08:10:30.305+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.ui                             : Running Changeset: db/changelog/changes/010_profile_audit_fields.sql::035::codex
+2026-06-10T08:10:30.307+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : Custom SQL executed
+2026-06-10T08:10:30.307+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : ChangeSet db/changelog/changes/010_profile_audit_fields.sql::035::codex ran successfully in 2ms
+2026-06-10T08:10:30.308+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.ui                             : Running Changeset: db/changelog/changes/010_profile_audit_fields.sql::036::codex
+2026-06-10T08:10:30.311+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : Custom SQL executed
+2026-06-10T08:10:30.311+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : ChangeSet db/changelog/changes/010_profile_audit_fields.sql::036::codex ran successfully in 3ms
+2026-06-10T08:10:30.312+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.ui                             : Running Changeset: db/changelog/changes/010_profile_audit_fields.sql::037::codex
+2026-06-10T08:10:30.313+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : Custom SQL executed
+2026-06-10T08:10:30.313+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : ChangeSet db/changelog/changes/010_profile_audit_fields.sql::037::codex ran successfully in 1ms
+2026-06-10T08:10:30.314+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.ui                             : Running Changeset: db/changelog/changes/010_profile_audit_fields.sql::038::codex
+2026-06-10T08:10:30.315+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : Custom SQL executed
+2026-06-10T08:10:30.315+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : ChangeSet db/changelog/changes/010_profile_audit_fields.sql::038::codex ran successfully in 1ms
+2026-06-10T08:10:30.316+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.ui                             : Running Changeset: db/changelog/changes/010_profile_audit_fields.sql::039::codex
+2026-06-10T08:10:30.317+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : Custom SQL executed
+2026-06-10T08:10:30.317+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : ChangeSet db/changelog/changes/010_profile_audit_fields.sql::039::codex ran successfully in 1ms
+2026-06-10T08:10:30.318+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.ui                             : Running Changeset: db/changelog/changes/010_profile_audit_fields.sql::040::codex
+2026-06-10T08:10:30.319+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.ui                             : column "update_by" of relation "profile" does not exist, skipping
+2026-06-10T08:10:30.319+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : Custom SQL executed
+2026-06-10T08:10:30.319+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : ChangeSet db/changelog/changes/010_profile_audit_fields.sql::040::codex ran successfully in 1ms
+2026-06-10T08:10:30.321+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.ui                             : Running Changeset: db/changelog/changes/011_drop_session_token_table.sql::041::codex
+2026-06-10T08:10:30.323+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : Custom SQL executed
+2026-06-10T08:10:30.324+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : ChangeSet db/changelog/changes/011_drop_session_token_table.sql::041::codex ran successfully in 3ms
+2026-06-10T08:10:30.325+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.ui                             : Running Changeset: db/changelog/changes/012_food_preference_by_profile.sql::042::codex
+2026-06-10T08:10:30.326+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : Custom SQL executed
+2026-06-10T08:10:30.327+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : ChangeSet db/changelog/changes/012_food_preference_by_profile.sql::042::codex ran successfully in 2ms
+2026-06-10T08:10:30.328+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.ui                             : Running Changeset: db/changelog/changes/012_food_preference_by_profile.sql::043::codex
+2026-06-10T08:10:30.328+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : Custom SQL executed
+2026-06-10T08:10:30.329+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : ChangeSet db/changelog/changes/012_food_preference_by_profile.sql::043::codex ran successfully in 1ms
+2026-06-10T08:10:30.330+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.ui                             : Running Changeset: db/changelog/changes/012_food_preference_by_profile.sql::044::codex
+2026-06-10T08:10:30.332+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : Custom SQL executed
+2026-06-10T08:10:30.332+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : ChangeSet db/changelog/changes/012_food_preference_by_profile.sql::044::codex ran successfully in 2ms
+2026-06-10T08:10:30.333+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.ui                             : Running Changeset: db/changelog/changes/012_food_preference_by_profile.sql::045::codex
+2026-06-10T08:10:30.335+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : Custom SQL executed
+2026-06-10T08:10:30.335+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : ChangeSet db/changelog/changes/012_food_preference_by_profile.sql::045::codex ran successfully in 2ms
+2026-06-10T08:10:30.335+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.ui                             : Running Changeset: db/changelog/changes/012_food_preference_by_profile.sql::046::codex
+2026-06-10T08:10:30.336+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.ui                             : constraint "fk_favorite_food_profile" of relation "favorite_food" does not exist, skipping
+2026-06-10T08:10:30.336+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : Custom SQL executed
+2026-06-10T08:10:30.336+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : ChangeSet db/changelog/changes/012_food_preference_by_profile.sql::046::codex ran successfully in 1ms
+2026-06-10T08:10:30.337+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.ui                             : Running Changeset: db/changelog/changes/012_food_preference_by_profile.sql::047::codex
+2026-06-10T08:10:30.339+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : Custom SQL executed
+2026-06-10T08:10:30.339+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : ChangeSet db/changelog/changes/012_food_preference_by_profile.sql::047::codex ran successfully in 2ms
+2026-06-10T08:10:30.340+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.ui                             : Running Changeset: db/changelog/changes/012_food_preference_by_profile.sql::048::codex
+2026-06-10T08:10:30.342+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.ui                             : constraint "fk_restricted_food_profile" of relation "restricted_food" does not exist, skipping
+2026-06-10T08:10:30.342+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : Custom SQL executed
+2026-06-10T08:10:30.342+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : ChangeSet db/changelog/changes/012_food_preference_by_profile.sql::048::codex ran successfully in 2ms
+2026-06-10T08:10:30.343+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.ui                             : Running Changeset: db/changelog/changes/012_food_preference_by_profile.sql::049::codex
+2026-06-10T08:10:30.345+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : Custom SQL executed
+2026-06-10T08:10:30.345+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : ChangeSet db/changelog/changes/012_food_preference_by_profile.sql::049::codex ran successfully in 2ms
+2026-06-10T08:10:30.346+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.ui                             : Running Changeset: db/changelog/changes/012_food_preference_by_profile.sql::050::codex
+2026-06-10T08:10:30.347+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : Custom SQL executed
+2026-06-10T08:10:30.347+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : ChangeSet db/changelog/changes/012_food_preference_by_profile.sql::050::codex ran successfully in 1ms
+2026-06-10T08:10:30.348+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.ui                             : Running Changeset: db/changelog/changes/012_food_preference_by_profile.sql::051::codex
+2026-06-10T08:10:30.349+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : Custom SQL executed
+2026-06-10T08:10:30.350+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : ChangeSet db/changelog/changes/012_food_preference_by_profile.sql::051::codex ran successfully in 2ms
+2026-06-10T08:10:30.351+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.ui                             : Running Changeset: db/changelog/changes/012_food_preference_by_profile.sql::052::codex
+2026-06-10T08:10:30.353+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : Custom SQL executed
+2026-06-10T08:10:30.353+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : ChangeSet db/changelog/changes/012_food_preference_by_profile.sql::052::codex ran successfully in 2ms
+2026-06-10T08:10:30.355+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.ui                             : Running Changeset: db/changelog/changes/012_food_preference_by_profile.sql::053::codex
+2026-06-10T08:10:30.357+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : Custom SQL executed
+2026-06-10T08:10:30.357+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : ChangeSet db/changelog/changes/012_food_preference_by_profile.sql::053::codex ran successfully in 2ms
+2026-06-10T08:10:30.359+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.ui                             : Running Changeset: db/changelog/changes/013_auth_otp_email_verification.sql::027::codex
+2026-06-10T08:10:30.360+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : Custom SQL executed
+2026-06-10T08:10:30.360+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : ChangeSet db/changelog/changes/013_auth_otp_email_verification.sql::027::codex ran successfully in 1ms
+2026-06-10T08:10:30.361+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.ui                             : Running Changeset: db/changelog/changes/013_auth_otp_email_verification.sql::028::codex
+2026-06-10T08:10:30.366+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : Custom SQL executed
+2026-06-10T08:10:30.366+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : ChangeSet db/changelog/changes/013_auth_otp_email_verification.sql::028::codex ran successfully in 5ms
+2026-06-10T08:10:30.367+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.ui                             : Running Changeset: db/changelog/changes/013_auth_otp_email_verification.sql::029::codex
+2026-06-10T08:10:30.368+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : Custom SQL executed
+2026-06-10T08:10:30.368+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : ChangeSet db/changelog/changes/013_auth_otp_email_verification.sql::029::codex ran successfully in 1ms
+2026-06-10T08:10:30.370+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.ui                             : Running Changeset: db/changelog/changes/014_social_login_user_fields.sql::030::codex
+2026-06-10T08:10:30.370+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : Custom SQL executed
+2026-06-10T08:10:30.370+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : ChangeSet db/changelog/changes/014_social_login_user_fields.sql::030::codex ran successfully in 0ms
+2026-06-10T08:10:30.372+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.ui                             : Running Changeset: db/changelog/changes/014_social_login_user_fields.sql::031::codex
+2026-06-10T08:10:30.373+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : Custom SQL executed
+2026-06-10T08:10:30.373+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : ChangeSet db/changelog/changes/014_social_login_user_fields.sql::031::codex ran successfully in 1ms
+2026-06-10T08:10:30.373+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.ui                             : Running Changeset: db/changelog/changes/015_auth_refresh_token.sql::060::codex
+2026-06-10T08:10:30.379+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : Custom SQL executed
+2026-06-10T08:10:30.379+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : ChangeSet db/changelog/changes/015_auth_refresh_token.sql::060::codex ran successfully in 6ms
+2026-06-10T08:10:30.380+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.ui                             : Running Changeset: db/changelog/changes/015_auth_refresh_token.sql::061::codex
+2026-06-10T08:10:30.382+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : Custom SQL executed
+2026-06-10T08:10:30.383+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : ChangeSet db/changelog/changes/015_auth_refresh_token.sql::061::codex ran successfully in 2ms
+2026-06-10T08:10:30.384+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.ui                             : Running Changeset: db/changelog/changes/015_auth_refresh_token.sql::062::codex
+2026-06-10T08:10:30.385+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : Custom SQL executed
+2026-06-10T08:10:30.385+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : ChangeSet db/changelog/changes/015_auth_refresh_token.sql::062::codex ran successfully in 1ms
+2026-06-10T08:10:30.387+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.ui                             : Running Changeset: db/changelog/changes/016_update_ingredient_cloudinary_image_paths.sql::045::codex
+2026-06-10T08:10:30.393+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : Custom SQL executed
+2026-06-10T08:10:30.395+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : ChangeSet db/changelog/changes/016_update_ingredient_cloudinary_image_paths.sql::045::codex ran successfully in 6ms
+2026-06-10T08:10:30.396+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.ui                             : Running Changeset: db/changelog/changes/016_update_ingredient_cloudinary_image_paths.sql::047::codex
+2026-06-10T08:10:30.397+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : Custom SQL executed
+2026-06-10T08:10:30.398+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : ChangeSet db/changelog/changes/016_update_ingredient_cloudinary_image_paths.sql::047::codex ran successfully in 2ms
+2026-06-10T08:10:30.398+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.ui                             : Running Changeset: db/changelog/changes/016_update_ingredient_cloudinary_image_paths.sql::048::codex
+2026-06-10T08:10:30.400+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : Custom SQL executed
+2026-06-10T08:10:30.400+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : ChangeSet db/changelog/changes/016_update_ingredient_cloudinary_image_paths.sql::048::codex ran successfully in 1ms
+2026-06-10T08:10:30.401+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.ui                             : Running Changeset: db/changelog/changes/016_update_ingredient_cloudinary_image_paths.sql::049::codex
+2026-06-10T08:10:30.403+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : Custom SQL executed
+2026-06-10T08:10:30.403+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : ChangeSet db/changelog/changes/016_update_ingredient_cloudinary_image_paths.sql::049::codex ran successfully in 2ms
+2026-06-10T08:10:30.404+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.ui                             : Running Changeset: db/changelog/changes/016_update_ingredient_cloudinary_image_paths.sql::050::codex
+2026-06-10T08:10:30.406+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : Custom SQL executed
+2026-06-10T08:10:30.406+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : ChangeSet db/changelog/changes/016_update_ingredient_cloudinary_image_paths.sql::050::codex ran successfully in 2ms
+2026-06-10T08:10:30.407+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.ui                             : Running Changeset: db/changelog/changes/017_seed_ai_teaching_lessons.sql::raw::includeAll
+2026-06-10T08:10:30.423+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.ui                             : column "lesson_name" of relation "ai_teaching_lesson" already exists, skipping
+2026-06-10T08:10:30.423+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.ui                             : column "description" of relation "ai_teaching_lesson" already exists, skipping
+2026-06-10T08:10:30.423+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.ui                             : column "reasonable_age_from_month" of relation "ai_teaching_lesson" already exists, skipping
+2026-06-10T08:10:30.423+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.ui                             : column "reasonable_age_to_month" of relation "ai_teaching_lesson" already exists, skipping
+2026-06-10T08:10:30.423+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.ui                             : column "recommended_duration_days" of relation "ai_teaching_lesson" already exists, skipping
+2026-06-10T08:10:30.423+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.ui                             : column "lesson_note" of relation "ai_teaching_lesson" already exists, skipping
+2026-06-10T08:10:30.423+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.ui                             : column "video_url" of relation "ai_teaching_lesson" already exists, skipping
+2026-06-10T08:10:30.423+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.ui                             : column "suggested_by_organization" of relation "ai_teaching_lesson" already exists, skipping
+2026-06-10T08:10:30.423+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.ui                             : column "source_url" of relation "ai_teaching_lesson" already exists, skipping
+2026-06-10T08:10:30.423+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.ui                             : column "source_organization" of relation "ai_teaching_lesson" already exists, skipping
+2026-06-10T08:10:30.423+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.ui                             : column "icon_url" of relation "ai_teaching_lesson" already exists, skipping
+2026-06-10T08:10:30.423+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.ui                             : column "sort_order" of relation "ai_teaching_lesson" already exists, skipping
+2026-06-10T08:10:30.423+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.ui                             : column "created_at" of relation "ai_teaching_lesson" already exists, skipping
+2026-06-10T08:10:30.423+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.ui                             : column "updated_at" of relation "ai_teaching_lesson" already exists, skipping
+2026-06-10T08:10:30.423+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.ui                             : column "created_by" of relation "ai_teaching_lesson" already exists, skipping
+2026-06-10T08:10:30.423+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.ui                             : column "updated_by" of relation "ai_teaching_lesson" already exists, skipping
+2026-06-10T08:10:30.423+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.ui                             : column "status" of relation "ai_teaching_lesson" already exists, skipping
+2026-06-10T08:10:30.423+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : Custom SQL executed
+2026-06-10T08:10:30.423+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : ChangeSet db/changelog/changes/017_seed_ai_teaching_lessons.sql::raw::includeAll ran successfully in 16ms
+2026-06-10T08:10:30.425+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.ui                             : Running Changeset: db/changelog/changes/018_seed_ai_lesson_progress.sql::raw::includeAll
+2026-06-10T08:10:30.438+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.ui                             : column "profile_id" of relation "ai_lesson_progress" already exists, skipping
+2026-06-10T08:10:30.438+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.ui                             : column "lesson_id" of relation "ai_lesson_progress" already exists, skipping
+2026-06-10T08:10:30.438+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.ui                             : column "progress_status" of relation "ai_lesson_progress" already exists, skipping
+2026-06-10T08:10:30.438+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.ui                             : column "started_at" of relation "ai_lesson_progress" already exists, skipping
+2026-06-10T08:10:30.438+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.ui                             : column "completed_at" of relation "ai_lesson_progress" already exists, skipping
+2026-06-10T08:10:30.438+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.ui                             : column "current_day" of relation "ai_lesson_progress" already exists, skipping
+2026-06-10T08:10:30.438+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.ui                             : column "practice_count" of relation "ai_lesson_progress" already exists, skipping
+2026-06-10T08:10:30.438+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.ui                             : column "last_practiced_at" of relation "ai_lesson_progress" already exists, skipping
+2026-06-10T08:10:30.438+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.ui                             : column "note" of relation "ai_lesson_progress" already exists, skipping
+2026-06-10T08:10:30.438+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.ui                             : column "created_at" of relation "ai_lesson_progress" already exists, skipping
+2026-06-10T08:10:30.438+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.ui                             : column "updated_at" of relation "ai_lesson_progress" already exists, skipping
+2026-06-10T08:10:30.438+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.ui                             : column "created_by" of relation "ai_lesson_progress" already exists, skipping
+2026-06-10T08:10:30.438+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.ui                             : column "updated_by" of relation "ai_lesson_progress" already exists, skipping
+2026-06-10T08:10:30.438+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.ui                             : column "status" of relation "ai_lesson_progress" already exists, skipping
+2026-06-10T08:10:30.438+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : Custom SQL executed
+2026-06-10T08:10:30.439+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : ChangeSet db/changelog/changes/018_seed_ai_lesson_progress.sql::raw::includeAll ran successfully in 13ms
+2026-06-10T08:10:30.441+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.ui                             : Running Changeset: db/changelog/changes/019_create_handbook.sql::raw::includeAll
+2026-06-10T08:10:30.456+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : Custom SQL executed
+2026-06-10T08:10:30.456+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : ChangeSet db/changelog/changes/019_create_handbook.sql::raw::includeAll ran successfully in 15ms
+2026-06-10T08:10:30.459+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.ui                             : Running Changeset: db/changelog/changes/020_create_type_catalog.sql::063::codex
+2026-06-10T08:10:30.464+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : Custom SQL executed
+2026-06-10T08:10:30.464+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : ChangeSet db/changelog/changes/020_create_type_catalog.sql::063::codex ran successfully in 5ms
+2026-06-10T08:10:30.465+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.ui                             : Running Changeset: db/changelog/changes/020_create_type_catalog.sql::064::codex
+2026-06-10T08:10:30.470+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : Custom SQL executed
+2026-06-10T08:10:30.471+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : ChangeSet db/changelog/changes/020_create_type_catalog.sql::064::codex ran successfully in 6ms
+2026-06-10T08:10:30.472+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.ui                             : Running Changeset: db/changelog/changes/020_create_type_catalog.sql::065::codex
+2026-06-10T08:10:30.473+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : Custom SQL executed
+2026-06-10T08:10:30.473+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : ChangeSet db/changelog/changes/020_create_type_catalog.sql::065::codex ran successfully in 1ms
+2026-06-10T08:10:30.475+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.ui                             : Running Changeset: db/changelog/changes/020_create_type_catalog.sql::066::codex
+2026-06-10T08:10:30.478+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : Custom SQL executed
+2026-06-10T08:10:30.478+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : ChangeSet db/changelog/changes/020_create_type_catalog.sql::066::codex ran successfully in 3ms
+2026-06-10T08:10:30.479+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.ui                             : Running Changeset: db/changelog/changes/020_create_type_catalog.sql::067::codex
+2026-06-10T08:10:30.492+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : Custom SQL executed
+2026-06-10T08:10:30.494+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : ChangeSet db/changelog/changes/020_create_type_catalog.sql::067::codex ran successfully in 15ms
+2026-06-10T08:10:30.495+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.ui                             : Running Changeset: db/changelog/changes/022_create_notification.sql::068::codex
+2026-06-10T08:10:30.500+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : Custom SQL executed
+2026-06-10T08:10:30.501+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : ChangeSet db/changelog/changes/022_create_notification.sql::068::codex ran successfully in 6ms
+2026-06-10T08:10:30.502+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.ui                             : Running Changeset: db/changelog/changes/022_create_notification.sql::069::codex
+2026-06-10T08:10:30.504+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : Custom SQL executed
+2026-06-10T08:10:30.504+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : ChangeSet db/changelog/changes/022_create_notification.sql::069::codex ran successfully in 2ms
+2026-06-10T08:10:30.505+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.ui                             : Running Changeset: db/changelog/changes/022_create_notification.sql::070::codex
+2026-06-10T08:10:30.511+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : Custom SQL executed
+2026-06-10T08:10:30.512+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : ChangeSet db/changelog/changes/022_create_notification.sql::070::codex ran successfully in 7ms
+2026-06-10T08:10:30.513+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.ui                             : Running Changeset: db/changelog/changes/022_create_notification.sql::071::codex
+2026-06-10T08:10:30.515+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : Custom SQL executed
+2026-06-10T08:10:30.515+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : ChangeSet db/changelog/changes/022_create_notification.sql::071::codex ran successfully in 2ms
+2026-06-10T08:10:30.516+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.ui                             : Running Changeset: db/changelog/changes/022_create_notification.sql::072::codex
+2026-06-10T08:10:30.521+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : Custom SQL executed
+2026-06-10T08:10:30.521+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : ChangeSet db/changelog/changes/022_create_notification.sql::072::codex ran successfully in 5ms
+2026-06-10T08:10:30.522+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.ui                             : Running Changeset: db/changelog/changes/023_seed_notification_user_2.sql::073::codex
+2026-06-10T08:10:30.525+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : Custom SQL executed
+2026-06-10T08:10:30.527+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : ChangeSet db/changelog/changes/023_seed_notification_user_2.sql::073::codex ran successfully in 4ms
+2026-06-10T08:10:30.528+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.ui                             : Running Changeset: db/changelog/changes/026_seed_profiles_user_2.sql::089::codex
+2026-06-10T08:10:30.530+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : Custom SQL executed
+2026-06-10T08:10:30.530+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : ChangeSet db/changelog/changes/026_seed_profiles_user_2.sql::089::codex ran successfully in 2ms
+2026-06-10T08:10:30.532+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.ui                             : Running Changeset: db/changelog/changes/026_seed_profiles_user_2.sql::090::codex
+2026-06-10T08:10:30.533+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : Custom SQL executed
+2026-06-10T08:10:30.533+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : ChangeSet db/changelog/changes/026_seed_profiles_user_2.sql::090::codex ran successfully in 1ms
+2026-06-10T08:10:30.534+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.ui                             : Running Changeset: db/changelog/changes/028_fix_notification_vietnamese_text.sql::095::codex
+2026-06-10T08:10:30.535+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : Custom SQL executed
+2026-06-10T08:10:30.535+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : ChangeSet db/changelog/changes/028_fix_notification_vietnamese_text.sql::095::codex ran successfully in 1ms
+2026-06-10T08:10:30.536+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.ui                             : Running Changeset: db/changelog/changes/028_fix_notification_vietnamese_text.sql::096::codex
+2026-06-10T08:10:30.537+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : Custom SQL executed
+2026-06-10T08:10:30.537+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : ChangeSet db/changelog/changes/028_fix_notification_vietnamese_text.sql::096::codex ran successfully in 1ms
+2026-06-10T08:10:30.538+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.ui                             : Running Changeset: db/changelog/changes/028_fix_notification_vietnamese_text.sql::097::codex
+2026-06-10T08:10:30.539+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : Custom SQL executed
+2026-06-10T08:10:30.539+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : ChangeSet db/changelog/changes/028_fix_notification_vietnamese_text.sql::097::codex ran successfully in 1ms
+2026-06-10T08:10:30.541+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.ui                             : Running Changeset: db/changelog/changes/022_update_food_cloudinary_image_paths.sql::071::codex
+2026-06-10T08:10:30.554+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : Custom SQL executed
+2026-06-10T08:10:30.555+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : ChangeSet db/changelog/changes/022_update_food_cloudinary_image_paths.sql::071::codex ran successfully in 14ms
+2026-06-10T08:10:30.556+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.ui                             : Running Changeset: db/changelog/changes/022_update_food_cloudinary_image_paths.sql::072::codex
+2026-06-10T08:10:30.565+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : Custom SQL executed
+2026-06-10T08:10:30.566+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : ChangeSet db/changelog/changes/022_update_food_cloudinary_image_paths.sql::072::codex ran successfully in 9ms
+2026-06-10T08:10:30.567+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.ui                             : Running Changeset: db/changelog/changes/023_optimize_food_queries.sql::073::codex
+2026-06-10T08:10:30.694+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : Custom SQL executed
+2026-06-10T08:10:30.695+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : ChangeSet db/changelog/changes/023_optimize_food_queries.sql::073::codex ran successfully in 128ms
+2026-06-10T08:10:30.697+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.ui                             : Running Changeset: db/changelog/changes/029_create_health_tracking.sql::074::codex
+2026-06-10T08:10:30.701+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : Custom SQL executed
+2026-06-10T08:10:30.701+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : ChangeSet db/changelog/changes/029_create_health_tracking.sql::074::codex ran successfully in 4ms
+2026-06-10T08:10:30.702+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.ui                             : Running Changeset: db/changelog/changes/029_create_health_tracking.sql::075::codex
+2026-06-10T08:10:30.705+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : Custom SQL executed
+2026-06-10T08:10:30.705+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : ChangeSet db/changelog/changes/029_create_health_tracking.sql::075::codex ran successfully in 2ms
+2026-06-10T08:10:30.706+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.ui                             : Running Changeset: db/changelog/changes/029_create_health_tracking.sql::076::codex
+2026-06-10T08:10:30.711+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : Custom SQL executed
+2026-06-10T08:10:30.711+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : ChangeSet db/changelog/changes/029_create_health_tracking.sql::076::codex ran successfully in 5ms
+2026-06-10T08:10:30.713+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.ui                             : Running Changeset: db/changelog/changes/029_create_health_tracking.sql::077::codex
+2026-06-10T08:10:30.715+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : Custom SQL executed
+2026-06-10T08:10:30.715+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : ChangeSet db/changelog/changes/029_create_health_tracking.sql::077::codex ran successfully in 2ms
+2026-06-10T08:10:30.717+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.ui                             : Running Changeset: db/changelog/changes/029_create_health_tracking.sql::078::codex
+2026-06-10T08:10:30.718+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : Custom SQL executed
+2026-06-10T08:10:30.718+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : ChangeSet db/changelog/changes/029_create_health_tracking.sql::078::codex ran successfully in 1ms
+2026-06-10T08:10:30.719+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.ui                             : Running Changeset: db/changelog/changes/029_create_health_tracking.sql::079::codex
+2026-06-10T08:10:30.720+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.ui                             : column "heart_rate" of relation "health_record" does not exist, skipping
+2026-06-10T08:10:30.720+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : Custom SQL executed
+2026-06-10T08:10:30.720+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : ChangeSet db/changelog/changes/029_create_health_tracking.sql::079::codex ran successfully in 1ms
+2026-06-10T08:10:30.721+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.ui                             : Running Changeset: db/changelog/changes/030_create_diary_entry.sql::080::codex
+2026-06-10T08:10:30.726+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : Custom SQL executed
+2026-06-10T08:10:30.727+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : ChangeSet db/changelog/changes/030_create_diary_entry.sql::080::codex ran successfully in 6ms
+2026-06-10T08:10:30.728+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.ui                             : Running Changeset: db/changelog/changes/030_create_diary_entry.sql::081::codex
+2026-06-10T08:10:30.730+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : Custom SQL executed
+2026-06-10T08:10:30.730+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : ChangeSet db/changelog/changes/030_create_diary_entry.sql::081::codex ran successfully in 2ms
+2026-06-10T08:10:30.731+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.ui                             : Running Changeset: db/changelog/changes/031_create_vaccine_catalog_schema.sql::095::codex
+2026-06-10T08:10:30.732+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.ui                             : table "vaccine_record" does not exist, skipping
+2026-06-10T08:10:30.733+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.ui                             : table "vaccine_pricing" does not exist, skipping
+2026-06-10T08:10:30.733+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.ui                             : table "vaccine_schedule" does not exist, skipping
+2026-06-10T08:10:30.733+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.ui                             : table "vaccination_center" does not exist, skipping
+2026-06-10T08:10:30.733+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.ui                             : table "vaccine_type" does not exist, skipping
+2026-06-10T08:10:30.733+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : Custom SQL executed
+2026-06-10T08:10:30.733+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : ChangeSet db/changelog/changes/031_create_vaccine_catalog_schema.sql::095::codex ran successfully in 2ms
+2026-06-10T08:10:30.735+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.ui                             : Running Changeset: db/changelog/changes/031_create_vaccine_catalog_schema.sql::096::codex
+2026-06-10T08:10:30.738+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : Custom SQL executed
+2026-06-10T08:10:30.739+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : ChangeSet db/changelog/changes/031_create_vaccine_catalog_schema.sql::096::codex ran successfully in 4ms
+2026-06-10T08:10:30.740+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.ui                             : Running Changeset: db/changelog/changes/031_create_vaccine_catalog_schema.sql::097::codex
+2026-06-10T08:10:30.745+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : Custom SQL executed
+2026-06-10T08:10:30.745+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : ChangeSet db/changelog/changes/031_create_vaccine_catalog_schema.sql::097::codex ran successfully in 5ms
+2026-06-10T08:10:30.746+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.ui                             : Running Changeset: db/changelog/changes/031_create_vaccine_catalog_schema.sql::098::codex
+2026-06-10T08:10:30.751+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : Custom SQL executed
+2026-06-10T08:10:30.752+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : ChangeSet db/changelog/changes/031_create_vaccine_catalog_schema.sql::098::codex ran successfully in 6ms
+2026-06-10T08:10:30.753+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.ui                             : Running Changeset: db/changelog/changes/031_create_vaccine_catalog_schema.sql::099::codex
+2026-06-10T08:10:30.760+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : Custom SQL executed
+2026-06-10T08:10:30.760+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : ChangeSet db/changelog/changes/031_create_vaccine_catalog_schema.sql::099::codex ran successfully in 7ms
+2026-06-10T08:10:30.762+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.ui                             : Running Changeset: db/changelog/changes/031_create_vaccine_catalog_schema.sql::100::codex
+2026-06-10T08:10:30.766+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : Custom SQL executed
+2026-06-10T08:10:30.766+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : ChangeSet db/changelog/changes/031_create_vaccine_catalog_schema.sql::100::codex ran successfully in 4ms
+2026-06-10T08:10:30.768+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.ui                             : Running Changeset: db/changelog/changes/031_create_vaccine_catalog_schema.sql::101::codex
+2026-06-10T08:10:30.774+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : Custom SQL executed
+2026-06-10T08:10:30.774+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : ChangeSet db/changelog/changes/031_create_vaccine_catalog_schema.sql::101::codex ran successfully in 6ms
+2026-06-10T08:10:30.775+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.ui                             : Running Changeset: db/changelog/changes/031_create_vaccine_catalog_schema.sql::102::codex
+2026-06-10T08:10:30.780+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : Custom SQL executed
+2026-06-10T08:10:30.781+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : ChangeSet db/changelog/changes/031_create_vaccine_catalog_schema.sql::102::codex ran successfully in 6ms
+2026-06-10T08:10:30.782+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.ui                             : Running Changeset: db/changelog/changes/031_create_vaccine_catalog_schema.sql::103::codex
+2026-06-10T08:10:30.788+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : Custom SQL executed
+2026-06-10T08:10:30.788+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : ChangeSet db/changelog/changes/031_create_vaccine_catalog_schema.sql::103::codex ran successfully in 6ms
+2026-06-10T08:10:30.789+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.ui                             : Running Changeset: db/changelog/changes/032_rebuild_vaccine_schema.sql::104::codex
+2026-06-10T08:10:30.799+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.ui                             : table "vaccine_pricing" does not exist, skipping
+2026-06-10T08:10:30.799+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.ui                             : table "vaccine_schedule" does not exist, skipping
+2026-06-10T08:10:30.800+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.ui                             : table "vaccination_center" does not exist, skipping
+2026-06-10T08:10:30.800+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.ui                             : table "vaccine_type" does not exist, skipping
+2026-06-10T08:10:30.800+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : Custom SQL executed
+2026-06-10T08:10:30.807+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : ChangeSet db/changelog/changes/032_rebuild_vaccine_schema.sql::104::codex ran successfully in 18ms
+2026-06-10T08:10:30.809+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.ui                             : Running Changeset: db/changelog/changes/032_rebuild_vaccine_schema.sql::105::codex
+2026-06-10T08:10:30.813+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : Custom SQL executed
+2026-06-10T08:10:30.813+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : ChangeSet db/changelog/changes/032_rebuild_vaccine_schema.sql::105::codex ran successfully in 4ms
+2026-06-10T08:10:30.814+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.ui                             : Running Changeset: db/changelog/changes/032_rebuild_vaccine_schema.sql::106::codex
+2026-06-10T08:10:30.818+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : Custom SQL executed
+2026-06-10T08:10:30.818+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : ChangeSet db/changelog/changes/032_rebuild_vaccine_schema.sql::106::codex ran successfully in 4ms
+2026-06-10T08:10:30.820+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.ui                             : Running Changeset: db/changelog/changes/032_rebuild_vaccine_schema.sql::107::codex
+2026-06-10T08:10:30.825+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : Custom SQL executed
+2026-06-10T08:10:30.825+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : ChangeSet db/changelog/changes/032_rebuild_vaccine_schema.sql::107::codex ran successfully in 5ms
+2026-06-10T08:10:30.826+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.ui                             : Running Changeset: db/changelog/changes/032_rebuild_vaccine_schema.sql::108::codex
+2026-06-10T08:10:30.832+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : Custom SQL executed
+2026-06-10T08:10:30.832+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : ChangeSet db/changelog/changes/032_rebuild_vaccine_schema.sql::108::codex ran successfully in 6ms
+2026-06-10T08:10:30.833+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.ui                             : Running Changeset: db/changelog/changes/032_rebuild_vaccine_schema.sql::109::codex
+2026-06-10T08:10:30.838+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : Custom SQL executed
+2026-06-10T08:10:30.838+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : ChangeSet db/changelog/changes/032_rebuild_vaccine_schema.sql::109::codex ran successfully in 5ms
+2026-06-10T08:10:30.840+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.ui                             : Running Changeset: db/changelog/changes/032_rebuild_vaccine_schema.sql::110::codex
+2026-06-10T08:10:30.846+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : Custom SQL executed
+2026-06-10T08:10:30.846+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : ChangeSet db/changelog/changes/032_rebuild_vaccine_schema.sql::110::codex ran successfully in 6ms
+2026-06-10T08:10:30.847+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.ui                             : Running Changeset: db/changelog/changes/032_rebuild_vaccine_schema.sql::111::codex
+2026-06-10T08:10:30.852+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : Custom SQL executed
+2026-06-10T08:10:30.852+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : ChangeSet db/changelog/changes/032_rebuild_vaccine_schema.sql::111::codex ran successfully in 5ms
+2026-06-10T08:10:30.853+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.ui                             : Running Changeset: db/changelog/changes/032_rebuild_vaccine_schema.sql::112::codex
+2026-06-10T08:10:30.858+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : Custom SQL executed
+2026-06-10T08:10:30.858+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : ChangeSet db/changelog/changes/032_rebuild_vaccine_schema.sql::112::codex ran successfully in 5ms
+2026-06-10T08:10:30.859+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.ui                             : Running Changeset: db/changelog/changes/033_seed_vaccine_catalog_records.sql::113::codex
+2026-06-10T08:10:30.861+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : Custom SQL executed
+2026-06-10T08:10:30.862+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : ChangeSet db/changelog/changes/033_seed_vaccine_catalog_records.sql::113::codex ran successfully in 3ms
+2026-06-10T08:10:30.863+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.ui                             : Running Changeset: db/changelog/changes/033_seed_vaccine_catalog_records.sql::114::codex
+2026-06-10T08:10:30.865+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : Custom SQL executed
+2026-06-10T08:10:30.866+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : ChangeSet db/changelog/changes/033_seed_vaccine_catalog_records.sql::114::codex ran successfully in 3ms
+2026-06-10T08:10:30.867+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.ui                             : Running Changeset: db/changelog/changes/033_seed_vaccine_catalog_records.sql::115::codex
+2026-06-10T08:10:30.871+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : Custom SQL executed
+2026-06-10T08:10:30.871+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : ChangeSet db/changelog/changes/033_seed_vaccine_catalog_records.sql::115::codex ran successfully in 4ms
+2026-06-10T08:10:30.872+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.ui                             : Running Changeset: db/changelog/changes/033_seed_vaccine_catalog_records.sql::116::codex
+2026-06-10T08:10:30.878+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : Custom SQL executed
+2026-06-10T08:10:30.879+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : ChangeSet db/changelog/changes/033_seed_vaccine_catalog_records.sql::116::codex ran successfully in 6ms
+2026-06-10T08:10:30.880+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.ui                             : Running Changeset: db/changelog/changes/033_seed_vaccine_catalog_records.sql::117::codex
+2026-06-10T08:10:30.883+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : Custom SQL executed
+2026-06-10T08:10:30.883+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : ChangeSet db/changelog/changes/033_seed_vaccine_catalog_records.sql::117::codex ran successfully in 3ms
+2026-06-10T08:10:30.883+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.ui                             : Running Changeset: db/changelog/changes/033_seed_vaccine_catalog_records.sql::118::codex
+2026-06-10T08:10:30.889+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : Custom SQL executed
+2026-06-10T08:10:30.889+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : ChangeSet db/changelog/changes/033_seed_vaccine_catalog_records.sql::118::codex ran successfully in 6ms
+2026-06-10T08:10:30.890+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.ui                             : Running Changeset: db/changelog/changes/034_seed_vnvc_vaccine_demo.sql::119::codex
+2026-06-10T08:10:30.891+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : Custom SQL executed
+2026-06-10T08:10:30.891+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : ChangeSet db/changelog/changes/034_seed_vnvc_vaccine_demo.sql::119::codex ran successfully in 1ms
+2026-06-10T08:10:30.892+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.ui                             : Running Changeset: db/changelog/changes/034_seed_vnvc_vaccine_demo.sql::120::codex
+2026-06-10T08:10:30.901+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : Custom SQL executed
+2026-06-10T08:10:30.901+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : ChangeSet db/changelog/changes/034_seed_vnvc_vaccine_demo.sql::120::codex ran successfully in 9ms
+2026-06-10T08:10:30.903+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.ui                             : Running Changeset: db/changelog/changes/034_seed_vnvc_vaccine_demo.sql::121::codex
+2026-06-10T08:10:30.914+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : Custom SQL executed
+2026-06-10T08:10:30.915+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : ChangeSet db/changelog/changes/034_seed_vnvc_vaccine_demo.sql::121::codex ran successfully in 12ms
+2026-06-10T08:10:30.916+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.ui                             : Running Changeset: db/changelog/changes/034_seed_vnvc_vaccine_demo.sql::122::codex
+2026-06-10T08:10:30.925+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : Custom SQL executed
+2026-06-10T08:10:30.926+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : ChangeSet db/changelog/changes/034_seed_vnvc_vaccine_demo.sql::122::codex ran successfully in 10ms
+2026-06-10T08:10:30.927+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.ui                             : Running Changeset: db/changelog/changes/034_seed_vnvc_vaccine_demo.sql::123::codex
+2026-06-10T08:10:30.932+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : Custom SQL executed
+2026-06-10T08:10:30.932+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : ChangeSet db/changelog/changes/034_seed_vnvc_vaccine_demo.sql::123::codex ran successfully in 5ms
+2026-06-10T08:10:30.933+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.ui                             : Running Changeset: db/changelog/changes/035_fix_vnvc_vaccine_vietnamese_text.sql::124::codex
+2026-06-10T08:10:30.935+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : Custom SQL executed
+2026-06-10T08:10:30.935+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : ChangeSet db/changelog/changes/035_fix_vnvc_vaccine_vietnamese_text.sql::124::codex ran successfully in 2ms
+2026-06-10T08:10:30.936+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.ui                             : Running Changeset: db/changelog/changes/035_fix_vnvc_vaccine_vietnamese_text.sql::125::codex
+2026-06-10T08:10:30.944+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : Custom SQL executed
+2026-06-10T08:10:30.945+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : ChangeSet db/changelog/changes/035_fix_vnvc_vaccine_vietnamese_text.sql::125::codex ran successfully in 8ms
+2026-06-10T08:10:30.945+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.ui                             : Running Changeset: db/changelog/changes/035_fix_vnvc_vaccine_vietnamese_text.sql::126::codex
+2026-06-10T08:10:30.957+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : Custom SQL executed
+2026-06-10T08:10:30.958+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : ChangeSet db/changelog/changes/035_fix_vnvc_vaccine_vietnamese_text.sql::126::codex ran successfully in 13ms
+2026-06-10T08:10:30.959+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.ui                             : Running Changeset: db/changelog/changes/035_fix_vnvc_vaccine_vietnamese_text.sql::127::codex
+2026-06-10T08:10:30.969+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : Custom SQL executed
+2026-06-10T08:10:30.969+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : ChangeSet db/changelog/changes/035_fix_vnvc_vaccine_vietnamese_text.sql::127::codex ran successfully in 10ms
+2026-06-10T08:10:30.971+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.ui                             : Running Changeset: db/changelog/changes/035_fix_vnvc_vaccine_vietnamese_text.sql::128::codex
+2026-06-10T08:10:30.975+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : Custom SQL executed
+2026-06-10T08:10:30.975+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : ChangeSet db/changelog/changes/035_fix_vnvc_vaccine_vietnamese_text.sql::128::codex ran successfully in 4ms
+2026-06-10T08:10:30.976+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.ui                             : Running Changeset: db/changelog/changes/036_fix_vnvc_vaccine_utf8_text.sql::129::codex
+2026-06-10T08:10:30.977+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : Custom SQL executed
+2026-06-10T08:10:30.977+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : ChangeSet db/changelog/changes/036_fix_vnvc_vaccine_utf8_text.sql::129::codex ran successfully in 1ms
+2026-06-10T08:10:30.978+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.ui                             : Running Changeset: db/changelog/changes/036_fix_vnvc_vaccine_utf8_text.sql::130::codex
+2026-06-10T08:10:30.987+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : Custom SQL executed
+2026-06-10T08:10:30.987+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : ChangeSet db/changelog/changes/036_fix_vnvc_vaccine_utf8_text.sql::130::codex ran successfully in 9ms
+2026-06-10T08:10:30.988+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.ui                             : Running Changeset: db/changelog/changes/036_fix_vnvc_vaccine_utf8_text.sql::131::codex
+2026-06-10T08:10:31.000+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : Custom SQL executed
+2026-06-10T08:10:31.001+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : ChangeSet db/changelog/changes/036_fix_vnvc_vaccine_utf8_text.sql::131::codex ran successfully in 13ms
+2026-06-10T08:10:31.002+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.ui                             : Running Changeset: db/changelog/changes/036_fix_vnvc_vaccine_utf8_text.sql::132::codex
+2026-06-10T08:10:31.012+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : Custom SQL executed
+2026-06-10T08:10:31.013+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : ChangeSet db/changelog/changes/036_fix_vnvc_vaccine_utf8_text.sql::132::codex ran successfully in 10ms
+2026-06-10T08:10:31.014+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.ui                             : Running Changeset: db/changelog/changes/036_fix_vnvc_vaccine_utf8_text.sql::133::codex
+2026-06-10T08:10:31.018+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : Custom SQL executed
+2026-06-10T08:10:31.018+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : ChangeSet db/changelog/changes/036_fix_vnvc_vaccine_utf8_text.sql::133::codex ran successfully in 4ms
+2026-06-10T08:10:31.019+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.ui                             : Running Changeset: db/changelog/changes/037_fix_vnvc_vaccine_text_hex.sql::134::codex
+2026-06-10T08:10:31.022+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : Custom SQL executed
+2026-06-10T08:10:31.022+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : ChangeSet db/changelog/changes/037_fix_vnvc_vaccine_text_hex.sql::134::codex ran successfully in 3ms
+2026-06-10T08:10:31.023+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.ui                             : Running Changeset: db/changelog/changes/037_fix_vnvc_vaccine_text_hex.sql::135::codex
+2026-06-10T08:10:31.032+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : Custom SQL executed
+2026-06-10T08:10:31.032+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : ChangeSet db/changelog/changes/037_fix_vnvc_vaccine_text_hex.sql::135::codex ran successfully in 9ms
+2026-06-10T08:10:31.033+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.ui                             : Running Changeset: db/changelog/changes/037_fix_vnvc_vaccine_text_hex.sql::136::codex
+2026-06-10T08:10:31.041+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : Custom SQL executed
+2026-06-10T08:10:31.042+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : ChangeSet db/changelog/changes/037_fix_vnvc_vaccine_text_hex.sql::136::codex ran successfully in 8ms
+2026-06-10T08:10:31.042+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.ui                             : Running Changeset: db/changelog/changes/037_fix_vnvc_vaccine_text_hex.sql::137::codex
+2026-06-10T08:10:31.046+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : Custom SQL executed
+2026-06-10T08:10:31.046+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : ChangeSet db/changelog/changes/037_fix_vnvc_vaccine_text_hex.sql::137::codex ran successfully in 4ms
+2026-06-10T08:10:31.047+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.ui                             : Running Changeset: db/changelog/changes/038_fix_vnvc_vaccine_text_hex_rerun.sql::138::codex
+2026-06-10T08:10:31.050+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : Custom SQL executed
+2026-06-10T08:10:31.050+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : ChangeSet db/changelog/changes/038_fix_vnvc_vaccine_text_hex_rerun.sql::138::codex ran successfully in 3ms
+2026-06-10T08:10:31.051+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.ui                             : Running Changeset: db/changelog/changes/038_fix_vnvc_vaccine_text_hex_rerun.sql::139::codex
+2026-06-10T08:10:31.060+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : Custom SQL executed
+2026-06-10T08:10:31.061+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : ChangeSet db/changelog/changes/038_fix_vnvc_vaccine_text_hex_rerun.sql::139::codex ran successfully in 10ms
+2026-06-10T08:10:31.063+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.ui                             : Running Changeset: db/changelog/changes/038_fix_vnvc_vaccine_text_hex_rerun.sql::140::codex
+2026-06-10T08:10:31.070+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : Custom SQL executed
+2026-06-10T08:10:31.070+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : ChangeSet db/changelog/changes/038_fix_vnvc_vaccine_text_hex_rerun.sql::140::codex ran successfully in 7ms
+2026-06-10T08:10:31.071+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.ui                             : Running Changeset: db/changelog/changes/038_fix_vnvc_vaccine_text_hex_rerun.sql::141::codex
+2026-06-10T08:10:31.073+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : Custom SQL executed
+2026-06-10T08:10:31.073+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : ChangeSet db/changelog/changes/038_fix_vnvc_vaccine_text_hex_rerun.sql::141::codex ran successfully in 2ms
+2026-06-10T08:10:31.075+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.ui                             : Running Changeset: db/changelog/changes/043_create_child_vaccine_disease_schema.sql::043-create-child-vaccine-disease-schema::codex
+2026-06-10T08:10:31.121+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : Custom SQL executed
+2026-06-10T08:10:31.123+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : ChangeSet db/changelog/changes/043_create_child_vaccine_disease_schema.sql::043-create-child-vaccine-disease-schema::codex ran successfully in 47ms
+2026-06-10T08:10:31.126+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.ui                             : Running Changeset: db/changelog/changes/044_create_child_disease_dose_vaccine_options.sql::044-create-child-disease-dose-vaccine-options::codex
+2026-06-10T08:10:31.151+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : Custom SQL executed
+2026-06-10T08:10:31.151+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : ChangeSet db/changelog/changes/044_create_child_disease_dose_vaccine_options.sql::044-create-child-disease-dose-vaccine-options::codex ran successfully in 25ms
+2026-06-10T08:10:31.153+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.ui                             : Running Changeset: db/changelog/changes/045_drop_legacy_vaccine_rule_tables.sql::045-drop-legacy-vaccine-rule-tables::codex
+2026-06-10T08:10:31.154+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.ui                             : table "vaccine_group_dose_schedules" does not exist, skipping
+2026-06-10T08:10:31.154+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.ui                             : table "vaccine_product_groups" does not exist, skipping
+2026-06-10T08:10:31.154+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.ui                             : table "vaccine_groups" does not exist, skipping
+2026-06-10T08:10:31.154+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : Custom SQL executed
+2026-06-10T08:10:31.154+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : ChangeSet db/changelog/changes/045_drop_legacy_vaccine_rule_tables.sql::045-drop-legacy-vaccine-rule-tables::codex ran successfully in 1ms
+2026-06-10T08:10:31.155+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.ui                             : Running Changeset: db/changelog/changes/046_create_profile_vaccine_disease_status.sql::046-create-profile-vaccine-disease-status::codex
+2026-06-10T08:10:31.163+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : Custom SQL executed
+2026-06-10T08:10:31.164+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : ChangeSet db/changelog/changes/046_create_profile_vaccine_disease_status.sql::046-create-profile-vaccine-disease-status::codex ran successfully in 9ms
+2026-06-10T08:10:31.165+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.ui                             : Running Changeset: db/changelog/changes/047_drop_legacy_vaccine_package_location_schema.sql::047-drop-legacy-vaccine-package-location-schema::codex
+2026-06-10T08:10:31.174+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : Custom SQL executed
+2026-06-10T08:10:31.181+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : ChangeSet db/changelog/changes/047_drop_legacy_vaccine_package_location_schema.sql::047-drop-legacy-vaccine-package-location-schema::codex ran successfully in 16ms
+2026-06-10T08:10:31.183+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.ui                             : Running Changeset: db/changelog/changes/048_add_vaccine_record_dose_context.sql::raw::includeAll
+2026-06-10T08:10:31.186+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : Custom SQL executed
+2026-06-10T08:10:31.186+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : ChangeSet db/changelog/changes/048_add_vaccine_record_dose_context.sql::raw::includeAll ran successfully in 3ms
+2026-06-10T08:10:31.188+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.ui                             : Running Changeset: db/changelog/changes/049_add_vaccine_record_source.sql::raw::includeAll
+2026-06-10T08:10:31.189+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : Custom SQL executed
+2026-06-10T08:10:31.189+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.changelog                      : ChangeSet db/changelog/changes/049_add_vaccine_record_source.sql::raw::includeAll ran successfully in 1ms
+2026-06-10T08:10:31.195+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.util                           : UPDATE SUMMARY
+2026-06-10T08:10:31.195+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.util                           : Run:                        153
+2026-06-10T08:10:31.195+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.util                           : Previously run:               0
+2026-06-10T08:10:31.195+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.util                           : Filtered out:                 0
+2026-06-10T08:10:31.195+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.util                           : -------------------------------
+2026-06-10T08:10:31.195+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.util                           : Total change sets:          153
+2026-06-10T08:10:31.196+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.util                           : Update summary generated
+2026-06-10T08:10:31.198+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.command                        : Update command completed successfully.
+2026-06-10T08:10:31.199+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.ui                             : Liquibase: Update has been successful. Rows affected: 40451
+2026-06-10T08:10:31.200+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.lockservice                    : Successfully released change log lock
+2026-06-10T08:10:31.201+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] liquibase.command                        : Command execution complete
+2026-06-10T08:10:31.278+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] org.hibernate.orm.jpa                    : HHH008540: Processing PersistenceUnitInfo [name: default]
+2026-06-10T08:10:31.331+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] org.hibernate.orm.core                   : HHH000001: Hibernate ORM core version 7.2.12.Final
+2026-06-10T08:10:31.720+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] o.s.o.j.p.SpringPersistenceUnitInfo      : No LoadTimeWeaver setup: ignoring JPA class transformer
+2026-06-10T08:10:31.795+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] org.hibernate.orm.connections.pooling    : HHH10001005: Database info:
+	Database JDBC URL [jdbc:postgresql://localhost:5432/babyoi]
+	Database driver: PostgreSQL JDBC Driver
+	Database dialect: PostgreSQLDialect
+	Database version: 18.1
+	Default catalog/schema: babyoi/public
+	Autocommit mode: undefined/unknown
+	Isolation level: READ_COMMITTED [default READ_COMMITTED]
+	JDBC fetch size: none
+	Pool: DataSourceConnectionProvider
+	Minimum pool size: undefined/unknown
+	Maximum pool size: undefined/unknown
+2026-06-10T08:10:33.135+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] org.hibernate.orm.core                   : HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2026-06-10T08:10:33.203+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] org.hibernate.orm.core                   : HHH000475: Cannot locate column information using identifier [lower((name)::text)]; ignoring index [idx_food_library_name_trgm]
+2026-06-10T08:10:33.226+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] j.LocalContainerEntityManagerFactoryBean : Initialized JPA EntityManagerFactory for persistence unit 'default'
+2026-06-10T08:10:33.283+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] o.s.d.j.r.query.QueryEnhancerFactories   : Hibernate is in classpath; If applicable, HQL parser will be used.
+2026-06-10T08:10:33.515+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] eAuthenticationProviderManagerConfigurer : Global AuthenticationManager configured with AuthenticationProvider bean with name authenticationProvider
+2026-06-10T08:10:33.515+07:00  WARN 24252 --- [BabyOI_BE] [  restartedMain] r$InitializeUserDetailsManagerConfigurer : Global AuthenticationManager configured with an AuthenticationProvider bean. UserDetailsService beans will not be used by Spring Security for automatically configuring username/password login. Consider removing the AuthenticationProvider bean. Alternatively, consider using the UserDetailsService in a manually instantiated DaoAuthenticationProvider. If the current configuration is intentional, to turn off this warning, increase the logging level of 'org.springframework.security.config.annotation.authentication.configuration.InitializeUserDetailsBeanManagerConfigurer' to ERROR
+2026-06-10T08:10:35.492+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] o.s.boot.tomcat.TomcatWebServer          : Tomcat started on port 8085 (http) with context path '/'
+2026-06-10T08:10:35.497+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] c.example.babyoi_be.BabyOiBeApplication  : Started BabyOiBeApplication in 14.464 seconds (process running for 14.85)
+2026-06-10T08:10:35.500+07:00  INFO 24252 --- [BabyOI_BE] [  restartedMain] c.e.b.c.AdminDashboardProcessManager     : AdminJS dashboard already running at http://localhost:8090/admin
+2026-06-10T08:12:03.903+07:00  INFO 24252 --- [BabyOI_BE] [nio-8085-exec-1] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring DispatcherServlet 'dispatcherServlet'
+2026-06-10T08:12:03.903+07:00  INFO 24252 --- [BabyOI_BE] [nio-8085-exec-1] o.s.web.servlet.DispatcherServlet        : Initializing Servlet 'dispatcherServlet'
+2026-06-10T08:12:03.906+07:00  INFO 24252 --- [BabyOI_BE] [nio-8085-exec-1] o.s.web.servlet.DispatcherServlet        : Completed initialization in 3 ms
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD FAILURE
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  02:48 min
+[INFO] Finished at: 2026-06-10T08:13:05+07:00
+[INFO] ------------------------------------------------------------------------
+[ERROR] Failed to execute goal org.springframework.boot:spring-boot-maven-plugin:4.0.6:run (default-cli) on project BabyOI_BE: Process terminated with exit code: -1 -> [Help 1]
+[ERROR] 
+[ERROR] To see the full stack trace of the errors, re-run Maven with the -e switch.
+[ERROR] Re-run Maven using the -X switch to enable full debug logging.
+[ERROR] 
+[ERROR] For more information about the errors and possible solutions, please read the following articles:
+[ERROR] [Help 1] http://cwiki.apache.org/confluence/display/MAVEN/MojoExecutionException

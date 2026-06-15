@@ -271,6 +271,21 @@ function propertiesFor(tableName, components) {
     }
   }
 
+  if (tableName === 'handbook_posts') {
+    return {
+      ...foodProperties,
+      image_url: {
+        label: 'Ảnh cẩm nang',
+        custom: {
+          apiBaseUrl: components.apiBaseUrl || 'http://localhost:8085',
+        },
+        components: components.HandbookImageProperty
+          ? { edit: components.HandbookImageProperty }
+          : undefined,
+      },
+    }
+  }
+
   if (tableName !== 'profile') {
     return foodProperties
   }

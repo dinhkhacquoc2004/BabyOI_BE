@@ -55,3 +55,11 @@ databaseChangeLog:
       file: db/changelog/changes/031_create_vaccine_catalog_schema.sql
   - include:
       file: db/changelog/changes/032_create_baby_routine_entry.sql
+  - include:
+      file: db/changelog/changes/033_improve_notification_flow.sql
+  - include:
+      file: db/changelog/changes/034_enrich_vaccine_notification_content.sql
+  - include:
+      file: db/changelog/changes/035_link_notification_to_vaccine_dose.sql
+  - include:
+      file: db/changelog/changes/036_link_custom_vaccine_notification.sql

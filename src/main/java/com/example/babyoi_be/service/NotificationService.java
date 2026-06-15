@@ -7,11 +7,13 @@ import com.example.babyoi_be.domain.dto.respone.NotificationSettingResponse;
 import com.example.babyoi_be.domain.dto.respone.PageResponse;
 
 public interface NotificationService {
-    PageResponse<NotificationResponse> getNotifications(Integer page, Integer size);
+    PageResponse<NotificationResponse> getNotifications(Integer page, Integer size, boolean archived);
 
     long getUnreadCount();
 
     NotificationResponse markRead(Long id);
+
+    void archive(Long id);
 
     void markAllRead();
 
@@ -25,4 +27,7 @@ public interface NotificationService {
 
     void createNotification(Long userId, String type, String title, String body, String dataJson,
                             Long priority, String sourceType, Long sourceId, boolean push);
+
+    boolean createReminderNotification(Long userId, String type, String title, String body, String dataJson,
+                                       Long priority, String sourceType, Long sourceId, String reminderKey);
 }

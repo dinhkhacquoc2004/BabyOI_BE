@@ -3,6 +3,7 @@ package com.example.babyoi_be.controller;
 import com.example.babyoi_be.domain.dto.request.AdminLoginRequest;
 import com.example.babyoi_be.domain.dto.respone.AdminLoginResponse;
 import com.example.babyoi_be.security.CustomUserDetails;
+import com.example.babyoi_be.security.JwtService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -19,6 +20,7 @@ import org.springframework.web.server.ResponseStatusException;
 public class AdminAuthController {
 
     private final AuthenticationManager authenticationManager;
+    private final JwtService jwtService;
 
     @PostMapping("/login")
     public AdminLoginResponse login(@Valid @RequestBody AdminLoginRequest request) {
@@ -47,6 +49,7 @@ public class AdminAuthController {
                 .email(userDetails.getUsername())
                 .userName(userDetails.getRealName())
                 .role(userDetails.getRoleName())
+                .accessToken(jwtService.generateToken(userDetails.getUser()))
                 .build();
     }
 }

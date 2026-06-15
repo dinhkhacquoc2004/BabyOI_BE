@@ -30,6 +30,10 @@ const IngredientFoodSuggestion = componentLoader.add(
   'IngredientFoodSuggestion',
   fileURLToPath(new URL('./components/IngredientFoodSuggestion.js', import.meta.url)),
 )
+const HandbookImageProperty = componentLoader.add(
+  'HandbookImageProperty',
+  fileURLToPath(new URL('./components/HandbookImageProperty.js', import.meta.url)),
+)
 const ADMINJS_BUNDLE_CACHE_DIR = fileURLToPath(new URL('../.adminjs', import.meta.url))
 
 AdminJS.registerAdapter({
@@ -46,6 +50,7 @@ async function start() {
     ProfileSegmentProperty,
     FoodLibraryForm,
     IngredientFoodSuggestion,
+    HandbookImageProperty,
     connectionString: connectionConfig.connectionString,
     apiBaseUrl: SPRING_API_BASE_URL,
   })

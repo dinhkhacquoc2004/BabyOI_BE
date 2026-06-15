@@ -50,12 +50,15 @@ public class NotificationServiceImpl implements NotificationService {
     private final Executor applicationTaskExecutor;
 
     @Override
-    public PageResponse<NotificationResponse> getNotifications(Integer page, Integer size) {
+    public PageResponse<NotificationResponse> getNotifications(Integer page, Integer size, boolean archived) {
         Long userId = getCurrentUserId();
         int pageIndex = page != null && page >= 0 ? page : 0;
         int pageSize = size != null && size > 0 ? Math.min(size, 50) : 20;
-        Page<Notification> notifications = notificationRepository
-                .findByUserIdAndStatusNotOrderByCreatedAtDesc(userId, Constants.TABLE_STATUS.DELETED, PageRequest.of(pageIndex, pageSize));
+        Page<Notification> notifications = archived
+                ? notificationRepository.findByUserIdAndArchivedAtIsNotNullAndStatusNotOrderByCreatedAtDesc(
+                        userId, Constants.TABLE_STATUS.DELETED, PageRequest.of(pageIndex, pageSize))
+                : notificationRepository.findByUserIdAndArchivedAtIsNullAndStatusNotOrderByCreatedAtDesc(
+                        userId, Constants.TABLE_STATUS.DELETED, PageRequest.of(pageIndex, pageSize));
 
         return PageResponse.<NotificationResponse>builder()
                 .content(notifications.getContent().stream().map(this::mapToResponse).toList())
@@ -89,19 +92,27 @@ public class NotificationServiceImpl implements NotificationService {
 
     @Override
     @Transactional
-    public void markAllRead() {
-        Long userId = getCurrentUserId();
-        List<Notification> notifications = notificationRepository
-                .findByUserIdAndStatusNotOrderByCreatedAtDesc(userId, Constants.TABLE_STATUS.DELETED, PageRequest.of(0, 500))
-                .getContent();
+    public void archive(Long id) {
+        Notification notification = notificationRepository.findByIdAndUserId(id, getCurrentUserId())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Notification not found"));
         LocalDateTime now = LocalDateTime.now();
-        notifications.stream()
-                .filter(item -> Constants.TABLE_STATUS.PENDING.equals(item.getStatus()))
-                .forEach(item -> {
-                    item.setStatus(Constants.TABLE_STATUS.SUCCESS);
-                    item.setReadAt(now);
-                });
-        notificationRepository.saveAll(notifications);
+        notification.setArchivedAt(now);
+        if (notification.getReadAt() == null) {
+            notification.setReadAt(now);
+            notification.setStatus(Constants.TABLE_STATUS.SUCCESS);
+        }
+        notificationRepository.save(notification);
+    }
+
+    @Override
+    @Transactional
+    public void markAllRead() {
+        notificationRepository.markAllRead(
+                getCurrentUserId(),
+                Constants.TABLE_STATUS.PENDING,
+                Constants.TABLE_STATUS.SUCCESS,
+                LocalDateTime.now()
+        );
     }
 
     @Override
@@ -182,6 +193,29 @@ public class NotificationServiceImpl implements NotificationService {
         if (push && shouldSendPush(user.getId(), type)) {
             schedulePush(user.getId(), notification.getId());
         }
+    }
+
+    @Override
+    @Transactional
+    public boolean createReminderNotification(Long userId, String type, String title, String body, String dataJson,
+                                              Long priority, String sourceType, Long sourceId, String reminderKey) {
+        if (!usersRepository.existsById(userId)) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found");
+        }
+        int inserted = notificationRepository.insertReminder(
+                userId, type, title, body, dataJson,
+                priority != null ? priority : Constants.NOTIFICATION_PRIORITY.NORMAL,
+                sourceType, sourceId, reminderKey, Constants.TABLE_STATUS.PENDING
+        );
+        if (inserted == 0) {
+            return false;
+        }
+        Notification notification = notificationRepository.findByReminderKey(reminderKey)
+                .orElseThrow(() -> new IllegalStateException("Created reminder not found"));
+        if (shouldSendPush(userId, type)) {
+            schedulePush(userId, notification.getId());
+        }
+        return true;
     }
 
     private void schedulePush(Long userId, Long notificationId) {
@@ -300,6 +334,7 @@ public class NotificationServiceImpl implements NotificationService {
                 .status(notification.getStatus())
                 .read(Constants.TABLE_STATUS.SUCCESS.equals(notification.getStatus()))
                 .readAt(notification.getReadAt())
+                .archivedAt(notification.getArchivedAt())
                 .createdAt(notification.getCreatedAt())
                 .build();
     }

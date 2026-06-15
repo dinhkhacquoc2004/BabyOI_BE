@@ -22,5 +22,6 @@ public class NotificationResponse {
     private Long status;
     private Boolean read;
     private LocalDateTime readAt;
+    private LocalDateTime archivedAt;
     private LocalDateTime createdAt;
 }

@@ -23,8 +23,9 @@ public class NotificationController {
     @GetMapping
     public PageResponse<NotificationResponse> getNotifications(
             @RequestParam(defaultValue = "0") Integer page,
-            @RequestParam(defaultValue = "20") Integer size) {
-        return notificationService.getNotifications(page, size);
+            @RequestParam(defaultValue = "20") Integer size,
+            @RequestParam(defaultValue = "false") boolean archived) {
+        return notificationService.getNotifications(page, size, archived);
     }
 
     @GetMapping("/unread-count")
@@ -35,6 +36,12 @@ public class NotificationController {
     @PatchMapping("/{id}/read")
     public NotificationResponse markRead(@PathVariable Long id) {
         return notificationService.markRead(id);
+    }
+
+    @PatchMapping("/{id}/archive")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void archive(@PathVariable Long id) {
+        notificationService.archive(id);
     }
 
     @PatchMapping("/read-all")

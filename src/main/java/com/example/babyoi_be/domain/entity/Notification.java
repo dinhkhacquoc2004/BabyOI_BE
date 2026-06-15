@@ -48,6 +48,12 @@ public class Notification {
     @Column(name = "read_at")
     private LocalDateTime readAt;
 
+    @Column(name = "archived_at")
+    private LocalDateTime archivedAt;
+
+    @Column(name = "reminder_key", length = 160, unique = true)
+    private String reminderKey;
+
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
 }

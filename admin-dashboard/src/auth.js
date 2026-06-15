@@ -26,6 +26,9 @@ export async function authenticate(username, password) {
       email: admin.email,
       title: admin.userName || admin.email,
       role: admin.role,
+      _auth: {
+        accessToken: admin.accessToken,
+      },
     }
   } catch (error) {
     console.warn('Spring admin authentication failed:', error.message)

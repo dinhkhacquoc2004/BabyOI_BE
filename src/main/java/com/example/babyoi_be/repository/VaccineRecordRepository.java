@@ -25,4 +25,6 @@ public interface VaccineRecordRepository extends JpaRepository<VaccineRecord, Lo
     boolean existsByProfileIdAndVaccineIdAndStatusInAndIdNot(Long profileId, Long vaccineId, Collection<Long> statuses, Long id);
     boolean existsByProfileIdAndVaccineIdAndInjectionDateAndStatusIn(Long profileId, Long vaccineId, LocalDate injectionDate, Collection<Long> statuses);
     boolean existsByProfileIdAndVaccineIdAndInjectionDateAndStatusInAndIdNot(Long profileId, Long vaccineId, LocalDate injectionDate, Collection<Long> statuses, Long id);
+
+    List<VaccineRecord> findByInjectionDateAndStatus(LocalDate injectionDate, Long status);
 }
