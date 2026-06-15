@@ -24,6 +24,7 @@ public interface Constants {
         }
 
         public static final String VACCINE_REMINDER = "VACCINE_REMINDER";
+        public static final String HEALTH_REMINDER = "HEALTH_REMINDER";
         public static final String SYSTEM = "SYSTEM";
     }
 
@@ -104,4 +105,3 @@ public interface Constants {
         public static final String BABY_19_TO_24_MONTHS_DEVELOPMENT = "FOR_BABY_19_24_MONTHS_DEVELOPMENT";
     }
 }
-

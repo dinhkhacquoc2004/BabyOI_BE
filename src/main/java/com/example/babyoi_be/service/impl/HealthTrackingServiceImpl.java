@@ -14,6 +14,7 @@ import com.example.babyoi_be.repository.IllnessEventRepository;
 import com.example.babyoi_be.repository.ProfileRepository;
 import com.example.babyoi_be.security.CustomUserDetails;
 import com.example.babyoi_be.service.HealthTrackingService;
+import com.example.babyoi_be.service.NotificationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -39,6 +40,7 @@ public class HealthTrackingServiceImpl implements HealthTrackingService {
     private final HealthRecordRepository healthRecordRepository;
     private final IllnessEventRepository illnessEventRepository;
     private final ProfileRepository profileRepository;
+    private final NotificationService notificationService;
 
     @Override
     @Transactional
@@ -57,7 +59,9 @@ public class HealthTrackingServiceImpl implements HealthTrackingService {
                 .updatedAt(now)
                 .build();
 
-        return mapHealthRecord(healthRecordRepository.save(record));
+        HealthRecord savedRecord = healthRecordRepository.save(record);
+        createHealthRecordNotification(savedRecord, false);
+        return mapHealthRecord(savedRecord);
     }
 
     @Override
@@ -75,7 +79,9 @@ public class HealthTrackingServiceImpl implements HealthTrackingService {
         record.setRecordDate(request.getRecordDate());
         record.setUpdatedAt(LocalDateTime.now());
 
-        return mapHealthRecord(healthRecordRepository.save(record));
+        HealthRecord savedRecord = healthRecordRepository.save(record);
+        createHealthRecordNotification(savedRecord, true);
+        return mapHealthRecord(savedRecord);
     }
 
     @Override
@@ -155,7 +161,9 @@ public class HealthTrackingServiceImpl implements HealthTrackingService {
                 .updatedAt(now)
                 .build();
 
-        return mapIllnessEvent(illnessEventRepository.save(event));
+        IllnessEvent savedEvent = illnessEventRepository.save(event);
+        createIllnessEventNotification(savedEvent, false);
+        return mapIllnessEvent(savedEvent);
     }
 
     @Override
@@ -174,7 +182,9 @@ public class HealthTrackingServiceImpl implements HealthTrackingService {
         event.setDescription(normalizeText(request.getDescription()));
         event.setUpdatedAt(LocalDateTime.now());
 
-        return mapIllnessEvent(illnessEventRepository.save(event));
+        IllnessEvent savedEvent = illnessEventRepository.save(event);
+        createIllnessEventNotification(savedEvent, true);
+        return mapIllnessEvent(savedEvent);
     }
 
     @Override
@@ -339,6 +349,100 @@ public class HealthTrackingServiceImpl implements HealthTrackingService {
 
     private String normalizeText(String text) {
         return text == null || text.isBlank() ? null : text.trim();
+    }
+
+    private void createHealthRecordNotification(HealthRecord record, boolean updated) {
+        Profile profile = record.getProfile();
+        if (profile == null || profile.getUser() == null) {
+            return;
+        }
+
+        String profileName = profile.getName() != null && !profile.getName().isBlank() ? profile.getName().trim() : "bé";
+        String title = updated ? "Đã cập nhật chỉ số sức khỏe" : "Đã ghi nhận chỉ số sức khỏe";
+        String body = buildHealthRecordBody(profileName, record);
+        String dataJson = String.format(
+                "{\"route\":\"/phattrien/health-detail?month=%d&year=%d\",\"screen\":\"HealthDetail\",\"recordId\":%d,\"profileId\":%d,\"month\":%d,\"year\":%d}",
+                record.getRecordDate().getMonthValue(),
+                record.getRecordDate().getYear(),
+                record.getId(),
+                profile.getId(),
+                record.getRecordDate().getMonthValue(),
+                record.getRecordDate().getYear()
+        );
+
+        notificationService.createNotification(
+                profile.getUser().getId(),
+                Constants.NOTIFICATION_TYPE.HEALTH_REMINDER,
+                title,
+                body,
+                dataJson,
+                Constants.NOTIFICATION_PRIORITY.NORMAL,
+                "HEALTH_RECORD",
+                record.getId(),
+                true
+        );
+    }
+
+    private String buildHealthRecordBody(String profileName, HealthRecord record) {
+        List<String> metrics = new java.util.ArrayList<>();
+        if (record.getWeight() != null) {
+            metrics.add("cân nặng " + formatNumber(record.getWeight()) + "kg");
+        }
+        if (record.getHeight() != null) {
+            metrics.add("chiều cao " + formatNumber(record.getHeight()) + "cm");
+        }
+        if (record.getBmi() != null) {
+            metrics.add("BMI " + formatNumber(record.getBmi()));
+        }
+
+        if (metrics.isEmpty()) {
+            return "Hồ sơ sức khỏe của bé " + profileName + " vừa được cập nhật ngày " + record.getRecordDate() + ".";
+        }
+        return "Bé " + profileName + " vừa được cập nhật " + String.join(", ", metrics) + " ngày " + record.getRecordDate() + ".";
+    }
+
+    private void createIllnessEventNotification(IllnessEvent event, boolean updated) {
+        Profile profile = event.getProfile();
+        if (profile == null || profile.getUser() == null) {
+            return;
+        }
+
+        String profileName = profile.getName() != null && !profile.getName().isBlank() ? profile.getName().trim() : "bé";
+        String statusLabel = resolveIllnessStatusLabel(event.getStatus());
+        String title = updated ? "Đã cập nhật hồ sơ bệnh" : "Đã thêm hồ sơ bệnh";
+        String body = "Bé " + profileName + " có ghi nhận " + event.getIllnessType()
+                + " từ " + event.getStartAt()
+                + ", mức độ: " + statusLabel + ".";
+        String dataJson = String.format(
+                "{\"route\":\"/phattrien/illness-history\",\"screen\":\"IllnessHistory\",\"eventId\":%d,\"profileId\":%d}",
+                event.getId(),
+                profile.getId()
+        );
+
+        notificationService.createNotification(
+                profile.getUser().getId(),
+                Constants.NOTIFICATION_TYPE.HEALTH_REMINDER,
+                title,
+                body,
+                dataJson,
+                ILLNESS_STATUS_ATTENTION == (event.getStatus() == null ? ILLNESS_STATUS_NORMAL : event.getStatus())
+                        ? Constants.NOTIFICATION_PRIORITY.HIGH
+                        : Constants.NOTIFICATION_PRIORITY.NORMAL,
+                "ILLNESS_EVENT",
+                event.getId(),
+                true
+        );
+    }
+
+    private String formatNumber(Double value) {
+        if (value == null) {
+            return "";
+        }
+        double rounded = roundOneDecimal(value);
+        if (rounded == Math.rint(rounded)) {
+            return String.valueOf((long) rounded);
+        }
+        return String.valueOf(rounded);
     }
 
     private void validateCurrentUser(Long userId) {

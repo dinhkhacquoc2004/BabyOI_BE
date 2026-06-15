@@ -209,6 +209,9 @@ public class NotificationServiceImpl implements NotificationService {
         if (Constants.NOTIFICATION_TYPE.VACCINE_REMINDER.equals(type)) {
             return Boolean.TRUE.equals(setting.getVaccineEnabled());
         }
+        if (Constants.NOTIFICATION_TYPE.HEALTH_REMINDER.equals(type)) {
+            return Boolean.TRUE.equals(setting.getSystemEnabled());
+        }
         return Boolean.TRUE.equals(setting.getSystemEnabled());
     }
 

@@ -53,3 +53,5 @@ databaseChangeLog:
       file: db/changelog/changes/030_create_diary_entry.sql
   - include:
       file: db/changelog/changes/031_create_vaccine_catalog_schema.sql
+  - include:
+      file: db/changelog/changes/032_create_baby_routine_entry.sql
