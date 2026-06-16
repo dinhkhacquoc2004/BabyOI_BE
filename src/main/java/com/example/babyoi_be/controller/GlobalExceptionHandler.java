@@ -14,6 +14,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.multipart.MultipartException;
+import org.springframework.web.multipart.support.MissingServletRequestPartException;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.LinkedHashMap;
@@ -70,6 +71,21 @@ public class GlobalExceptionHandler extends CommonController {
                 RETURN_CODE_BAD_REQUEST,
                 HttpStatus.BAD_REQUEST,
                 null
+        );
+    }
+
+    @ExceptionHandler(MissingServletRequestPartException.class)
+    public ResponseEntity<ResponseMessage<Object>> handleMissingServletRequestPart(MissingServletRequestPartException exception, HttpServletRequest request) {
+        log.error("Missing multipart part at URI: {} - Part: {}", request.getRequestURI(), exception.getRequestPartName(), exception);
+
+        Map<String, String> errors = new LinkedHashMap<>();
+        errors.put(exception.getRequestPartName(), "File is required");
+
+        return toExceptionResult(
+                "Thiếu file ảnh cần tải lên",
+                RETURN_CODE_BAD_REQUEST,
+                HttpStatus.BAD_REQUEST,
+                errors
         );
     }
 
