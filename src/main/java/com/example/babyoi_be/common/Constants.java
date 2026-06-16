@@ -25,6 +25,7 @@ public interface Constants {
 
         public static final String VACCINE_REMINDER = "VACCINE_REMINDER";
         public static final String HEALTH_REMINDER = "HEALTH_REMINDER";
+        public static final String HANDBOOK_COMMENT_REPLY = "HANDBOOK_COMMENT_REPLY";
         public static final String SYSTEM = "SYSTEM";
     }
 

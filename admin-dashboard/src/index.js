@@ -34,6 +34,18 @@ const HandbookImageProperty = componentLoader.add(
   'HandbookImageProperty',
   fileURLToPath(new URL('./components/HandbookImageProperty.js', import.meta.url)),
 )
+const HandbookListProperty = componentLoader.add(
+  'HandbookListProperty',
+  fileURLToPath(new URL('./components/HandbookListProperty.js', import.meta.url)),
+)
+const HandbookReplyAction = componentLoader.add(
+  'HandbookReplyAction',
+  fileURLToPath(new URL('./components/HandbookReplyAction.js', import.meta.url)),
+)
+const HandbookCommentsRedirectAction = componentLoader.add(
+  'HandbookCommentsRedirectAction',
+  fileURLToPath(new URL('./components/HandbookCommentsRedirectAction.js', import.meta.url)),
+)
 const ADMINJS_BUNDLE_CACHE_DIR = fileURLToPath(new URL('../.adminjs', import.meta.url))
 
 AdminJS.registerAdapter({
@@ -51,6 +63,9 @@ async function start() {
     FoodLibraryForm,
     IngredientFoodSuggestion,
     HandbookImageProperty,
+    HandbookListProperty,
+    HandbookReplyAction,
+    HandbookCommentsRedirectAction,
     connectionString: connectionConfig.connectionString,
     apiBaseUrl: SPRING_API_BASE_URL,
   })

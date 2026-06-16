@@ -246,6 +246,9 @@ public class NotificationServiceImpl implements NotificationService {
         if (Constants.NOTIFICATION_TYPE.HEALTH_REMINDER.equals(type)) {
             return Boolean.TRUE.equals(setting.getSystemEnabled());
         }
+        if (Constants.NOTIFICATION_TYPE.HANDBOOK_COMMENT_REPLY.equals(type)) {
+            return Boolean.TRUE.equals(setting.getChatEnabled());
+        }
         return Boolean.TRUE.equals(setting.getSystemEnabled());
     }
 

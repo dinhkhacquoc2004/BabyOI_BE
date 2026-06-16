@@ -3,6 +3,7 @@ import { camNangSection } from './camnang.js'
 import { danhMucSection } from './danhmuc.js'
 import { dinhDuongSection } from './dinhduong.js'
 import { foodLibraryFullFormActions } from './food-library-action.js'
+import { handbookCommentActions, handbookPostActions } from './handbook-actions.js'
 import { nguoiDungSection } from './nguoidung.js'
 import { tiemChungSection } from './tiemchung.js'
 
@@ -46,6 +47,19 @@ const FOOD_ADVICE_FOR_OPTIONS = [
   { value: 'FOR_BABY_9_11_MONTHS_DEVELOPMENT', label: 'Baby 9-11 months development' },
   { value: 'FOR_BABY_12_18_MONTHS_DEVELOPMENT', label: 'Baby 12-18 months development' },
   { value: 'FOR_BABY_19_24_MONTHS_DEVELOPMENT', label: 'Baby 19-24 months development' },
+]
+
+const HANDBOOK_CATEGORY_OPTIONS = [
+  { value: 'Dinh dưỡng', label: 'Dinh dưỡng' },
+  { value: 'Sức khỏe', label: 'Sức khỏe' },
+  { value: 'Giáo dục', label: 'Giáo dục' },
+  { value: 'Tiêm chủng', label: 'Tiêm chủng' },
+  { value: 'Quảng cáo', label: 'Quảng cáo' },
+]
+
+const TABLE_STATUS_OPTIONS = [
+  { value: -4, label: 'DELETED (-4)' },
+  { value: 2, label: 'ACTIVE (2)' },
 ]
 
 const TITLE_PROPERTIES = {
@@ -126,6 +140,8 @@ const FOOD_LIST_PROPERTIES = {
   food_recommendation: ['id', 'food_id', 'status'],
   favorite_food: ['id', 'profile_id', 'user_id', 'food_libarary_id'],
   restricted_food: ['id', 'profile_id', 'user_id', 'food_libarary_id'],
+  handbook_posts: ['id', 'category', 'title', 'snippet', 'author_name', 'published_at', 'status'],
+  handbook_comments: ['id', 'post_id', 'parent_id', 'user_name', 'content', 'admin_reply', 'created_at', 'status'],
 }
 
 const REFERENCE_PROPERTIES = {
@@ -232,6 +248,10 @@ function resourceOptions(section, tableName, components) {
     options.listProperties = FOOD_LIST_PROPERTIES[tableName]
   }
 
+  if (tableName === 'handbook_comments') {
+    options.sort = { sortBy: 'created_at', direction: 'desc' }
+  }
+
   return options
 }
 
@@ -242,6 +262,7 @@ function titlePropertyFor(tableName) {
 function propertiesFor(tableName, components) {
   const referenceProperties = referencePropertiesFor(tableName)
   const foodProperties = mergePropertyOptions(referenceProperties, FOOD_PROPERTY_OPTIONS[tableName])
+  const handbookListProperty = components.HandbookListProperty
   if (tableName === 'food_library') {
     foodProperties.function_code = {
       ...foodProperties.function_code,
@@ -274,14 +295,84 @@ function propertiesFor(tableName, components) {
   if (tableName === 'handbook_posts') {
     return {
       ...foodProperties,
+      category: {
+        ...foodProperties.category,
+        label: 'Danh mục',
+        availableValues: HANDBOOK_CATEGORY_OPTIONS,
+        components: handbookListProperty ? { list: handbookListProperty } : undefined,
+      },
+      title: {
+        label: 'Tiêu đề',
+        components: handbookListProperty ? { list: handbookListProperty } : undefined,
+      },
+      snippet: {
+        label: 'Mô tả ngắn',
+        components: handbookListProperty ? { list: handbookListProperty } : undefined,
+      },
+      content: {
+        label: 'Nội dung',
+        isVisible: { list: false, filter: false, show: true, edit: true },
+        components: handbookListProperty ? { list: handbookListProperty } : undefined,
+      },
+      author_name: {
+        label: 'Tác giả',
+        components: handbookListProperty ? { list: handbookListProperty } : undefined,
+      },
+      author_role: {
+        label: 'Vai trò tác giả',
+        components: handbookListProperty ? { list: handbookListProperty } : undefined,
+      },
+      status: {
+        ...foodProperties.status,
+        label: 'Trạng thái',
+        availableValues: TABLE_STATUS_OPTIONS,
+        components: handbookListProperty ? { list: handbookListProperty } : undefined,
+      },
       image_url: {
         label: 'Ảnh cẩm nang',
         custom: {
           apiBaseUrl: components.apiBaseUrl || 'http://localhost:8085',
         },
         components: components.HandbookImageProperty
-          ? { edit: components.HandbookImageProperty }
+          ? {
+            edit: components.HandbookImageProperty,
+            ...(handbookListProperty ? { list: handbookListProperty } : {}),
+          }
           : undefined,
+      },
+    }
+  }
+
+  if (tableName === 'handbook_comments') {
+    return {
+      ...foodProperties,
+      post_id: {
+        ...foodProperties.post_id,
+        label: 'Bài viết',
+        components: handbookListProperty ? { list: handbookListProperty } : undefined,
+      },
+      parent_id: {
+        ...foodProperties.parent_id,
+        label: 'Luồng',
+        components: handbookListProperty ? { list: handbookListProperty } : undefined,
+      },
+      user_name: {
+        label: 'Người bình luận',
+        components: handbookListProperty ? { list: handbookListProperty } : undefined,
+      },
+      content: {
+        label: 'Bình luận',
+        components: handbookListProperty ? { list: handbookListProperty } : undefined,
+      },
+      admin_reply: {
+        label: 'Loại',
+        components: handbookListProperty ? { list: handbookListProperty } : undefined,
+      },
+      status: {
+        ...foodProperties.status,
+        label: 'Trạng thái',
+        availableValues: TABLE_STATUS_OPTIONS,
+        components: handbookListProperty ? { list: handbookListProperty } : undefined,
       },
     }
   }
@@ -356,6 +447,20 @@ function actionsFor(tableName, components) {
         components.connectionString,
         components.apiBaseUrl,
       ),
+    }
+  }
+
+  if (tableName === 'handbook_posts') {
+    return {
+      ...actions,
+      ...handbookPostActions(components.HandbookCommentsRedirectAction),
+    }
+  }
+
+  if (tableName === 'handbook_comments') {
+    return {
+      ...actions,
+      ...handbookCommentActions(components.HandbookReplyAction, components.connectionString),
     }
   }
 
