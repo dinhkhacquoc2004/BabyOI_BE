@@ -13,6 +13,7 @@ public interface ProfileRepository extends JpaRepository<Profile, Long> {
     List<Profile> findByUserId(Long userId);
     List<Profile> findByUserIdAndStatus(Long userId, Long status);
     List<Profile> findByProfileType(String profileType);
+    List<Profile> findByProfileTypeAndStatus(String profileType, Long status);
     
     long countByUserIdAndStatusIn(Long userId, Collection<Long> statuses);
     long countByUserIdAndProfileTypeAndStatus(Long userId, String profileType, Long status);

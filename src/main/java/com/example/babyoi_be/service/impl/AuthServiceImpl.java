@@ -13,10 +13,15 @@ import com.example.babyoi_be.domain.dto.UserProfileResponse;
 import com.example.babyoi_be.domain.dto.VerifyOtpRequest;
 import com.example.babyoi_be.domain.entity.AuthOtp;
 import com.example.babyoi_be.domain.entity.AuthRefreshToken;
+import com.example.babyoi_be.domain.entity.Profile;
 import com.example.babyoi_be.domain.entity.Roles;
 import com.example.babyoi_be.domain.entity.Users;
 import com.example.babyoi_be.repository.AuthOtpRepository;
 import com.example.babyoi_be.repository.AuthRefreshTokenRepository;
+import com.example.babyoi_be.repository.DeviceTokenRepository;
+import com.example.babyoi_be.repository.NotificationRepository;
+import com.example.babyoi_be.repository.NotificationSettingRepository;
+import com.example.babyoi_be.repository.ProfileRepository;
 import com.example.babyoi_be.repository.RolesRepository;
 import com.example.babyoi_be.repository.UsersRepository;
 import com.example.babyoi_be.security.CustomUserDetails;
@@ -64,6 +69,10 @@ public class AuthServiceImpl implements AuthService {
     private final RolesRepository rolesRepository;
     private final AuthOtpRepository authOtpRepository;
     private final AuthRefreshTokenRepository authRefreshTokenRepository;
+    private final ProfileRepository profileRepository;
+    private final NotificationRepository notificationRepository;
+    private final NotificationSettingRepository notificationSettingRepository;
+    private final DeviceTokenRepository deviceTokenRepository;
     private final PasswordEncoder passwordEncoder;
     private final AuthenticationManager authenticationManager;
     private final JwtService jwtService;
@@ -289,6 +298,53 @@ public class AuthServiceImpl implements AuthService {
     @Override
     @Transactional(readOnly = true)
     public UserProfileResponse getCurrentUser() {
+        Users user = getAuthenticatedUser();
+
+        return UserProfileResponse.builder()
+                .id(user.getId())
+                .userName(user.getUserName())
+                .email(user.getEmail())
+                .role(user.getRoles() != null ? user.getRoles().getName() : null)
+                .build();
+    }
+
+    @Override
+    @Transactional
+    public void deleteCurrentAccount() {
+        Users user = getAuthenticatedUser();
+        Long userId = user.getId();
+        String originalEmail = user.getEmail();
+        LocalDateTime now = LocalDateTime.now();
+
+        authRefreshTokenRepository.revokeAllActiveByUserId(userId, now);
+        authOtpRepository.deleteByEmail(originalEmail);
+        deviceTokenRepository.deleteByUserId(userId);
+        notificationSettingRepository.deleteByUserId(userId);
+        notificationRepository.deleteByUserId(userId);
+
+        for (Profile profile : profileRepository.findByUserId(userId)) {
+            profile.setName("Deleted profile");
+            profile.setDateOfBirth(null);
+            profile.setImageUrl(null);
+            profile.setStatus(Constants.TABLE_STATUS.DELETED);
+            profile.setUpdatedAt(now);
+            profile.setUpdatedBy("account-deletion");
+        }
+
+        String deletedIdentity = "deleted-" + userId + "-" + UUID.randomUUID();
+        user.setUserName(deletedIdentity);
+        user.setEmail(deletedIdentity + "@deleted.babyoi.local");
+        user.setPasswordHash(passwordEncoder.encode(UUID.randomUUID().toString()));
+        user.setEmailVerified(false);
+        user.setSocialProvider(null);
+        user.setSocialProviderId(null);
+        user.setStatus(Constants.TABLE_STATUS.DELETED);
+        usersRepository.save(user);
+
+        SecurityContextHolder.clearContext();
+    }
+
+    private Users getAuthenticatedUser() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         Object principal = authentication != null ? authentication.getPrincipal() : null;
 
@@ -299,12 +355,11 @@ public class AuthServiceImpl implements AuthService {
         Users user = usersRepository.findByEmail(userDetails.getUsername())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "auth.unauthorized"));
 
-        return UserProfileResponse.builder()
-                .id(user.getId())
-                .userName(user.getUserName())
-                .email(user.getEmail())
-                .role(user.getRoles() != null ? user.getRoles().getName() : null)
-                .build();
+        if (!Constants.TABLE_STATUS.ACTIVE.equals(user.getStatus())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "auth.login.account-disabled");
+        }
+
+        return user;
     }
 
     private Roles createDefaultRole() {
