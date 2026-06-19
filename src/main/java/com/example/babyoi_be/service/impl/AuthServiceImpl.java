@@ -26,6 +26,7 @@ import com.example.babyoi_be.repository.RolesRepository;
 import com.example.babyoi_be.repository.UsersRepository;
 import com.example.babyoi_be.security.CustomUserDetails;
 import com.example.babyoi_be.security.JwtService;
+import com.example.babyoi_be.exception.EmailVerificationRequiredException;
 import com.example.babyoi_be.service.AuthService;
 import com.example.babyoi_be.service.EmailNotificationService;
 import lombok.RequiredArgsConstructor;
@@ -119,16 +120,11 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
-    @Transactional
+    @Transactional(noRollbackFor = EmailVerificationRequiredException.class)
     public AuthResponse login(LoginRequest request) {
         String normalizedEmail = normalizeEmail(request.getEmail());
         Users user = usersRepository.findByEmail(normalizedEmail)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "auth.login.invalid-credentials"));
-
-        if (!Boolean.TRUE.equals(user.getEmailVerified())) {
-            createAndSendOtp(normalizedEmail, AuthOtp.Purpose.REGISTER_VERIFY);
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Vui lòng xác nhận email trước khi đăng nhập");
-        }
 
         try {
             authenticationManager.authenticate(
@@ -140,11 +136,16 @@ public class AuthServiceImpl implements AuthService {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "auth.login.account-disabled");
         }
 
+        if (!Boolean.TRUE.equals(user.getEmailVerified())) {
+            createAndSendOtp(normalizedEmail, AuthOtp.Purpose.REGISTER_VERIFY);
+            throw new EmailVerificationRequiredException(normalizedEmail, OTP_EXPIRES_IN_MINUTES);
+        }
+
         return buildAuthResponse(user);
     }
 
     @Override
-    @Transactional
+    @Transactional(noRollbackFor = EmailVerificationRequiredException.class)
     public AuthResponse issueToken(LoginRequest request) {
         return login(request);
     }

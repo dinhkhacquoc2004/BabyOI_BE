@@ -2,6 +2,7 @@ package com.example.babyoi_be.controller;
 
 import com.example.babyoi_be.common.utils.MessageUtils;
 import com.example.babyoi_be.domain.message.ResponseMessage;
+import com.example.babyoi_be.exception.EmailVerificationRequiredException;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -59,6 +60,27 @@ public class GlobalExceptionHandler extends CommonController {
                 mapStatusCode(status),
                 status,
                 null
+        );
+    }
+
+    @ExceptionHandler(EmailVerificationRequiredException.class)
+    public ResponseEntity<ResponseMessage<Object>> handleEmailVerificationRequired(
+            EmailVerificationRequiredException exception,
+            HttpServletRequest request
+    ) {
+        log.warn("Email verification required at URI: {} - Email: {}", request.getRequestURI(), exception.getEmail());
+
+        Map<String, String> errors = new LinkedHashMap<>();
+        errors.put("code", EmailVerificationRequiredException.ERROR_CODE);
+        errors.put("action", EmailVerificationRequiredException.ACTION);
+        errors.put("email", exception.getEmail());
+        errors.put("expiresInMinutes", String.valueOf(exception.getExpiresInMinutes()));
+
+        return toExceptionResult(
+                messageUtils.getMessage(exception.getMessage()),
+                RETURN_CODE_FORBIDDEN,
+                HttpStatus.FORBIDDEN,
+                errors
         );
     }
 

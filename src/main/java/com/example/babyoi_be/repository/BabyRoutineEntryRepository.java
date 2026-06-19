@@ -16,6 +16,11 @@ public interface BabyRoutineEntryRepository extends JpaRepository<BabyRoutineEnt
             Long status
     );
 
+    List<BabyRoutineEntry> findByProfile_IdAndRoutineDateOrderByPlannedTimeAscIdAsc(
+            Long profileId,
+            LocalDate routineDate
+    );
+
     List<BabyRoutineEntry> findByRoutineDateBeforeAndStatusAndCompletedFalseOrderByRoutineDateAscPlannedTimeAscIdAsc(
             LocalDate routineDate,
             Long status

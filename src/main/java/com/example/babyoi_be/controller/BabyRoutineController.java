@@ -1,6 +1,7 @@
 package com.example.babyoi_be.controller;
 
 import com.example.babyoi_be.domain.dto.request.BabyRoutineEntryUpdateRequest;
+import com.example.babyoi_be.domain.dto.request.BabyRoutineEntryCreateRequest;
 import com.example.babyoi_be.domain.dto.respone.BabyRoutineAiAnalysisResponse;
 import com.example.babyoi_be.domain.dto.respone.BabyRoutineDayResponse;
 import com.example.babyoi_be.domain.dto.respone.BabyRoutineEntryResponse;
@@ -8,6 +9,7 @@ import com.example.babyoi_be.domain.dto.respone.BabyRoutineHistoryResponse;
 import com.example.babyoi_be.service.BabyRoutineService;
 import jakarta.validation.Valid;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
@@ -55,12 +57,26 @@ public class BabyRoutineController {
         return babyRoutineService.applyNextDayRoutineAdjustment(profileId, date != null ? date : LocalDate.now(APP_ZONE));
     }
 
+    @PostMapping("/profile/{profileId}/entries")
+    public BabyRoutineEntryResponse createRoutineEntry(
+            @PathVariable Long profileId,
+            @Valid @RequestBody BabyRoutineEntryCreateRequest request
+    ) {
+        return babyRoutineService.createRoutineEntry(profileId, request);
+    }
+
     @PatchMapping("/entries/{entryId}")
     public BabyRoutineEntryResponse updateRoutineEntry(
             @PathVariable Long entryId,
             @Valid @RequestBody BabyRoutineEntryUpdateRequest request
     ) {
         return babyRoutineService.updateRoutineEntry(entryId, request);
+    }
+
+    @DeleteMapping("/entries/{entryId}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void deleteRoutineEntry(@PathVariable Long entryId) {
+        babyRoutineService.deleteRoutineEntry(entryId);
     }
 
     @PostMapping("/entries/{entryId}/timeline-update")

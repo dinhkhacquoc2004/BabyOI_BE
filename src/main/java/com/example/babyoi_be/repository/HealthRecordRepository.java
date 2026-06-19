@@ -15,4 +15,8 @@ public interface HealthRecordRepository extends JpaRepository<HealthRecord, Long
     List<HealthRecord> findByProfileIdAndRecordDateBetweenOrderByRecordDateAsc(Long profileId, LocalDate fromDate, LocalDate toDate);
 
     Optional<HealthRecord> findFirstByProfileIdAndRecordDateBetweenOrderByRecordDateDesc(Long profileId, LocalDate fromDate, LocalDate toDate);
+
+    Optional<HealthRecord> findFirstByProfileIdOrderByRecordDateDesc(Long profileId);
+
+    List<HealthRecord> findTop2ByProfileIdOrderByRecordDateDesc(Long profileId);
 }

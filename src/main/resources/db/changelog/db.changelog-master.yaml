@@ -63,3 +63,7 @@ databaseChangeLog:
       file: db/changelog/changes/035_link_notification_to_vaccine_dose.sql
   - include:
       file: db/changelog/changes/036_link_custom_vaccine_notification.sql
+  - include:
+      file: db/changelog/changes/037_add_health_record_tdee.sql
+  - include:
+      file: db/changelog/changes/038_create_nutrition_plan.sql

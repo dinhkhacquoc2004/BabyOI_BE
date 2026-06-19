@@ -1,6 +1,7 @@
 package com.example.babyoi_be.service.impl;
 
 import com.example.babyoi_be.common.Constants;
+import com.example.babyoi_be.domain.dto.request.BabyRoutineEntryCreateRequest;
 import com.example.babyoi_be.domain.dto.request.BabyRoutineEntryUpdateRequest;
 import com.example.babyoi_be.domain.dto.respone.BabyRoutineAiAnalysisResponse;
 import com.example.babyoi_be.domain.dto.respone.BabyRoutineDayResponse;
@@ -37,6 +38,7 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
@@ -180,6 +182,35 @@ public class BabyRoutineServiceImpl implements BabyRoutineService {
 
     @Override
     @Transactional
+    public BabyRoutineEntryResponse createRoutineEntry(Long profileId, BabyRoutineEntryCreateRequest request) {
+        LocalDate routineDate = parseRoutineDate(request.getRoutineDate());
+        Profile profile = resolveChildProfile(profileId, routineDate);
+        List<BabyRoutineEntry> entries = getOrCreateRoutineEntries(profile, routineDate);
+        LocalTime plannedTime = parseRequiredTime(request.getPlannedTime(), "plannedTime");
+        validateNewRoutineTime(entries, plannedTime);
+
+        LocalDateTime now = LocalDateTime.now(APP_ZONE);
+        BabyRoutineEntry entry = BabyRoutineEntry.builder()
+                .profile(profile)
+                .routineDate(routineDate)
+                .type(compactText(defaultText(request.getType(), "CUSTOM"), 30))
+                .plannedTime(plannedTime)
+                .activity(compactText(request.getActivity(), 255))
+                .note(compactText(request.getNote(), 1000))
+                .icon(compactText(defaultText(request.getIcon(), "calendar"), 40))
+                .color(compactText(defaultText(request.getColor(), "#FF8FAB"), 20))
+                .completed(false)
+                .source("CUSTOM")
+                .status(Constants.TABLE_STATUS.ACTIVE)
+                .createdAt(now)
+                .updatedAt(now)
+                .build();
+
+        return mapEntry(babyRoutineEntryRepository.save(entry));
+    }
+
+    @Override
+    @Transactional
     public BabyRoutineEntryResponse updateRoutineEntry(Long entryId, BabyRoutineEntryUpdateRequest request) {
         BabyRoutineEntry entry = babyRoutineEntryRepository.findById(entryId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Routine entry not found"));
@@ -198,8 +229,9 @@ public class BabyRoutineServiceImpl implements BabyRoutineService {
         LocalTime actualTime = Boolean.TRUE.equals(request.getCompleted())
                 ? parseOptionalTime(request.getActualTime(), LocalTime.now(APP_ZONE))
                 : null;
-        long deltaMinutes = actualTime != null ? Duration.between(entry.getPlannedTime(), actualTime).toMinutes() : 0;
-
+        if (actualTime != null) {
+            validateActualTimeAfterPrevious(entry, actualTime);
+        }
         entry.setCompleted(request.getCompleted());
         entry.setActualTime(actualTime);
         if (request.getNote() != null && !request.getNote().isBlank()) {
@@ -211,12 +243,24 @@ public class BabyRoutineServiceImpl implements BabyRoutineService {
         }
         entry.setUpdatedAt(now);
         BabyRoutineEntry savedEntry = babyRoutineEntryRepository.save(entry);
-
-        if (!wasCompleted && Boolean.TRUE.equals(request.getCompleted()) && deltaMinutes != 0) {
-            shiftFutureEntries(savedEntry, deltaMinutes, now);
-        }
-
+        syncNextDayAfterNightSleepUpdate(savedEntry);
         return mapEntry(savedEntry);
+    }
+
+    @Override
+    @Transactional
+    public void deleteRoutineEntry(Long entryId) {
+        BabyRoutineEntry entry = babyRoutineEntryRepository.findById(entryId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Routine entry not found"));
+        validateCurrentUser(entry.getProfile().getUser().getId());
+        if (Constants.TABLE_STATUS.DELETED.equals(entry.getStatus())) {
+            return;
+        }
+        validateEntryActive(entry);
+
+        entry.setStatus(Constants.TABLE_STATUS.DELETED);
+        entry.setUpdatedAt(LocalDateTime.now(APP_ZONE));
+        babyRoutineEntryRepository.save(entry);
     }
 
     @Override
@@ -296,7 +340,9 @@ public class BabyRoutineServiceImpl implements BabyRoutineService {
                         Constants.TABLE_STATUS.ACTIVE
                 );
         if (!existingEntries.isEmpty()) {
-            return autoCompleteRoutineEntries(existingEntries, LocalDateTime.now(APP_ZONE));
+            List<BabyRoutineEntry> syncedEntries = syncGuidelineRoutineEntries(profile, routineDate, existingEntries);
+            syncedEntries = syncPredictedNightRoutineEntries(profile, routineDate, syncedEntries);
+            return autoCompleteRoutineEntries(syncedEntries, LocalDateTime.now(APP_ZONE));
         }
 
         LocalDateTime now = LocalDateTime.now(APP_ZONE);
@@ -318,57 +364,427 @@ public class BabyRoutineServiceImpl implements BabyRoutineService {
                         .updatedAt(now)
                         .build())
                 .toList();
-        return autoCompleteRoutineEntries(babyRoutineEntryRepository.saveAll(generatedEntries), LocalDateTime.now(APP_ZONE));
+        List<BabyRoutineEntry> savedEntries = babyRoutineEntryRepository.saveAll(generatedEntries);
+        List<BabyRoutineEntry> syncedEntries = syncPredictedNightRoutineEntries(profile, routineDate, savedEntries);
+        return autoCompleteRoutineEntries(syncedEntries, LocalDateTime.now(APP_ZONE));
     }
 
-    private List<RoutineSpec> routineSpecs(int ageMonths) {
-        if (ageMonths < 4) {
+    private List<BabyRoutineEntry> syncGuidelineRoutineEntries(
+            Profile profile,
+            LocalDate routineDate,
+            List<BabyRoutineEntry> activeEntries
+    ) {
+        List<RoutineSpec> specs = routineSpecs(resolveAgeMonths(profile, routineDate));
+        boolean hasMissingSpec = specs.stream().anyMatch(spec -> !hasRoutineSpec(activeEntries, spec));
+        if (!hasMissingSpec) {
+            return activeEntries;
+        }
+
+        List<BabyRoutineEntry> allEntries = babyRoutineEntryRepository
+                .findByProfile_IdAndRoutineDateOrderByPlannedTimeAscIdAsc(profile.getId(), routineDate);
+        LocalDateTime now = LocalDateTime.now(APP_ZONE);
+        List<BabyRoutineEntry> missingEntries = specs.stream()
+                .filter(spec -> !hasRoutineSpec(allEntries, spec))
+                .map(spec -> BabyRoutineEntry.builder()
+                        .profile(profile)
+                        .routineDate(routineDate)
+                        .type(spec.type())
+                        .plannedTime(LocalTime.parse(spec.time()))
+                        .activity(spec.activity())
+                        .note(spec.note())
+                        .icon(spec.icon())
+                        .color(spec.color())
+                        .completed(false)
+                        .source("AGE_GUIDELINE")
+                        .status(Constants.TABLE_STATUS.ACTIVE)
+                        .createdAt(now)
+                        .updatedAt(now)
+                        .build())
+                .toList();
+        if (missingEntries.isEmpty()) {
+            return activeEntries;
+        }
+
+        List<BabyRoutineEntry> syncedEntries = new ArrayList<>(activeEntries);
+        syncedEntries.addAll(babyRoutineEntryRepository.saveAll(missingEntries));
+        syncedEntries.sort(Comparator.comparing(BabyRoutineEntry::getPlannedTime).thenComparing(BabyRoutineEntry::getId));
+        return syncedEntries;
+    }
+
+    private boolean hasRoutineSpec(List<BabyRoutineEntry> entries, RoutineSpec spec) {
+        LocalTime plannedTime = LocalTime.parse(spec.time());
+        return entries.stream().anyMatch(entry ->
+                spec.type().equals(entry.getType())
+                        && plannedTime.equals(entry.getPlannedTime())
+                        && spec.activity().equals(entry.getActivity())
+        );
+    }
+
+    private List<BabyRoutineEntry> syncPredictedNightRoutineEntries(
+            Profile profile,
+            LocalDate routineDate,
+            List<BabyRoutineEntry> activeEntries
+    ) {
+        List<BabyRoutineEntry> usableEntries = removeUncompletedStaticNightGuidelines(activeEntries);
+        List<PredictedRoutineSpec> predictedSpecs = predictedNightRoutineSpecs(profile, routineDate, usableEntries);
+        usableEntries = removeStalePredictedNightEntries(routineDate, usableEntries, predictedSpecs);
+        if (predictedSpecs.isEmpty()) {
+            return usableEntries;
+        }
+
+        List<BabyRoutineEntry> allEntries = babyRoutineEntryRepository
+                .findByProfile_IdAndRoutineDateOrderByPlannedTimeAscIdAsc(profile.getId(), routineDate);
+        LocalDateTime now = LocalDateTime.now(APP_ZONE);
+        List<BabyRoutineEntry> changedEntries = new ArrayList<>();
+        List<BabyRoutineEntry> newEntries = new ArrayList<>();
+
+        for (PredictedRoutineSpec spec : predictedSpecs) {
+            BabyRoutineEntry existingActive = findPredictedNightEntry(usableEntries, spec);
+            if (existingActive != null) {
+                if (syncPredictedNightEntry(existingActive, spec, now)) {
+                    changedEntries.add(existingActive);
+                }
+                continue;
+            }
+            if (findPredictedNightEntry(allEntries, spec) != null) {
+                continue;
+            }
+            newEntries.add(BabyRoutineEntry.builder()
+                    .profile(profile)
+                    .routineDate(routineDate)
+                    .type(spec.type())
+                    .plannedTime(spec.dateTime().toLocalTime())
+                    .activity(spec.activity())
+                    .note(spec.note())
+                    .icon(spec.icon())
+                    .color(spec.color())
+                    .completed(false)
+                    .source("NIGHT_PREDICTION")
+                    .status(Constants.TABLE_STATUS.ACTIVE)
+                    .createdAt(now)
+                    .updatedAt(now)
+                    .build());
+        }
+
+        List<BabyRoutineEntry> syncedEntries = new ArrayList<>(usableEntries);
+        if (!changedEntries.isEmpty()) {
+            babyRoutineEntryRepository.saveAll(changedEntries);
+        }
+        if (!newEntries.isEmpty()) {
+            syncedEntries.addAll(babyRoutineEntryRepository.saveAll(newEntries));
+        }
+        syncedEntries.sort(Comparator.comparing(BabyRoutineEntry::getPlannedTime).thenComparing(BabyRoutineEntry::getId));
+        return syncedEntries;
+    }
+
+    private List<BabyRoutineEntry> removeUncompletedStaticNightGuidelines(List<BabyRoutineEntry> activeEntries) {
+        List<BabyRoutineEntry> staleEntries = activeEntries.stream()
+                .filter(this::isUncompletedStaticNightGuideline)
+                .toList();
+        if (staleEntries.isEmpty()) {
+            return activeEntries;
+        }
+
+        LocalDateTime now = LocalDateTime.now(APP_ZONE);
+        staleEntries.forEach(entry -> {
+            entry.setStatus(Constants.TABLE_STATUS.DELETED);
+            entry.setUpdatedAt(now);
+        });
+        babyRoutineEntryRepository.saveAll(staleEntries);
+        return activeEntries.stream()
+                .filter(entry -> !staleEntries.contains(entry))
+                .toList();
+    }
+
+    private List<BabyRoutineEntry> removeStalePredictedNightEntries(
+            LocalDate routineDate,
+            List<BabyRoutineEntry> activeEntries,
+            List<PredictedRoutineSpec> predictedSpecs
+    ) {
+        LocalDate previousDate = routineDate.minusDays(1);
+        List<BabyRoutineEntry> staleEntries = activeEntries.stream()
+                .filter(entry -> "NIGHT_PREDICTION".equals(entry.getSource()))
+                .filter(entry -> isPredictedFromSleepDate(entry, previousDate) || isPredictedFromSleepDate(entry, routineDate))
+                .filter(entry -> predictedSpecs.stream().noneMatch(spec -> isSamePredictedNightEntry(entry, spec)))
+                .toList();
+        if (staleEntries.isEmpty()) {
+            return activeEntries;
+        }
+
+        LocalDateTime now = LocalDateTime.now(APP_ZONE);
+        staleEntries.forEach(entry -> {
+            entry.setStatus(Constants.TABLE_STATUS.DELETED);
+            entry.setUpdatedAt(now);
+        });
+        babyRoutineEntryRepository.saveAll(staleEntries);
+        return activeEntries.stream()
+                .filter(entry -> !staleEntries.contains(entry))
+                .toList();
+    }
+
+    private boolean isPredictedFromSleepDate(BabyRoutineEntry entry, LocalDate sleepDate) {
+        return entry.getNote() != null && entry.getNote().contains("ngày " + sleepDate);
+    }
+
+    private boolean isUncompletedStaticNightGuideline(BabyRoutineEntry entry) {
+        if (!"AGE_GUIDELINE".equals(entry.getSource()) || Boolean.TRUE.equals(entry.getCompleted())) {
+            return false;
+        }
+        return "NIGHT_FEED".equals(entry.getType())
+                || "NIGHT_WAKE".equals(entry.getType())
+                || ("SLEEP".equals(entry.getType()) && entry.getActivity() != null && entry.getActivity().startsWith("Ngủ tiếp"));
+    }
+
+    private List<PredictedRoutineSpec> predictedNightRoutineSpecs(
+            Profile profile,
+            LocalDate routineDate,
+            List<BabyRoutineEntry> currentDateEntries
+    ) {
+        List<PredictedRoutineSpec> specs = new ArrayList<>();
+        LocalDate previousDate = routineDate.minusDays(1);
+        List<BabyRoutineEntry> previousEntries = babyRoutineEntryRepository
+                .findByProfile_IdAndRoutineDateAndStatusOrderByPlannedTimeAscIdAsc(
+                        profile.getId(),
+                        previousDate,
+                        Constants.TABLE_STATUS.ACTIVE
+                );
+        addPredictedNightRoutineSpecs(profile, previousDate, routineDate, previousEntries, specs);
+        addPredictedNightRoutineSpecs(profile, routineDate, routineDate, currentDateEntries, specs);
+        specs.sort(Comparator.comparing(PredictedRoutineSpec::dateTime));
+        return specs;
+    }
+
+    private void addPredictedNightRoutineSpecs(
+            Profile profile,
+            LocalDate sleepDate,
+            LocalDate targetDate,
+            List<BabyRoutineEntry> entries,
+            List<PredictedRoutineSpec> specs
+    ) {
+        BabyRoutineEntry sleepEntry = entries.stream()
+                .filter(entry -> "SLEEP".equals(entry.getType()))
+                .filter(entry -> !"NIGHT_PREDICTION".equals(entry.getSource()))
+                .max(Comparator.comparing(entry -> entry.getActualTime() != null ? entry.getActualTime() : entry.getPlannedTime()))
+                .orElse(null);
+        if (sleepEntry == null) {
+            return;
+        }
+
+        LocalTime sleepStartTime = sleepEntry.getActualTime() != null ? sleepEntry.getActualTime() : sleepEntry.getPlannedTime();
+        LocalDateTime sleepStartDateTime = LocalDateTime.of(sleepDate, sleepStartTime);
+        int ageMonths = resolveAgeMonths(profile, sleepDate);
+        for (PredictedNightEvent event : predictedNightEvents(ageMonths, sleepStartDateTime)) {
+            if (event.likelyDateTime().toLocalDate().isEqual(targetDate)) {
+                specs.add(predictedSpec(
+                        event.type(),
+                        event.likelyDateTime(),
+                        event.label(),
+                        event.note(),
+                        event.type().contains("FEED") ? "water" : "happy",
+                        event.type().contains("FEED") ? "#A7E4F5" : "#FFD166",
+                        sleepDate
+                ));
+            }
+            LocalDateTime sleepBackDateTime = event.likelyDateTime().plusMinutes(20);
+            if (event.addSleepBack() && sleepBackDateTime.toLocalDate().isEqual(targetDate)) {
+                specs.add(predictedSpec(
+                        "SLEEP",
+                        sleepBackDateTime,
+                        "Ngủ tiếp sau " + event.label().toLowerCase(Locale.ROOT),
+                        "Tích khi bé đã được hỗ trợ và quay lại giấc ngủ.",
+                        "moon",
+                        "#5C7A8A",
+                        sleepDate
+                ));
+            }
+        }
+    }
+
+    private List<PredictedNightEvent> predictedNightEvents(int ageMonths, LocalDateTime sleepStartDateTime) {
+        if (ageMonths < 3) {
             return List.of(
-                    spec("WAKE", "07:00", "Bé thức dậy", "Vệ sinh buổi sáng, quan sát dấu hiệu đói/buồn ngủ.", "sunny", "#FFB6C1"),
-                    spec("MILK", "07:20", "Cữ sữa sáng", "Bú theo nhu cầu, ưu tiên tín hiệu đói và no của bé.", "water", "#A7E4F5"),
-                    spec("NAP", "08:20", "Giấc ngủ ngắn", "Trẻ sơ sinh ngủ theo cụm ngắn, không ép lịch cứng.", "bed", "#74C0FC"),
-                    spec("PLAY", "10:00", "Vận động nhẹ", "Nằm sấp có giám sát 3-5 phút nếu bé hợp tác.", "happy", "#FFD166"),
-                    spec("MILK", "10:30", "Cữ sữa tiếp theo", "Giữ nhật ký lượng sữa để nhận biết thay đổi bất thường.", "water", "#A7E4F5"),
-                    spec("NAP", "11:15", "Giấc ngủ ngày", "Môi trường ngủ an toàn, nằm ngửa, mặt phẳng thoáng.", "bed", "#74C0FC"),
-                    spec("MILK", "14:00", "Cữ sữa chiều", "Bé có thể cần bú đêm, đây là biến thiên bình thường.", "water", "#A7E4F5"),
-                    spec("BATH", "17:30", "Tắm và thư giãn", "Giảm kích thích, ánh sáng dịu trước giờ ngủ đêm.", "sparkles", "#FF8FAB"),
-                    spec("SLEEP", "19:00", "Ngủ đêm", "Tập nhất quán trình tự ngủ, vẫn đáp ứng khi bé cần an ủi.", "moon", "#5C7A8A")
+                    predictedEvent("NIGHT_FEED", "Cữ đêm 1", sleepStartDateTime, 180,
+                            "Bé 0-2 tháng thường thức sau 2-4 giờ để bú hoặc được vỗ về.", true),
+                    predictedEvent("NIGHT_FEED", "Cữ đêm 2", sleepStartDateTime, 390,
+                            "Cữ đêm tiếp theo có thể xuất hiện nếu bé chưa ngủ đủ hoặc đói.", true),
+                    predictedEvent("EARLY_MORNING_FEED", "Cữ gần sáng", sleepStartDateTime, 540,
+                            "Gần sáng bé có thể bú thêm rồi ngủ tiếp hoặc bắt đầu ngày mới.", true)
             );
         }
         if (ageMonths < 6) {
             return List.of(
-                    spec("WAKE", "07:00", "Bé thức dậy", "Vệ sinh buổi sáng và đón ánh sáng tự nhiên.", "sunny", "#FFB6C1"),
-                    spec("MILK", "07:30", "Cữ sữa sáng", "Sữa mẹ/sữa công thức vẫn là nguồn dinh dưỡng chính.", "water", "#A7E4F5"),
-                    spec("NAP", "09:00", "Giấc ngủ 1", "Cửa thức thường ngắn, tránh để bé quá mệt.", "bed", "#74C0FC"),
-                    spec("PLAY", "10:45", "Tập lật/chơi cùng mẹ", "Cho bé vận động trên sàn an toàn và có giám sát.", "happy", "#FFD166"),
-                    spec("MILK", "11:30", "Cữ sữa trưa", "Theo dõi tín hiệu đói/no, không ép bé bú hết bình.", "water", "#A7E4F5"),
-                    spec("NAP", "13:30", "Giấc ngủ 2", "Giữ phòng ngủ dịu, ít kích thích.", "bed", "#74C0FC"),
-                    spec("MILK", "16:30", "Cữ sữa chiều", "Nếu bé sẵn sàng ăn dặm, trao đổi bác sĩ khi cần.", "water", "#A7E4F5"),
-                    spec("SLEEP", "19:30", "Ngủ đêm", "Duy trì routine tắm, massage, đọc sách ngắn.", "moon", "#5C7A8A")
+                    predictedEvent("NIGHT_FEED", "Cữ đêm có thể xảy ra", sleepStartDateTime, 360,
+                            "Bé 3-5 tháng có thể ngủ một mạch khoảng 6 tiếng, nhưng thức 1-2 lần ban đêm vẫn bình thường.", true),
+                    predictedEvent("EARLY_MORNING_WAKE", "Dậy sáng sớm", sleepStartDateTime, 600,
+                            "Nếu đêm ổn, bé có thể dậy vào khoảng sáng sớm sau giấc ngủ dài.", false)
             );
         }
         if (ageMonths < 9) {
             return List.of(
-                    spec("WAKE", "07:00", "Bé thức dậy", "Bắt đầu ngày bằng ánh sáng và vệ sinh nhẹ.", "sunny", "#FFB6C1"),
+                    predictedEvent("POSSIBLE_WAKE", "Có thể dậy giữa đêm", sleepStartDateTime, 480,
+                            "Bé có thể thức ngắn khi đói, mọc răng hoặc cần trấn an.", true),
+                    predictedEvent("EARLY_MORNING_WAKE", "Dậy buổi sáng", sleepStartDateTime, 600,
+                            "Sau giấc đêm dài, bé thường dậy vào sáng sớm.", false)
+            );
+        }
+        if (ageMonths < 13) {
+            return List.of(
+                    predictedEvent("SLEEP_REGRESSION_WAKE", "Có thể thức ngắn", sleepStartDateTime, 420,
+                            "Phát triển kỹ năng, mọc răng hoặc bám mẹ có thể làm bé thức ngắn.", true),
+                    predictedEvent("MORNING_WAKE", "Dậy buổi sáng", sleepStartDateTime, 660,
+                            "Nếu giấc đêm ổn, đây là khoảng bé có thể dậy để bắt đầu ngày mới.", false)
+            );
+        }
+        return List.of(
+                predictedEvent("MORNING_WAKE", "Dậy buổi sáng", sleepStartDateTime, 660,
+                        "Mốc này giúp mẹ dự đoán giờ dậy sáng.", false)
+        );
+    }
+
+    private PredictedNightEvent predictedEvent(
+            String type,
+            String label,
+            LocalDateTime sleepStartDateTime,
+            int likelyOffsetMinutes,
+            String note,
+            boolean addSleepBack
+    ) {
+        return new PredictedNightEvent(
+                type,
+                label,
+                sleepStartDateTime.plusMinutes(likelyOffsetMinutes),
+                note,
+                addSleepBack
+        );
+    }
+
+    private PredictedRoutineSpec predictedSpec(
+            String type,
+            LocalDateTime dateTime,
+            String activity,
+            String note,
+            String icon,
+            String color,
+            LocalDate sleepDate
+    ) {
+        return new PredictedRoutineSpec(
+                type,
+                dateTime,
+                activity,
+                note + " Dự đoán từ giấc ngủ cuối ngày " + sleepDate + ".",
+                icon,
+                color,
+                sleepDate.toString()
+        );
+    }
+
+    private BabyRoutineEntry findPredictedNightEntry(List<BabyRoutineEntry> entries, PredictedRoutineSpec spec) {
+        return entries.stream()
+                .filter(entry -> "NIGHT_PREDICTION".equals(entry.getSource()))
+                .filter(entry -> isSamePredictedNightEntry(entry, spec))
+                .findFirst()
+                .orElse(null);
+    }
+
+    private boolean isSamePredictedNightEntry(BabyRoutineEntry entry, PredictedRoutineSpec spec) {
+        return spec.type().equals(entry.getType())
+                && spec.activity().equals(entry.getActivity())
+                && entry.getNote() != null
+                && entry.getNote().contains("ngày " + spec.sourceDate());
+    }
+
+    private boolean syncPredictedNightEntry(BabyRoutineEntry entry, PredictedRoutineSpec spec, LocalDateTime now) {
+        boolean changed = false;
+        LocalTime plannedTime = spec.dateTime().toLocalTime();
+        if (!plannedTime.equals(entry.getPlannedTime())) {
+            entry.setPlannedTime(plannedTime);
+            changed = true;
+        }
+        if (!spec.note().equals(entry.getNote())) {
+            entry.setNote(spec.note());
+            changed = true;
+        }
+        if (!spec.icon().equals(entry.getIcon())) {
+            entry.setIcon(spec.icon());
+            changed = true;
+        }
+        if (!spec.color().equals(entry.getColor())) {
+            entry.setColor(spec.color());
+            changed = true;
+        }
+        if (changed) {
+            entry.setUpdatedAt(now);
+        }
+        return changed;
+    }
+
+    private void syncNextDayAfterNightSleepUpdate(BabyRoutineEntry entry) {
+        if (!"SLEEP".equals(entry.getType()) || "NIGHT_PREDICTION".equals(entry.getSource())) {
+            return;
+        }
+        LocalDate nextDate = entry.getRoutineDate().plusDays(1);
+        if (resolveAgeMonths(entry.getProfile(), nextDate) > 24) {
+            return;
+        }
+        getOrCreateRoutineEntries(entry.getProfile(), nextDate);
+    }
+
+    private List<RoutineSpec> routineSpecs(int ageMonths) {
+        if (ageMonths < 3) {
+            return List.of(
+                    spec("WAKE", "06:30", "Bé thức dậy", "Trẻ sơ sinh giai đoạn đầu ngủ rất nhiều và thức dậy chủ yếu để bú.", "sunny", "#FFB6C1"),
+                    spec("MILK", "06:45", "Cữ sữa sáng", "Cho bú theo nhu cầu, ưu tiên đủ năng lượng trong những tuần đầu.", "water", "#A7E4F5"),
+                    spec("NAP", "07:30", "Giấc ngủ sáng", "Giấc ngủ thường ngắn, chia đều ngày và đêm.", "bed", "#74C0FC"),
+                    spec("MILK", "09:30", "Cữ sữa giữa sáng", "Bé có thể thức vì đói sau mỗi cụm ngủ ngắn.", "water", "#A7E4F5"),
+                    spec("NAP", "10:00", "Giấc ngủ gần trưa", "Giữ môi trường ngủ an toàn: nằm ngửa, mặt phẳng thoáng.", "bed", "#74C0FC"),
+                    spec("MILK", "12:00", "Cữ sữa trưa", "Tiếp tục bú đầy đủ theo nhu cầu của bé.", "water", "#A7E4F5"),
+                    spec("NAP", "12:45", "Giấc ngủ trưa", "Ban ngày có thể ngủ tổng khoảng 8 tiếng.", "bed", "#74C0FC"),
+                    spec("MILK", "15:00", "Cữ sữa chiều", "Theo dõi tã ướt, cân nặng và dấu hiệu đói/no.", "water", "#A7E4F5"),
+                    spec("NAP", "15:45", "Giấc ngủ chiều", "Không ép lịch cứng, quan sát tín hiệu buồn ngủ.", "bed", "#74C0FC"),
+                    spec("BATH", "18:00", "Tắm và thư giãn", "Giảm kích thích, ánh sáng dịu trước giấc đêm.", "sparkles", "#FF8FAB"),
+                    spec("MILK", "18:30", "Cữ sữa trước ngủ", "Bú đủ trước khi vào giấc đêm, bé vẫn có thể dậy 2-3 lần để bú.", "water", "#A7E4F5"),
+                    spec("SLEEP", "19:00", "Ngủ đêm", "Ban đêm có thể ngủ khoảng 9 tiếng nhưng thường thức dậy vì đói.", "moon", "#5C7A8A")
+            );
+        }
+        if (ageMonths < 6) {
+            return List.of(
+                    spec("WAKE", "07:00", "Bé thức dậy", "Bé 3-5 tháng đã phân biệt ngày đêm rõ hơn.", "sunny", "#FFB6C1"),
+                    spec("MILK", "07:30", "Cữ sữa sáng", "Sữa mẹ/sữa công thức vẫn là nguồn dinh dưỡng chính.", "water", "#A7E4F5"),
+                    spec("NAP", "09:00", "Giấc ngủ sáng", "Mục tiêu tổng ngủ khoảng 14-16 giờ/ngày.", "bed", "#74C0FC"),
+                    spec("PLAY", "10:30", "Tương tác nhẹ", "Trò chuyện, tập lật và chơi trên sàn an toàn.", "happy", "#FFD166"),
+                    spec("MILK", "11:00", "Cữ sữa trưa", "Theo dõi tín hiệu đói/no, không ép bé bú hết bình.", "water", "#A7E4F5"),
+                    spec("NAP", "12:30", "Giấc ngủ trưa", "Đặt bé xuống cũi/nôi khi lim dim để tập tự ngủ.", "bed", "#74C0FC"),
+                    spec("MILK", "15:00", "Cữ sữa chiều", "Một số bé có thể ngủ liền 6 tiếng ban đêm, thức 1-2 lần vẫn bình thường.", "water", "#A7E4F5"),
+                    spec("NAP", "16:00", "Giấc ngủ chiều ngắn", "Giấc chiều nên vừa đủ để không quá mệt trước ngủ đêm.", "bed", "#74C0FC"),
+                    spec("BATH", "18:30", "Tắm và thư giãn", "Giữ routine tối lặp lại: tắm, massage, ánh sáng dịu.", "sparkles", "#FF8FAB"),
+                    spec("SLEEP", "19:30", "Ngủ đêm", "Khuyến khích nhịp ngày đêm ổn định, vẫn đáp ứng khi bé cần.", "moon", "#5C7A8A")
+            );
+        }
+        if (ageMonths < 9) {
+            return List.of(
+                    spec("WAKE", "07:00", "Bé thức dậy", "Bé 6-8 tháng thường ngủ tổng khoảng 14 giờ/ngày.", "sunny", "#FFB6C1"),
                     spec("MILK", "07:30", "Cữ sữa sáng", "Sữa vẫn là nền chính, ăn dặm chỉ bổ sung.", "water", "#A7E4F5"),
-                    spec("NAP", "09:00", "Giấc ngủ 1", "Mục tiêu tổng ngủ 12-16 giờ/ngày nếu bé 4-12 tháng.", "bed", "#74C0FC"),
-                    spec("EAT", "11:30", "Ăn dặm bữa 1", "Ưu tiên thực phẩm mềm, giàu sắt, không nêm muối/đường.", "restaurant", "#FF8FAB"),
-                    spec("NAP", "13:30", "Giấc ngủ 2", "Nap đều giúp bé đỡ quá mệt về chiều.", "bed", "#74C0FC"),
-                    spec("PLAY", "15:30", "Vận động và tương tác", "Tập ngồi/bò theo khả năng, luôn có người lớn bên cạnh.", "happy", "#FFD166"),
-                    spec("MILK", "16:30", "Cữ sữa chiều", "Bổ sung sữa theo nhu cầu và khuyến nghị riêng của bé.", "water", "#A7E4F5"),
-                    spec("SLEEP", "19:30", "Ngủ đêm", "Giảm màn hình, giảm âm thanh mạnh trước ngủ.", "moon", "#5C7A8A")
+                    spec("NAP", "09:00", "Giấc ngủ 1", "Thường có 2-3 giấc ngủ ngắn, tổng ngủ ngày khoảng 3-4 giờ.", "bed", "#74C0FC"),
+                    spec("EAT", "11:00", "Ăn dặm bữa 1", "Ưu tiên thực phẩm mềm, giàu sắt, không nêm muối/đường.", "restaurant", "#FF8FAB"),
+                    spec("NAP", "12:30", "Giấc ngủ 2", "Nap đều giúp bé đỡ quá mệt về chiều.", "bed", "#74C0FC"),
+                    spec("MILK", "14:30", "Cữ sữa chiều", "Bổ sung sữa theo nhu cầu và khuyến nghị riêng của bé.", "water", "#A7E4F5"),
+                    spec("NAP", "15:30", "Giấc ngủ 3 ngắn", "Nếu bé chỉ cần 2 giấc, có thể bỏ giấc này.", "bed", "#74C0FC"),
+                    spec("PLAY", "16:30", "Vận động và tương tác", "Tập ngồi/bò theo khả năng, luôn có người lớn bên cạnh.", "happy", "#FFD166"),
+                    spec("BATH", "18:30", "Tắm và thư giãn", "Giảm kích thích trước giấc ngủ đêm.", "sparkles", "#FF8FAB"),
+                    spec("SLEEP", "19:30", "Ngủ đêm", "Một số bé 6 tháng có thể ngủ liền khoảng 8 tiếng/đêm.", "moon", "#5C7A8A")
             );
         }
         if (ageMonths < 13) {
             return List.of(
                     spec("WAKE", "07:00", "Bé thức dậy", "Giữ giờ dậy ổn định để tạo nhịp sinh học.", "sunny", "#FFB6C1"),
                     spec("MILK", "07:30", "Sữa/bữa sáng nhẹ", "Kết hợp sữa và đồ ăn phù hợp khả năng nhai nuốt.", "water", "#A7E4F5"),
-                    spec("NAP", "09:30", "Giấc ngủ 1", "Nhiều bé vẫn cần 2 giấc ngủ ngày.", "bed", "#74C0FC"),
-                    spec("EAT", "11:45", "Bữa trưa ăn dặm", "Tăng độ thô dần, tránh thức ăn dễ hóc.", "restaurant", "#FF8FAB"),
-                    spec("NAP", "14:00", "Giấc ngủ 2", "Nếu bé khó ngủ đêm, xem lại giấc chiều có quá muộn không.", "bed", "#74C0FC"),
-                    spec("PLAY", "16:00", "Chơi vận động", "Bò, đứng bám, trò chơi tương tác và đọc sách tranh.", "happy", "#FFD166"),
+                    spec("NAP", "09:30", "Giấc ngủ sáng", "Ban ngày thường còn khoảng 3-4 giờ ngủ.", "bed", "#74C0FC"),
+                    spec("EAT", "11:30", "Bữa trưa ăn dặm", "Tăng độ thô dần, tránh thức ăn dễ hóc.", "restaurant", "#FF8FAB"),
+                    spec("NAP", "13:30", "Giấc ngủ chiều", "Nhiều bé vẫn cần 2 giấc ngủ ngày.", "bed", "#74C0FC"),
+                    spec("PLAY", "15:30", "Chơi vận động", "Bò, đứng bám, bập bẹ và trò chơi tương tác cùng người lớn.", "happy", "#FFD166"),
                     spec("EAT", "17:30", "Bữa tối nhẹ", "Ăn theo gia đình với kết cấu an toàn cho bé.", "restaurant", "#FF8FAB"),
-                    spec("SLEEP", "19:45", "Ngủ đêm", "Rút ngắn kích thích 30-60 phút trước giờ ngủ.", "moon", "#5C7A8A")
+                    spec("BATH", "18:30", "Tắm và thư giãn", "Rút ngắn kích thích 30-60 phút trước giờ ngủ.", "sparkles", "#FF8FAB"),
+                    spec("SLEEP", "19:30", "Ngủ đêm", "Giấc đêm có thể kéo dài 9-12 tiếng, nhưng mọc răng/phát triển kỹ năng có thể làm bé khó ngủ.", "moon", "#5C7A8A")
             );
         }
         if (ageMonths < 19) {
@@ -408,8 +824,8 @@ public class BabyRoutineServiceImpl implements BabyRoutineService {
                 .profileAgeMonths(ageMonths)
                 .routineDate(routineDate.toString())
                 .ageGroup(resolveAgeGroup(ageMonths))
-                .sleepTargetMinHours(ageMonths < 4 ? 14 : ageMonths < 13 ? 12 : 11)
-                .sleepTargetMaxHours(ageMonths < 4 ? 17 : ageMonths < 13 ? 16 : 14)
+                .sleepTargetMinHours(resolveSleepTargetMinHours(ageMonths))
+                .sleepTargetMaxHours(resolveSleepTargetMaxHours(ageMonths))
                 .feedingGuide(resolveFeedingGuide(ageMonths))
                 .activityGuide(resolveActivityGuide(ageMonths))
                 .sleepPrediction(buildSleepPrediction(profile, routineDate, entries))
@@ -436,7 +852,11 @@ public class BabyRoutineServiceImpl implements BabyRoutineService {
 
         List<String> highlights = new ArrayList<>();
         highlights.add("Đã có " + completedCount + "/" + entries.size() + " mục được ghi nhận hôm nay.");
-        highlights.add("Khung ngủ mục tiêu: " + (ageMonths < 4 ? "14-17" : ageMonths < 13 ? "12-16" : "11-14") + " giờ/ngày, tính cả ngủ ngày.");
+        highlights.add("Khung ngủ mục tiêu: "
+                + resolveSleepTargetMinHours(ageMonths)
+                + "-"
+                + resolveSleepTargetMaxHours(ageMonths)
+                + " giờ/ngày, tính cả ngủ ngày.");
 
         List<String> warnings = new ArrayList<>();
         if (ageMonths < 6 && mealCount > 0) {
@@ -585,6 +1005,9 @@ public class BabyRoutineServiceImpl implements BabyRoutineService {
             if (Boolean.TRUE.equals(entry.getCompleted())) {
                 continue;
             }
+            if ("CUSTOM".equals(entry.getSource())) {
+                continue;
+            }
 
             boolean pastDay = entry.getRoutineDate().isBefore(today);
             boolean overdueToday = entry.getRoutineDate().isEqual(today)
@@ -699,11 +1122,11 @@ public class BabyRoutineServiceImpl implements BabyRoutineService {
     }
 
     private String resolveAgeGroup(int ageMonths) {
-        if (ageMonths < 4) {
-            return "0-3 tháng";
+        if (ageMonths < 3) {
+            return "0-2 tháng";
         }
         if (ageMonths < 6) {
-            return "4-5 tháng";
+            return "3-5 tháng";
         }
         if (ageMonths < 9) {
             return "6-8 tháng";
@@ -715,6 +1138,38 @@ public class BabyRoutineServiceImpl implements BabyRoutineService {
             return "13-18 tháng";
         }
         return "19-24 tháng";
+    }
+
+    private int resolveSleepTargetMinHours(int ageMonths) {
+        if (ageMonths < 3) {
+            return 17;
+        }
+        if (ageMonths < 6) {
+            return 14;
+        }
+        if (ageMonths < 9) {
+            return 13;
+        }
+        if (ageMonths < 13) {
+            return 12;
+        }
+        return 11;
+    }
+
+    private int resolveSleepTargetMaxHours(int ageMonths) {
+        if (ageMonths < 3) {
+            return 18;
+        }
+        if (ageMonths < 6) {
+            return 16;
+        }
+        if (ageMonths < 9) {
+            return 15;
+        }
+        if (ageMonths < 13) {
+            return 16;
+        }
+        return 14;
     }
 
     private String resolveFeedingGuide(int ageMonths) {
@@ -774,25 +1229,44 @@ public class BabyRoutineServiceImpl implements BabyRoutineService {
     }
 
     private List<BabyRoutineNightEventPredictionResponse> buildNightEventPredictions(int ageMonths, LocalDateTime sleepStartDateTime) {
-        if (ageMonths < 4) {
+        if (ageMonths < 3) {
             return List.of(
-                    nightEvent("NIGHT_FEED", "Cữ đêm 1", sleepStartDateTime, 150, 180, 240,
-                            "Bé 0-3 tháng thường có thể dậy sau 2.5-4 giờ để bú/được vỗ về."),
-                    nightEvent("NIGHT_FEED", "Cữ đêm 2", sleepStartDateTime, 330, 390, 480,
-                            "Cữ đêm tiếp theo có thể xuất hiện nếu bé chưa ngủ đủ sau cữ đầu."),
-                    nightEvent("EARLY_MORNING_WAKE", "Dậy sớm", sleepStartDateTime, 540, 600, 660,
-                            "Gần sáng bé có thể dậy sớm, bú thêm rồi ngủ tiếp hoặc bắt đầu ngày mới.")
+                    nightEvent("NIGHT_FEED", "Cữ đêm 1", sleepStartDateTime, 120, 180, 240,
+                            "Bé 0-2 tháng thường thức sau 2-4 giờ để bú hoặc được vỗ về."),
+                    nightEvent("NIGHT_FEED", "Cữ đêm 2", sleepStartDateTime, 300, 390, 480,
+                            "Cữ đêm tiếp theo có thể xuất hiện nếu bé chưa ngủ đủ hoặc đói."),
+                    nightEvent("EARLY_MORNING_FEED", "Cữ gần sáng", sleepStartDateTime, 480, 540, 600,
+                            "Gần sáng bé có thể bú thêm rồi ngủ tiếp hoặc bắt đầu ngày mới.")
             );
         }
         if (ageMonths < 6) {
             return List.of(
-                    nightEvent("NIGHT_FEED", "Cữ đêm có thể xảy ra", sleepStartDateTime, 300, 390, 480,
-                            "Bé 4-5 tháng có thể có một cữ đêm dài hơn, vẫn có khả năng thức để bú/được vỗ về."),
-                    nightEvent("EARLY_MORNING_WAKE", "Dậy sáng", sleepStartDateTime, 600, 660, 720,
-                            "Nếu đêm ổn, bé có thể dậy vào khoảng sáng sớm sau 10-12 giờ tính từ lúc ngủ.")
+                    nightEvent("NIGHT_FEED", "Cữ đêm có thể xảy ra", sleepStartDateTime, 300, 360, 480,
+                            "Bé 3-5 tháng có thể ngủ một mạch khoảng 6 tiếng, nhưng thức 1-2 lần ban đêm vẫn bình thường."),
+                    nightEvent("EARLY_MORNING_WAKE", "Dậy sáng sớm", sleepStartDateTime, 540, 600, 720,
+                            "Nếu đêm ổn, bé có thể dậy vào khoảng sáng sớm sau giấc ngủ dài.")
             );
         }
-        return List.of();
+        if (ageMonths < 9) {
+            return List.of(
+                    nightEvent("POSSIBLE_WAKE", "Có thể dậy giữa đêm", sleepStartDateTime, 360, 480, 540,
+                            "Một số bé 6-8 tháng có thể ngủ liền khoảng 8 tiếng, nhưng vẫn có thể thức ngắn khi đói, mọc răng hoặc cần trấn an."),
+                    nightEvent("EARLY_MORNING_WAKE", "Dậy buổi sáng", sleepStartDateTime, 540, 600, 660,
+                            "Sau giấc đêm dài, bé thường dậy vào sáng sớm; nếu còn buồn ngủ có thể ngủ lại ngắn.")
+            );
+        }
+        if (ageMonths < 13) {
+            return List.of(
+                    nightEvent("SLEEP_REGRESSION_WAKE", "Có thể thức ngắn", sleepStartDateTime, 540, 600, 720,
+                            "Bé 9-12 tháng thường ngủ đêm 9-12 tiếng, nhưng phát triển kỹ năng, mọc răng hoặc bám mẹ có thể làm bé thức ngắn."),
+                    nightEvent("MORNING_WAKE", "Dậy buổi sáng", sleepStartDateTime, 600, 660, 720,
+                            "Nếu giấc đêm ổn, đây là khoảng bé có thể dậy để bắt đầu ngày mới.")
+            );
+        }
+        return List.of(
+                nightEvent("MORNING_WAKE", "Dậy buổi sáng", sleepStartDateTime, 600, 660, 720,
+                        "Bé lớn hơn thường có giấc đêm ổn hơn; mốc này giúp mẹ dự đoán giờ dậy sáng.")
+        );
     }
 
     private BabyRoutineNightEventPredictionResponse nightEvent(
@@ -815,17 +1289,17 @@ public class BabyRoutineServiceImpl implements BabyRoutineService {
     }
 
     private SleepWindow resolveNightSleepWindow(int ageMonths) {
-        if (ageMonths < 4) {
+        if (ageMonths < 3) {
             return new SleepWindow(120, 180, 240);
         }
         if (ageMonths < 6) {
-            return new SleepWindow(300, 390, 480);
+            return new SleepWindow(300, 360, 480);
         }
         if (ageMonths < 9) {
-            return new SleepWindow(540, 600, 660);
+            return new SleepWindow(360, 480, 540);
         }
         if (ageMonths < 13) {
-            return new SleepWindow(600, 660, 720);
+            return new SleepWindow(540, 600, 720);
         }
         return new SleepWindow(600, 660, 720);
     }
@@ -884,15 +1358,93 @@ public class BabyRoutineServiceImpl implements BabyRoutineService {
         return new RoutineSpec(type, time, activity, note, icon, color);
     }
 
+    private LocalDate parseRoutineDate(String value) {
+        try {
+            return LocalDate.parse(value == null ? "" : value.trim());
+        } catch (Exception exception) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "routineDate must use yyyy-MM-dd");
+        }
+    }
+
+    private LocalTime parseRequiredTime(String time, String fieldName) {
+        try {
+            return LocalTime.parse(normalizeTimeInput(time));
+        } catch (Exception exception) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, fieldName + " must use HH:mm");
+        }
+    }
+
     private LocalTime parseOptionalTime(String time, LocalTime fallback) {
         if (time == null || time.isBlank()) {
             return fallback.withSecond(0).withNano(0);
         }
-        String normalizedTime = time.trim();
-        if (normalizedTime.length() == 5) {
-            return LocalTime.parse(normalizedTime);
+        return parseRequiredTime(time, "actualTime").withSecond(0).withNano(0);
+    }
+
+    private String normalizeTimeInput(String time) {
+        String value = time == null ? "" : time.trim();
+        if (value.matches("\\d{1,2}:\\d{2}")) {
+            String[] parts = value.split(":");
+            return "%02d:%02d".formatted(Integer.parseInt(parts[0]), Integer.parseInt(parts[1]));
         }
-        return LocalTime.parse(normalizedTime).withSecond(0).withNano(0);
+        String digits = value.replaceAll("\\D", "");
+        if (digits.length() == 3) {
+            digits = "0" + digits;
+        }
+        if (digits.length() == 4) {
+            return digits.substring(0, 2) + ":" + digits.substring(2);
+        }
+        throw new IllegalArgumentException("Invalid time");
+    }
+
+    private void validateNewRoutineTime(List<BabyRoutineEntry> entries, LocalTime plannedTime) {
+        List<BabyRoutineEntry> sortedEntries = entries.stream()
+                .sorted(Comparator.comparing(BabyRoutineEntry::getPlannedTime).thenComparing(BabyRoutineEntry::getId))
+                .toList();
+        BabyRoutineEntry previous = null;
+        BabyRoutineEntry next = null;
+        for (BabyRoutineEntry entry : sortedEntries) {
+            if (entry.getPlannedTime().equals(plannedTime)) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Khung gio nay da co trong lich cua be");
+            }
+            if (entry.getPlannedTime().isBefore(plannedTime)) {
+                previous = entry;
+                continue;
+            }
+            next = entry;
+            break;
+        }
+        if (previous != null && !plannedTime.isAfter(previous.getPlannedTime())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Vui lòng cập nhật lịch trình theo đúng lịch");
+        }
+        if (next != null && !plannedTime.isBefore(next.getPlannedTime())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Vui lòng cập nhật lịch trình theo đúng lịch");
+        }
+    }
+
+    private void validateActualTimeAfterPrevious(BabyRoutineEntry entry, LocalTime actualTime) {
+        List<BabyRoutineEntry> entries = babyRoutineEntryRepository
+                .findByProfile_IdAndRoutineDateAndStatusOrderByPlannedTimeAscIdAsc(
+                        entry.getProfile().getId(),
+                        entry.getRoutineDate(),
+                        Constants.TABLE_STATUS.ACTIVE
+                );
+        int index = findEntryIndex(entries, entry.getId());
+        if (index <= 0) {
+            return;
+        }
+        BabyRoutineEntry previous = entries.get(index - 1);
+        LocalTime previousTime = previous.getActualTime() != null ? previous.getActualTime() : previous.getPlannedTime();
+        if (!actualTime.isAfter(previousTime)) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Vui lòng cập nhật lịch trình theo đúng lịch"
+            );
+        }
+    }
+
+    private String defaultText(String value, String fallback) {
+        return value == null || value.isBlank() ? fallback : value.trim();
     }
 
     private String formatTime(LocalTime time) {
@@ -972,5 +1524,25 @@ public class BabyRoutineServiceImpl implements BabyRoutineService {
     }
 
     private record SleepWindow(int minMinutes, int likelyMinutes, int maxMinutes) {
+    }
+
+    private record PredictedNightEvent(
+            String type,
+            String label,
+            LocalDateTime likelyDateTime,
+            String note,
+            boolean addSleepBack
+    ) {
+    }
+
+    private record PredictedRoutineSpec(
+            String type,
+            LocalDateTime dateTime,
+            String activity,
+            String note,
+            String icon,
+            String color,
+            String sourceDate
+    ) {
     }
 }

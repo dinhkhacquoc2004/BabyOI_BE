@@ -31,6 +31,18 @@ public class HealthRecord {
     @Column(name = "bmi")
     private Double bmi;
 
+    @Column(name = "activity_level")
+    private String activityLevel;
+
+    @Column(name = "bmr")
+    private Double bmr;
+
+    @Column(name = "tdee")
+    private Double tdee;
+
+    @Column(name = "tdee_formula")
+    private String tdeeFormula;
+
     @Column(name = "record_date", nullable = false)
     private LocalDate recordDate;
 

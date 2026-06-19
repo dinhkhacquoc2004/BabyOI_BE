@@ -27,7 +27,9 @@ import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.YearMonth;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
+import java.util.Locale;
 
 @Service
 @RequiredArgsConstructor
@@ -36,6 +38,11 @@ public class HealthTrackingServiceImpl implements HealthTrackingService {
     private static final long ILLNESS_STATUS_LIGHT = 1L;
     private static final long ILLNESS_STATUS_NORMAL = 2L;
     private static final long ILLNESS_STATUS_ATTENTION = 3L;
+    private static final String PROFILE_TYPE_MOTHER = "MOTHER";
+    private static final String PROFILE_TYPE_CHILD = "CHILD";
+    private static final String DEFAULT_MOTHER_ACTIVITY_LEVEL = "LIGHT";
+    private static final String FORMULA_MIFFLIN_ST_JEOR = "MIFFLIN_ST_JEOR";
+    private static final String FORMULA_IOM_CHILD_EER = "IOM_CHILD_EER_0_35_MONTHS";
 
     private final HealthRecordRepository healthRecordRepository;
     private final IllnessEventRepository illnessEventRepository;
@@ -46,7 +53,8 @@ public class HealthTrackingServiceImpl implements HealthTrackingService {
     @Transactional
     public HealthRecordResponse createHealthRecord(HealthRecordRequest request) {
         Profile profile = resolveProfile(request.getProfileId());
-        validateHealthRecordRequest(request);
+        validateHealthRecordRequest(request, profile);
+        EnergyEstimate energyEstimate = resolveEnergyEstimate(profile, request);
 
         LocalDateTime now = LocalDateTime.now();
         HealthRecord record = HealthRecord.builder()
@@ -54,6 +62,10 @@ public class HealthTrackingServiceImpl implements HealthTrackingService {
                 .height(request.getHeight())
                 .weight(request.getWeight())
                 .bmi(resolveBmi(request.getHeight(), request.getWeight(), request.getBmi()))
+                .activityLevel(energyEstimate.activityLevel())
+                .bmr(energyEstimate.bmr())
+                .tdee(energyEstimate.tdee())
+                .tdeeFormula(energyEstimate.formula())
                 .recordDate(request.getRecordDate())
                 .createdAt(now)
                 .updatedAt(now)
@@ -70,12 +82,17 @@ public class HealthTrackingServiceImpl implements HealthTrackingService {
         HealthRecord record = healthRecordRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Health record not found"));
         Profile profile = resolveProfile(request.getProfileId());
-        validateHealthRecordRequest(request);
+        validateHealthRecordRequest(request, profile);
+        EnergyEstimate energyEstimate = resolveEnergyEstimate(profile, request);
 
         record.setProfile(profile);
         record.setHeight(request.getHeight());
         record.setWeight(request.getWeight());
         record.setBmi(resolveBmi(request.getHeight(), request.getWeight(), request.getBmi()));
+        record.setActivityLevel(energyEstimate.activityLevel());
+        record.setBmr(energyEstimate.bmr());
+        record.setTdee(energyEstimate.tdee());
+        record.setTdeeFormula(energyEstimate.formula());
         record.setRecordDate(request.getRecordDate());
         record.setUpdatedAt(LocalDateTime.now());
 
@@ -225,9 +242,12 @@ public class HealthTrackingServiceImpl implements HealthTrackingService {
         return profile;
     }
 
-    private void validateHealthRecordRequest(HealthRecordRequest request) {
+    private void validateHealthRecordRequest(HealthRecordRequest request, Profile profile) {
         if (request.getRecordDate().isAfter(LocalDate.now())) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Record date cannot be in the future");
+        }
+        if (profile.getDateOfBirth() != null && request.getRecordDate().isBefore(profile.getDateOfBirth())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Record date cannot be before profile date of birth");
         }
         if (request.getHeight() == null && request.getWeight() == null && request.getBmi() == null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "At least one health index is required");
@@ -255,8 +275,106 @@ public class HealthTrackingServiceImpl implements HealthTrackingService {
         return roundOneDecimal(weight / (heightMeters * heightMeters));
     }
 
+    private EnergyEstimate resolveEnergyEstimate(Profile profile, HealthRecordRequest request) {
+        String profileType = normalizeCode(profile.getProfileType());
+        if (PROFILE_TYPE_CHILD.equals(profileType)) {
+            return resolveChildEnergyEstimate(profile, request);
+        }
+        if (PROFILE_TYPE_MOTHER.equals(profileType)) {
+            return resolveMotherEnergyEstimate(profile, request);
+        }
+        return EnergyEstimate.empty();
+    }
+
+    private EnergyEstimate resolveMotherEnergyEstimate(Profile profile, HealthRecordRequest request) {
+        String activityLevel = resolveMotherActivityLevel(request.getActivityLevel());
+        if (request.getHeight() == null || request.getWeight() == null || profile.getDateOfBirth() == null) {
+            return new EnergyEstimate(activityLevel, null, null, null);
+        }
+
+        long ageYears = ChronoUnit.YEARS.between(profile.getDateOfBirth(), request.getRecordDate());
+        if (ageYears < 0) {
+            return new EnergyEstimate(activityLevel, null, null, null);
+        }
+
+        double bmr = (10 * request.getWeight())
+                + (6.25 * request.getHeight())
+                - (5 * ageYears)
+                + resolveMifflinSexAdjustment(profile.getSex());
+        double tdee = bmr * resolveActivityFactor(activityLevel);
+        if (bmr <= 0 || tdee <= 0) {
+            return new EnergyEstimate(activityLevel, null, null, null);
+        }
+
+        return new EnergyEstimate(activityLevel, roundWhole(bmr), roundWhole(tdee), FORMULA_MIFFLIN_ST_JEOR);
+    }
+
+    private EnergyEstimate resolveChildEnergyEstimate(Profile profile, HealthRecordRequest request) {
+        if (request.getWeight() == null || profile.getDateOfBirth() == null) {
+            return EnergyEstimate.empty();
+        }
+
+        long ageMonths = ChronoUnit.MONTHS.between(profile.getDateOfBirth(), request.getRecordDate());
+        if (ageMonths < 0 || ageMonths > 35) {
+            return EnergyEstimate.empty();
+        }
+
+        double tdee = (89 * request.getWeight()) - 100 + resolveChildEnergyAdjustment(ageMonths);
+        if (tdee <= 0) {
+            return EnergyEstimate.empty();
+        }
+
+        return new EnergyEstimate(null, null, roundWhole(tdee), FORMULA_IOM_CHILD_EER);
+    }
+
+    private double resolveChildEnergyAdjustment(long ageMonths) {
+        if (ageMonths <= 3) {
+            return 175;
+        }
+        if (ageMonths <= 6) {
+            return 56;
+        }
+        if (ageMonths <= 12) {
+            return 22;
+        }
+        return 20;
+    }
+
+    private String resolveMotherActivityLevel(String activityLevel) {
+        String normalized = normalizeCode(activityLevel);
+        if (normalized.isEmpty()) {
+            return DEFAULT_MOTHER_ACTIVITY_LEVEL;
+        }
+
+        return switch (normalized) {
+            case "SEDENTARY", "LIGHT", "MODERATE", "ACTIVE", "VERY_ACTIVE" -> normalized;
+            default -> throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Activity level must be SEDENTARY, LIGHT, MODERATE, ACTIVE or VERY_ACTIVE"
+            );
+        };
+    }
+
+    private double resolveActivityFactor(String activityLevel) {
+        return switch (activityLevel) {
+            case "SEDENTARY" -> 1.2;
+            case "MODERATE" -> 1.55;
+            case "ACTIVE" -> 1.725;
+            case "VERY_ACTIVE" -> 1.9;
+            default -> 1.375;
+        };
+    }
+
+    private double resolveMifflinSexAdjustment(Profile.Sex sex) {
+        return Profile.Sex.MALE.equals(sex) ? 5 : -161;
+    }
+
     private Double roundOneDecimal(Double value) {
         return BigDecimal.valueOf(value).setScale(1, RoundingMode.HALF_UP).doubleValue();
+    }
+
+    private Double roundWhole(Double value) {
+        return BigDecimal.valueOf(value).setScale(0, RoundingMode.HALF_UP).doubleValue();
     }
 
     private Long resolveIllnessStatus(Long status) {
@@ -315,6 +433,11 @@ public class HealthTrackingServiceImpl implements HealthTrackingService {
                 .height(record.getHeight())
                 .weight(record.getWeight())
                 .bmi(record.getBmi())
+                .activityLevel(record.getActivityLevel())
+                .bmr(record.getBmr())
+                .tdee(record.getTdee())
+                .tdeeFormula(record.getTdeeFormula())
+                .tdeeNote(resolveTdeeNote(record))
                 .illnessCount(illnessCount)
                 .recordDate(record.getRecordDate())
                 .createdAt(record.getCreatedAt())
@@ -394,6 +517,9 @@ public class HealthTrackingServiceImpl implements HealthTrackingService {
         if (record.getBmi() != null) {
             metrics.add("BMI " + formatNumber(record.getBmi()));
         }
+        if (record.getTdee() != null) {
+            metrics.add("TDEE " + formatNumber(record.getTdee()) + " kcal/ngay");
+        }
 
         if (metrics.isEmpty()) {
             return "Hồ sơ sức khỏe của bé " + profileName + " vừa được cập nhật ngày " + record.getRecordDate() + ".";
@@ -445,6 +571,33 @@ public class HealthTrackingServiceImpl implements HealthTrackingService {
         return String.valueOf(rounded);
     }
 
+    private String resolveTdeeNote(HealthRecord record) {
+        if (record.getTdee() == null) {
+            return "Chưa đủ dữ liệu chiều cao/cân nặng/ngày sinh để ước tính TDEE.";
+        }
+        if (FORMULA_IOM_CHILD_EER.equals(record.getTdeeFormula())) {
+            return "Ước tính nhu cầu năng lượng hằng ngày cho bé theo tuổi và cân nặng.";
+        }
+        if (record.getActivityLevel() != null) {
+            return "Ước tính kcal/ngày theo mức vận động " + resolveActivityLevelLabel(record.getActivityLevel()) + ".";
+        }
+        return "Ước tính kcal/ngày.";
+    }
+
+    private String resolveActivityLevelLabel(String activityLevel) {
+        return switch (normalizeCode(activityLevel)) {
+            case "SEDENTARY" -> "ít vận động";
+            case "MODERATE" -> "vừa";
+            case "ACTIVE" -> "cao";
+            case "VERY_ACTIVE" -> "rất cao";
+            default -> "nhẹ";
+        };
+    }
+
+    private String normalizeCode(String value) {
+        return value == null ? "" : value.trim().toUpperCase(Locale.ROOT);
+    }
+
     private void validateCurrentUser(Long userId) {
         Object principal = SecurityContextHolder.getContext().getAuthentication() != null
                 ? SecurityContextHolder.getContext().getAuthentication().getPrincipal()
@@ -458,5 +611,11 @@ public class HealthTrackingServiceImpl implements HealthTrackingService {
     }
 
     private record DateRange(LocalDate fromDate, LocalDate toDate) {
+    }
+
+    private record EnergyEstimate(String activityLevel, Double bmr, Double tdee, String formula) {
+        private static EnergyEstimate empty() {
+            return new EnergyEstimate(null, null, null, null);
+        }
     }
 }
