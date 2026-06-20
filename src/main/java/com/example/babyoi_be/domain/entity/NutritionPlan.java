@@ -26,6 +26,9 @@ public class NutritionPlan {
     @Column(name = "current_goal", columnDefinition = "TEXT")
     private String currentGoal;
 
+    @Column(name = "goal_code", length = 80)
+    private String goalCode;
+
     @Column(name = "future_goal", columnDefinition = "TEXT")
     private String futureGoal;
 

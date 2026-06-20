@@ -87,16 +87,18 @@ public class VaccineReminderScheduler {
             return;
         }
 
-        String childName = profile.getName() == null || profile.getName().isBlank() ? "bé" : profile.getName().trim();
+        String profileName = resolveProfileDisplayName(profile);
+        String subject = resolveProfileDisplaySubject(profile);
+        String sentenceSubject = resolveProfileSentenceSubject(profile);
         String immunizationName = resolveImmunizationName(record);
         String doseLabel = record.getDoseOrder() == null ? "mũi theo lịch" : "mũi " + record.getDoseOrder();
         String title = daysBefore == 0
-                ? "Lịch tiêm hôm nay của bé " + childName
-                : "Còn " + daysBefore + " ngày đến lịch tiêm của bé " + childName;
+                ? "Lịch tiêm hôm nay của " + subject + " " + profileName
+                : "Còn " + daysBefore + " ngày đến lịch tiêm của " + subject + " " + profileName;
         String body = daysBefore == 0
-                ? "Hôm nay bé " + childName + " tiêm " + immunizationName + ", " + doseLabel
+                ? "Hôm nay " + subject + " " + profileName + " tiêm " + immunizationName + ", " + doseLabel
                 + ". Mẹ nhớ kiểm tra giấy tờ và giờ hẹn nhé."
-                : "Bé " + childName + " sẽ tiêm " + immunizationName + ", " + doseLabel + " vào "
+                : sentenceSubject + " " + profileName + " sẽ tiêm " + immunizationName + ", " + doseLabel + " vào "
                 + record.getInjectionDate().format(DISPLAY_DATE) + ". Mẹ có thể sắp xếp thời gian từ bây giờ.";
         String dataJson = record.getDisease() != null
                 ? String.format(
@@ -120,6 +122,23 @@ public class VaccineReminderScheduler {
                 record.getId(),
                 reminderKey
         );
+    }
+
+    private String resolveProfileDisplayName(Profile profile) {
+        String fallback = isMotherProfile(profile) ? "mẹ" : "bé";
+        return profile.getName() == null || profile.getName().isBlank() ? fallback : profile.getName().trim();
+    }
+
+    private String resolveProfileDisplaySubject(Profile profile) {
+        return isMotherProfile(profile) ? "mẹ" : "bé";
+    }
+
+    private String resolveProfileSentenceSubject(Profile profile) {
+        return isMotherProfile(profile) ? "Mẹ" : "Bé";
+    }
+
+    private boolean isMotherProfile(Profile profile) {
+        return "MOTHER".equalsIgnoreCase(profile.getProfileType());
     }
 
     private String resolveImmunizationName(VaccineRecord record) {

@@ -32,7 +32,7 @@ public interface BabyRoutineEntryRepository extends JpaRepository<BabyRoutineEnt
             LocalTime plannedTime
     );
 
-    List<BabyRoutineEntry> findByRoutineDateAndStatusAndCompletedFalseAndPlannedTimeGreaterThanEqualAndPlannedTimeBeforeOrderByPlannedTimeAscIdAsc(
+    List<BabyRoutineEntry> findByRoutineDateAndStatusAndPlannedTimeGreaterThanEqualAndPlannedTimeBeforeOrderByPlannedTimeAscIdAsc(
             LocalDate routineDate,
             Long status,
             LocalTime fromTime,

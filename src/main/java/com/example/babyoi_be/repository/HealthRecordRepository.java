@@ -10,13 +10,13 @@ import java.util.Optional;
 
 @Repository
 public interface HealthRecordRepository extends JpaRepository<HealthRecord, Long> {
-    List<HealthRecord> findByProfileIdAndRecordDateBetweenOrderByRecordDateDesc(Long profileId, LocalDate fromDate, LocalDate toDate);
+    List<HealthRecord> findByProfileIdAndRecordDateBetweenOrderByRecordDateDescIdDesc(Long profileId, LocalDate fromDate, LocalDate toDate);
 
-    List<HealthRecord> findByProfileIdAndRecordDateBetweenOrderByRecordDateAsc(Long profileId, LocalDate fromDate, LocalDate toDate);
+    List<HealthRecord> findByProfileIdAndRecordDateBetweenOrderByRecordDateAscIdAsc(Long profileId, LocalDate fromDate, LocalDate toDate);
 
-    Optional<HealthRecord> findFirstByProfileIdAndRecordDateBetweenOrderByRecordDateDesc(Long profileId, LocalDate fromDate, LocalDate toDate);
+    Optional<HealthRecord> findFirstByProfileIdAndRecordDateBetweenOrderByRecordDateDescIdDesc(Long profileId, LocalDate fromDate, LocalDate toDate);
 
-    Optional<HealthRecord> findFirstByProfileIdOrderByRecordDateDesc(Long profileId);
+    Optional<HealthRecord> findFirstByProfileIdOrderByRecordDateDescIdDesc(Long profileId);
 
-    List<HealthRecord> findTop2ByProfileIdOrderByRecordDateDesc(Long profileId);
+    List<HealthRecord> findTop2ByProfileIdOrderByRecordDateDescIdDesc(Long profileId);
 }

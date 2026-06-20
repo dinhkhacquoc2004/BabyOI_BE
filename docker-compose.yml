@@ -73,5 +73,17 @@ services:
       - "${ADMIN_PORT:-8090}:${ADMIN_PORT:-8090}"
     command: sh -c "corepack enable && pnpm install --frozen-lockfile && pnpm start"
 
+  frontend:
+    image: nginx:1.27-alpine
+    container_name: babyoi-web
+    restart: unless-stopped
+    volumes:
+      - ./frontend-dist:/usr/share/nginx/html:ro
+      - ./nginx-web.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./ssl:/etc/nginx/ssl:ro
+    ports:
+      - "${WEB_PORT:-80}:80"
+      - "${WEB_SSL_PORT:-443}:443"
+
 volumes:
   postgres_data:

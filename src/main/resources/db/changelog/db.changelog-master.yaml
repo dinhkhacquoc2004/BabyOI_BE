@@ -67,3 +67,15 @@ databaseChangeLog:
       file: db/changelog/changes/037_add_health_record_tdee.sql
   - include:
       file: db/changelog/changes/038_create_nutrition_plan.sql
+  - include:
+      file: db/changelog/changes/039_remove_mother_routine_notifications.sql
+  - include:
+      file: db/changelog/changes/040_fix_mother_notification_labels.sql
+  - include:
+      file: db/changelog/changes/041_add_nutrition_plan_goal_code.sql
+  - include:
+      file: db/changelog/changes/042_enforce_one_active_nutrition_plan_per_profile.sql
+  - include:
+      file: db/changelog/changes/043_add_profile_activity_level.sql
+  - include:
+      file: db/changelog/changes/044_update_activity_level_labels.sql

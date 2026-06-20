@@ -40,7 +40,6 @@ public class HealthTrackingServiceImpl implements HealthTrackingService {
     private static final long ILLNESS_STATUS_ATTENTION = 3L;
     private static final String PROFILE_TYPE_MOTHER = "MOTHER";
     private static final String PROFILE_TYPE_CHILD = "CHILD";
-    private static final String DEFAULT_MOTHER_ACTIVITY_LEVEL = "LIGHT";
     private static final String FORMULA_MIFFLIN_ST_JEOR = "MIFFLIN_ST_JEOR";
     private static final String FORMULA_IOM_CHILD_EER = "IOM_CHILD_EER_0_35_MONTHS";
 
@@ -55,6 +54,7 @@ public class HealthTrackingServiceImpl implements HealthTrackingService {
         Profile profile = resolveProfile(request.getProfileId());
         validateHealthRecordRequest(request, profile);
         EnergyEstimate energyEstimate = resolveEnergyEstimate(profile, request);
+        updateMotherActivityLevel(profile, energyEstimate.activityLevel());
 
         LocalDateTime now = LocalDateTime.now();
         HealthRecord record = HealthRecord.builder()
@@ -84,6 +84,7 @@ public class HealthTrackingServiceImpl implements HealthTrackingService {
         Profile profile = resolveProfile(request.getProfileId());
         validateHealthRecordRequest(request, profile);
         EnergyEstimate energyEstimate = resolveEnergyEstimate(profile, request);
+        updateMotherActivityLevel(profile, energyEstimate.activityLevel());
 
         record.setProfile(profile);
         record.setHeight(request.getHeight());
@@ -111,6 +112,7 @@ public class HealthTrackingServiceImpl implements HealthTrackingService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public HealthRecordResponse getHealthRecord(Long id) {
         HealthRecord record = healthRecordRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Health record not found"));
@@ -119,28 +121,31 @@ public class HealthTrackingServiceImpl implements HealthTrackingService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<HealthRecordResponse> getHealthRecords(Long profileId, LocalDate fromDate, LocalDate toDate, Integer month, Integer year) {
         Profile profile = resolveProfile(profileId);
         DateRange range = resolveDateRange(fromDate, toDate, month, year);
 
-        return healthRecordRepository.findByProfileIdAndRecordDateBetweenOrderByRecordDateDesc(profile.getId(), range.fromDate(), range.toDate())
+        return healthRecordRepository.findByProfileIdAndRecordDateBetweenOrderByRecordDateDescIdDesc(profile.getId(), range.fromDate(), range.toDate())
                 .stream()
                 .map(this::mapHealthRecord)
                 .toList();
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<HealthRecordResponse> getDevelopmentHistory(Long profileId, LocalDate fromDate, LocalDate toDate, Integer month, Integer year) {
         Profile profile = resolveProfile(profileId);
         DateRange range = resolveDateRange(fromDate, toDate, month, year);
 
-        return healthRecordRepository.findByProfileIdAndRecordDateBetweenOrderByRecordDateAsc(profile.getId(), range.fromDate(), range.toDate())
+        return healthRecordRepository.findByProfileIdAndRecordDateBetweenOrderByRecordDateAscIdAsc(profile.getId(), range.fromDate(), range.toDate())
                 .stream()
                 .map(this::mapHealthRecord)
                 .toList();
     }
 
     @Override
+    @Transactional(readOnly = true)
     public HealthMonthlyDetailResponse getMonthlyDetail(Long profileId, Integer month, Integer year) {
         Profile profile = resolveProfile(profileId);
         YearMonth yearMonth = YearMonth.of(resolveYear(year), resolveMonth(month));
@@ -148,7 +153,7 @@ public class HealthTrackingServiceImpl implements HealthTrackingService {
         LocalDate toDate = yearMonth.atEndOfMonth();
 
         HealthRecordResponse healthRecord = healthRecordRepository
-                .findFirstByProfileIdAndRecordDateBetweenOrderByRecordDateDesc(profile.getId(), fromDate, toDate)
+                .findFirstByProfileIdAndRecordDateBetweenOrderByRecordDateDescIdDesc(profile.getId(), fromDate, toDate)
                 .map(this::mapHealthRecord)
                 .orElse(null);
         List<IllnessEventResponse> illnesses = illnessEventRepository
@@ -214,6 +219,7 @@ public class HealthTrackingServiceImpl implements HealthTrackingService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public IllnessEventResponse getIllnessEvent(Long id) {
         IllnessEvent event = illnessEventRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Illness event not found"));
@@ -222,6 +228,7 @@ public class HealthTrackingServiceImpl implements HealthTrackingService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<IllnessEventResponse> getIllnessEvents(Long profileId, LocalDate fromDate, LocalDate toDate, Integer month, Integer year, Long status) {
         Profile profile = resolveProfile(profileId);
         DateRange range = resolveDateRange(fromDate, toDate, month, year);
@@ -251,6 +258,33 @@ public class HealthTrackingServiceImpl implements HealthTrackingService {
         }
         if (request.getHeight() == null && request.getWeight() == null && request.getBmi() == null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "At least one health index is required");
+        }
+        if (isMotherProfile(profile) && normalizeCode(request.getActivityLevel()).isEmpty()) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Activity level is required for mother health records"
+            );
+        }
+        validateChildMeasurements(profile, request);
+    }
+
+    private void validateChildMeasurements(Profile profile, HealthRecordRequest request) {
+        if (!PROFILE_TYPE_CHILD.equals(normalizeCode(profile.getProfileType()))
+                || profile.getDateOfBirth() == null
+                || request.getWeight() == null) {
+            return;
+        }
+
+        long ageMonths = ChronoUnit.MONTHS.between(profile.getDateOfBirth(), request.getRecordDate());
+        double maximumSupportedWeight = ageMonths <= 6 ? 15D
+                : ageMonths <= 12 ? 20D
+                : ageMonths <= 24 ? 30D
+                : 35D;
+        if (request.getWeight() > maximumSupportedWeight) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Cân nặng vượt phạm vi hỗ trợ tính EER cho độ tuổi của bé; vui lòng kiểm tra lại đơn vị kg"
+            );
         }
     }
 
@@ -340,11 +374,8 @@ public class HealthTrackingServiceImpl implements HealthTrackingService {
         return 20;
     }
 
-    private String resolveMotherActivityLevel(String activityLevel) {
-        String normalized = normalizeCode(activityLevel);
-        if (normalized.isEmpty()) {
-            return DEFAULT_MOTHER_ACTIVITY_LEVEL;
-        }
+    private String resolveMotherActivityLevel(String requestedActivityLevel) {
+        String normalized = normalizeCode(requestedActivityLevel);
 
         return switch (normalized) {
             case "SEDENTARY", "LIGHT", "MODERATE", "ACTIVE", "VERY_ACTIVE" -> normalized;
@@ -353,6 +384,15 @@ public class HealthTrackingServiceImpl implements HealthTrackingService {
                     "Activity level must be SEDENTARY, LIGHT, MODERATE, ACTIVE or VERY_ACTIVE"
             );
         };
+    }
+
+    private void updateMotherActivityLevel(Profile profile, String activityLevel) {
+        if (!isMotherProfile(profile) || activityLevel == null || activityLevel.equals(profile.getActivityLevel())) {
+            return;
+        }
+        profile.setActivityLevel(activityLevel);
+        profile.setUpdatedAt(LocalDateTime.now());
+        profileRepository.save(profile);
     }
 
     private double resolveActivityFactor(String activityLevel) {
@@ -480,9 +520,9 @@ public class HealthTrackingServiceImpl implements HealthTrackingService {
             return;
         }
 
-        String profileName = profile.getName() != null && !profile.getName().isBlank() ? profile.getName().trim() : "bé";
+        String profileName = resolveProfileDisplayName(profile);
         String title = updated ? "Đã cập nhật chỉ số sức khỏe" : "Đã ghi nhận chỉ số sức khỏe";
-        String body = buildHealthRecordBody(profileName, record);
+        String body = buildHealthRecordBody(profile, profileName, record);
         String dataJson = String.format(
                 "{\"route\":\"/phattrien/health-detail?month=%d&year=%d\",\"screen\":\"HealthDetail\",\"recordId\":%d,\"profileId\":%d,\"month\":%d,\"year\":%d}",
                 record.getRecordDate().getMonthValue(),
@@ -506,7 +546,7 @@ public class HealthTrackingServiceImpl implements HealthTrackingService {
         );
     }
 
-    private String buildHealthRecordBody(String profileName, HealthRecord record) {
+    private String buildHealthRecordBody(Profile profile, String profileName, HealthRecord record) {
         List<String> metrics = new java.util.ArrayList<>();
         if (record.getWeight() != null) {
             metrics.add("cân nặng " + formatNumber(record.getWeight()) + "kg");
@@ -522,9 +562,9 @@ public class HealthTrackingServiceImpl implements HealthTrackingService {
         }
 
         if (metrics.isEmpty()) {
-            return "Hồ sơ sức khỏe của bé " + profileName + " vừa được cập nhật ngày " + record.getRecordDate() + ".";
+            return "Hồ sơ sức khỏe của " + resolveProfileDisplaySubject(profile) + " " + profileName + " vừa được cập nhật ngày " + record.getRecordDate() + ".";
         }
-        return "Bé " + profileName + " vừa được cập nhật " + String.join(", ", metrics) + " ngày " + record.getRecordDate() + ".";
+        return resolveProfileSentenceSubject(profile) + " " + profileName + " vừa được cập nhật " + String.join(", ", metrics) + " ngày " + record.getRecordDate() + ".";
     }
 
     private void createIllnessEventNotification(IllnessEvent event, boolean updated) {
@@ -533,10 +573,10 @@ public class HealthTrackingServiceImpl implements HealthTrackingService {
             return;
         }
 
-        String profileName = profile.getName() != null && !profile.getName().isBlank() ? profile.getName().trim() : "bé";
+        String profileName = resolveProfileDisplayName(profile);
         String statusLabel = resolveIllnessStatusLabel(event.getStatus());
         String title = updated ? "Đã cập nhật hồ sơ bệnh" : "Đã thêm hồ sơ bệnh";
-        String body = "Bé " + profileName + " có ghi nhận " + event.getIllnessType()
+        String body = resolveProfileSentenceSubject(profile) + " " + profileName + " có ghi nhận " + event.getIllnessType()
                 + " từ " + event.getStartAt()
                 + ", mức độ: " + statusLabel + ".";
         String dataJson = String.format(
@@ -560,6 +600,23 @@ public class HealthTrackingServiceImpl implements HealthTrackingService {
         );
     }
 
+    private String resolveProfileDisplayName(Profile profile) {
+        String fallback = isMotherProfile(profile) ? "mẹ" : "bé";
+        return profile.getName() != null && !profile.getName().isBlank() ? profile.getName().trim() : fallback;
+    }
+
+    private String resolveProfileDisplaySubject(Profile profile) {
+        return isMotherProfile(profile) ? "mẹ" : "bé";
+    }
+
+    private String resolveProfileSentenceSubject(Profile profile) {
+        return isMotherProfile(profile) ? "Mẹ" : "Bé";
+    }
+
+    private boolean isMotherProfile(Profile profile) {
+        return PROFILE_TYPE_MOTHER.equalsIgnoreCase(profile.getProfileType());
+    }
+
     private String formatNumber(Double value) {
         if (value == null) {
             return "";
@@ -573,10 +630,12 @@ public class HealthTrackingServiceImpl implements HealthTrackingService {
 
     private String resolveTdeeNote(HealthRecord record) {
         if (record.getTdee() == null) {
-            return "Chưa đủ dữ liệu chiều cao/cân nặng/ngày sinh để ước tính TDEE.";
+            return isMotherProfile(record.getProfile())
+                    ? "Chưa đủ chiều cao, cân nặng hoặc ngày sinh để ước tính TDEE."
+                    : "Chưa đủ cân nặng hoặc ngày sinh để ước tính EER của bé.";
         }
         if (FORMULA_IOM_CHILD_EER.equals(record.getTdeeFormula())) {
-            return "Ước tính nhu cầu năng lượng hằng ngày cho bé theo tuổi và cân nặng.";
+            return "EER là tổng nhu cầu năng lượng hằng ngày của bé, gồm cả năng lượng tăng trưởng.";
         }
         if (record.getActivityLevel() != null) {
             return "Ước tính kcal/ngày theo mức vận động " + resolveActivityLevelLabel(record.getActivityLevel()) + ".";
@@ -586,11 +645,11 @@ public class HealthTrackingServiceImpl implements HealthTrackingService {
 
     private String resolveActivityLevelLabel(String activityLevel) {
         return switch (normalizeCode(activityLevel)) {
-            case "SEDENTARY" -> "ít vận động";
-            case "MODERATE" -> "vừa";
-            case "ACTIVE" -> "cao";
-            case "VERY_ACTIVE" -> "rất cao";
-            default -> "nhẹ";
+            case "SEDENTARY" -> "không tập luyện";
+            case "MODERATE" -> "tập vừa 3-5 buổi/tuần";
+            case "ACTIVE" -> "tập nặng 6-7 buổi/tuần";
+            case "VERY_ACTIVE" -> "tập rất nặng hằng ngày hoặc lao động thể lực";
+            default -> "tập nhẹ 1-3 buổi/tuần";
         };
     }
 

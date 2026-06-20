@@ -9,9 +9,15 @@ import java.util.List;
 @Builder
 public class NutritionPlanResponse {
     private String status;
+    private String lifecycleStatus;
     private Long planId;
     private Long profileId;
     private String profileName;
+    private String profileType;
+    private String currentGoal;
+    private String goalCode;
+    private String userNotes;
+    private Double targetDailyCalories;
     private String startDate;
     private String endDate;
     private Integer mealsPerDay;

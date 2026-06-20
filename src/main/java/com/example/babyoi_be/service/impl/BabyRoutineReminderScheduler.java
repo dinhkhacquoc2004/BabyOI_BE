@@ -90,7 +90,7 @@ public class BabyRoutineReminderScheduler {
 
     private List<BabyRoutineEntry> findEntriesForDate(LocalDate date, LocalTime fromTime, LocalTime toTime) {
         return babyRoutineEntryRepository
-                .findByRoutineDateAndStatusAndCompletedFalseAndPlannedTimeGreaterThanEqualAndPlannedTimeBeforeOrderByPlannedTimeAscIdAsc(
+                .findByRoutineDateAndStatusAndPlannedTimeGreaterThanEqualAndPlannedTimeBeforeOrderByPlannedTimeAscIdAsc(
                         date,
                         Constants.TABLE_STATUS.ACTIVE,
                         fromTime,
@@ -101,6 +101,9 @@ public class BabyRoutineReminderScheduler {
     private boolean createReminder(BabyRoutineEntry entry) {
         Profile profile = entry.getProfile();
         if (profile == null || profile.getUser() == null) {
+            return false;
+        }
+        if (!isChildProfile(profile) || !supportsRoutine(profile, entry.getRoutineDate())) {
             return false;
         }
 
@@ -128,7 +131,7 @@ public class BabyRoutineReminderScheduler {
                 dataJson,
                 Constants.NOTIFICATION_PRIORITY.NORMAL,
                 "BABY_ROUTINE_ENTRY",
-                null,
+                entry.getId(),
                 reminderKey
         );
     }
@@ -137,6 +140,10 @@ public class BabyRoutineReminderScheduler {
         return profile.getDateOfBirth() != null
                 && !profile.getDateOfBirth().isAfter(date)
                 && profile.getDateOfBirth().plusMonths(25).isAfter(date);
+    }
+
+    private boolean isChildProfile(Profile profile) {
+        return "CHILD".equalsIgnoreCase(profile.getProfileType());
     }
 
     private String normalize(String value, String fallback) {

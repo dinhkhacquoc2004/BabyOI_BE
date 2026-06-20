@@ -36,3 +36,7 @@ build/
 admin-dashboard/node_modules/
 admin-dashboard/.env
 admin-dashboard/.adminjs/
+
+### SSL certificates ###
+ssl/
+*.key

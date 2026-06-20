@@ -26,7 +26,7 @@ public class HealthRecordRequest {
     private Double bmi;
 
     @Size(max = 32, message = "Activity level must not exceed 32 characters")
-    private String activityLevel;
+    private String activityLevel; // Required for MOTHER: SEDENTARY, LIGHT, MODERATE, ACTIVE, VERY_ACTIVE
 
     @NotNull(message = "Record date is required")
     @JsonFormat(pattern = "yyyy-MM-dd")

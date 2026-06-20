@@ -36,6 +36,10 @@ import java.util.stream.Collectors;
 @Slf4j
 public class ProfileServiceImpl implements ProfileService {
 
+    private static final String PROFILE_TYPE_MOTHER = "MOTHER";
+    private static final String ACTIVITY_LEVEL_TYPE_CODE = "ACTIVITY_LEVEL";
+    private static final String DEFAULT_MOTHER_ACTIVITY_LEVEL = "LIGHT";
+
     private final ProfileRepository profileRepository;
     private final UsersRepository usersRepository;
     private final ChildDiseaseDoseScheduleRepository childDiseaseDoseScheduleRepository;
@@ -63,6 +67,7 @@ public class ProfileServiceImpl implements ProfileService {
         profile.setUser(user);
         profile.setProfileType(profileType);
         profile.setSex(Profile.Sex.valueOf(resolveSex(profileType, request.getSex())));
+        profile.setActivityLevel(resolveProfileActivityLevel(profileType, request.getActivityLevel()));
         profile.setImageUrl(normalizeImageUrl(request));
         profile.setCreatedAt(now);
         profile.setCreatedBy(actorName);
@@ -92,10 +97,15 @@ public class ProfileServiceImpl implements ProfileService {
         String profileType = normalizeCode(request.getProfileType());
         validateProfileLimit(profile.getUser().getId(), profileType, profile.getId());
 
-        BeanUtils.copyProperties(request, profile, "id", "userId", "sex");
+        BeanUtils.copyProperties(request, profile, "id", "userId", "sex", "activityLevel");
 
         profile.setProfileType(profileType);
         profile.setSex(Profile.Sex.valueOf(resolveSex(profileType, request.getSex())));
+        profile.setActivityLevel(resolveUpdatedProfileActivityLevel(
+                profileType,
+                request.getActivityLevel(),
+                profile.getActivityLevel()
+        ));
         String oldImageUrl = profile.getImageUrl();
         String newImageUrl = normalizeImageUrl(request);
         profile.setImageUrl(newImageUrl);
@@ -171,6 +181,7 @@ public class ProfileServiceImpl implements ProfileService {
         String name = request.getName() != null ? request.getName().trim() : "";
         String profileType = normalizeCode(request.getProfileType());
         String sex = resolveSex(profileType, request.getSex());
+        String activityLevel = resolveProfileActivityLevel(profileType, request.getActivityLevel());
 
         if (name.length() < 2 || name.length() > 50) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Tên hồ sơ cần từ 2 đến 50 ký tự");
@@ -183,6 +194,13 @@ public class ProfileServiceImpl implements ProfileService {
         }
         if ("MOTHER".equals(profileType) && !"FEMALE".equals(sex)) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Hồ sơ mẹ mặc định là FEMALE");
+        }
+        if (PROFILE_TYPE_MOTHER.equals(profileType)
+                && !typeValueService.existsValueCode(ACTIVITY_LEVEL_TYPE_CODE, activityLevel)) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Activity level must be SEDENTARY, LIGHT, MODERATE, ACTIVE or VERY_ACTIVE"
+            );
         }
         if (request.getDateOfBirth() == null || request.getDateOfBirth().isAfter(LocalDate.now())) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Ngày sinh không hợp lệ");
@@ -248,6 +266,31 @@ public class ProfileServiceImpl implements ProfileService {
             return "FEMALE";
         }
         return normalizeCode(sex);
+    }
+
+    private String resolveProfileActivityLevel(String profileType, String activityLevel) {
+        if (!PROFILE_TYPE_MOTHER.equals(profileType)) {
+            return null;
+        }
+
+        String normalized = normalizeCode(activityLevel);
+        return normalized.isEmpty() ? DEFAULT_MOTHER_ACTIVITY_LEVEL : normalized;
+    }
+
+    private String resolveUpdatedProfileActivityLevel(
+            String profileType,
+            String requestedActivityLevel,
+            String currentActivityLevel
+    ) {
+        if (!PROFILE_TYPE_MOTHER.equals(profileType)) {
+            return null;
+        }
+
+        String normalized = normalizeCode(requestedActivityLevel);
+        if (normalized.isEmpty()) {
+            normalized = normalizeCode(currentActivityLevel);
+        }
+        return normalized.isEmpty() ? DEFAULT_MOTHER_ACTIVITY_LEVEL : normalized;
     }
 
     private String normalizeCode(String value) {

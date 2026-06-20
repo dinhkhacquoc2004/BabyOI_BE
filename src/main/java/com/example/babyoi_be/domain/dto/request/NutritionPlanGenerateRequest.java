@@ -22,6 +22,8 @@ public class NutritionPlanGenerateRequest {
     private Integer mealsPerDay;
     private List<String> allowedMealTypes;
     private String currentGoal;
+    private String goalCode;
+    private Double targetWeightKg;
     private String futureGoal;
     private String userNotes;
     private List<Long> candidateFoodIds;

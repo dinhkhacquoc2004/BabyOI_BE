@@ -2,6 +2,7 @@ package com.example.babyoi_be.service.impl;
 
 import com.example.babyoi_be.common.Constants;
 import com.example.babyoi_be.domain.dto.request.NutritionPlanGenerateRequest;
+import com.example.babyoi_be.domain.dto.request.NutritionPlanMealUpdateRequest;
 import com.example.babyoi_be.domain.dto.respone.FoodNutritionResponse;
 import com.example.babyoi_be.domain.dto.respone.NutritionPlanDayResponse;
 import com.example.babyoi_be.domain.dto.respone.NutritionPlanMealResponse;
@@ -25,6 +26,9 @@ import org.springframework.web.server.ResponseStatusException;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 
+import java.text.Normalizer;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.time.Duration;
@@ -40,7 +44,11 @@ import java.util.stream.Collectors;
 @Slf4j
 public class NutritionPlanServiceImpl implements NutritionPlanService {
 
-    private static final String PROMPT_VERSION = "nutrition-plan-v1";
+    private static final String PROMPT_VERSION = "nutrition-plan-v8-child-auto-meals";
+    private static final int MIN_COMPLEMENTARY_FEEDING_AGE_MONTHS = 6;
+    private static final double WHO_COMPLEMENTARY_KCAL_6_TO_8_MONTHS = 200D;
+    private static final double WHO_COMPLEMENTARY_KCAL_9_TO_11_MONTHS = 300D;
+    private static final double WHO_COMPLEMENTARY_KCAL_12_TO_23_MONTHS = 550D;
     private static final List<String> DEFAULT_MEAL_TYPES = List.of("BREAKFAST", "MORNING_SNACK", "LUNCH", "AFTERNOON_SNACK", "DINNER", "EVENING_SNACK");
     private static final Set<String> ALLOWED_MEAL_TYPES = Set.of(
             "BREAKFAST", "MORNING_SNACK", "LUNCH", "AFTERNOON_SNACK", "DINNER", "EVENING_SNACK"
@@ -62,6 +70,8 @@ public class NutritionPlanServiceImpl implements NutritionPlanService {
     private final FavoriteFoodRepository favoriteFoodRepository;
     private final RestrictedFoodRepository restrictedFoodRepository;
     private final FoodLibraryRepository foodLibraryRepository;
+    private final FoodLibraryIngredientRepository foodLibraryIngredientRepository;
+    private final NutritionPlanMealRepository nutritionPlanMealRepository;
 
     @Value("${app.ai.gemini.api-key:}")
     private String apiKey;
@@ -72,7 +82,7 @@ public class NutritionPlanServiceImpl implements NutritionPlanService {
     @Value("${app.ai.gemini.text-model:gemini-3.5-flash,gemini-2.5-flash,gemini-2.5-flash-lite}")
     private String textModels;
 
-    @Value("${app.ai.gemini.timeout-seconds:20}")
+    @Value("${app.ai.gemini.timeout-seconds:40}")
     private Long timeoutSeconds;
 
     @Override
@@ -82,12 +92,25 @@ public class NutritionPlanServiceImpl implements NutritionPlanService {
         LocalDate endDate = parseDate(request.getEndDate(), "endDate");
         validateDateRange(startDate, endDate);
         int days = (int) ChronoUnit.DAYS.between(startDate, endDate) + 1;
-        int mealsPerDay = resolveMealsPerDay(request.getMealsPerDay());
-        List<String> mealTypes = resolveMealTypes(request.getAllowedMealTypes(), mealsPerDay);
-
         Profile profile = validateCurrentProfile(request.getProfileId());
-        HealthRecord latestHealth = healthRecordRepository.findFirstByProfileIdOrderByRecordDateDesc(profile.getId()).orElse(null);
-        List<HealthRecord> latestTwoHealth = healthRecordRepository.findTop2ByProfileIdOrderByRecordDateDesc(profile.getId());
+        profileRepository.lockById(profile.getId())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Profile not found"));
+        validateBabyPlanningAge(profile);
+        int mealsPerDay = resolveMealsPerDay(request.getMealsPerDay(), profile);
+        List<String> mealTypes = resolveMealTypes(
+                isMotherProfile(profile) ? request.getAllowedMealTypes() : null,
+                mealsPerDay
+        );
+        validateGoalTarget(profile, request);
+        if (nutritionPlanRepository.existsByProfileIdAndStatus(profile.getId(), Constants.TABLE_STATUS.ACTIVE)) {
+            throw new ResponseStatusException(
+                    HttpStatus.CONFLICT,
+                    "Hồ sơ đang có một lịch ăn chưa hoàn thành. Hãy hoàn thành hoặc xóa lịch đó trước khi tạo lịch mới"
+            );
+        }
+        HealthRecord latestHealth = healthRecordRepository.findFirstByProfileIdOrderByRecordDateDescIdDesc(profile.getId()).orElse(null);
+        validateTdeeAvailable(latestHealth, profile);
+        List<HealthRecord> latestTwoHealth = healthRecordRepository.findTop2ByProfileIdOrderByRecordDateDescIdDesc(profile.getId());
         List<IllnessEvent> recentIllnesses = illnessEventRepository.findByProfileAndDateRange(
                 profile.getId(),
                 startDate.minusDays(30),
@@ -96,7 +119,8 @@ public class NutritionPlanServiceImpl implements NutritionPlanService {
         );
         List<Long> favoriteIds = favoriteFoodRepository.findFoodLibraryIdsByProfileId(profile.getId());
         List<Long> restrictedIds = restrictedFoodRepository.findFoodLibraryIdsByProfileId(profile.getId());
-        List<FoodLibrary> candidateFoods = resolveCandidateFoods(request.getCandidateFoodIds(), restrictedIds);
+        List<String> targetAdvanceFor = resolveTargetAdvanceFor(profile, request);
+        List<FoodLibrary> candidateFoods = resolveCandidateFoods(profile, request, targetAdvanceFor, restrictedIds);
         if (candidateFoods.isEmpty()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Không có món ăn hợp lệ để lập lịch");
         }
@@ -112,6 +136,7 @@ public class NutritionPlanServiceImpl implements NutritionPlanService {
                 mealsPerDay,
                 mealTypes,
                 request,
+                targetAdvanceFor,
                 favoriteIds,
                 restrictedIds,
                 candidateFoods
@@ -136,11 +161,15 @@ public class NutritionPlanServiceImpl implements NutritionPlanService {
             aiPlan = buildRuleBasedPlan(startDate, days, mealTypes, request, candidateFoods, recentIllnesses, false);
             validateAiPlan(aiPlan, startDate, endDate, days, mealsPerDay, mealTypes, candidateFoods, restrictedIds);
         }
+        aiPlan = appendComplementaryFeedingWarning(aiPlan, profile);
         if (!"SUCCESS".equals(aiPlan.status())) {
             return NutritionPlanResponse.builder()
                     .status(aiPlan.status())
                     .profileId(profile.getId())
                     .profileName(profile.getName())
+                    .profileType(profile.getProfileType())
+                    .currentGoal(resolveCurrentGoal(profile, request))
+                    .goalCode(resolveGoalCode(profile, request))
                     .startDate(startDate.toString())
                     .endDate(endDate.toString())
                     .mealsPerDay(mealsPerDay)
@@ -155,6 +184,101 @@ public class NutritionPlanServiceImpl implements NutritionPlanService {
 
         NutritionPlan plan = savePlan(profile, request, startDate, endDate, mealsPerDay, requestHash, aiPlan, candidateFoods);
         return mapPlan(plan, false);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<NutritionPlanResponse> getPlanHistory(Long profileId) {
+        Profile profile = validateCurrentProfile(profileId);
+        return nutritionPlanRepository.findByProfileIdAndStatusInOrderByCreatedAtDescIdDesc(
+                        profile.getId(),
+                        List.of(Constants.TABLE_STATUS.ACTIVE, Constants.TABLE_STATUS.SUCCESS)
+                )
+                .stream()
+                .map(plan -> mapPlan(plan, false))
+                .toList();
+    }
+
+    @Override
+    @Transactional
+    public NutritionPlanResponse updateMeal(Long mealId, NutritionPlanMealUpdateRequest request) {
+        NutritionPlanMeal meal = nutritionPlanMealRepository.findById(mealId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Không tìm thấy bữa ăn trong lịch"));
+        NutritionPlan plan = meal.getPlanDay().getPlan();
+        validatePlanEditable(plan);
+        validateCurrentUser(plan.getProfile().getUser().getId());
+
+        if (request.getMealType() != null && !request.getMealType().isBlank()) {
+            String mealType = normalizeMealType(request.getMealType());
+            if (!ALLOWED_MEAL_TYPES.contains(mealType)) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "mealType không hợp lệ");
+            }
+            meal.setMealType(mealType);
+        }
+        if (request.getFoodId() != null) {
+            FoodLibrary food = foodLibraryRepository.findById(request.getFoodId())
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Không tìm thấy món ăn"));
+            if (!Constants.TABLE_STATUS.ACTIVE.equals(food.getStatus())) {
+                throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Không tìm thấy món ăn");
+            }
+            if (!isFoodForProfile(food, plan.getProfile())) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Món ăn không phù hợp với đối tượng của hồ sơ");
+            }
+            if (plan.getGoalCode() != null
+                    && !plan.getGoalCode().isBlank()
+                    && !expandGoalCode(plan.getGoalCode().toUpperCase(Locale.ROOT)).contains(food.getAdvanceFor())) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Món ăn không đúng mục tiêu của lịch ăn");
+            }
+            if (restrictedFoodRepository.findFoodLibraryIdsByProfileId(plan.getProfile().getId()).contains(food.getId())) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Món này đang nằm trong danh sách hạn chế của hồ sơ");
+            }
+            meal.setFoodLibrary(food);
+            meal.setFoodNameSnapshot(food.getName());
+            meal.setReason("Đã thay món theo mong muốn của người dùng.");
+            meal.setWarning(null);
+        }
+        if (request.getPortion() != null) {
+            meal.setPortion(nullableCompactText(request.getPortion(), 255));
+        }
+        if (request.getReason() != null) {
+            meal.setReason(nullableCompactText(request.getReason(), 1000));
+        }
+        if (request.getWarning() != null) {
+            meal.setWarning(nullableCompactText(request.getWarning(), 1000));
+        }
+        if (request.getEatenStatus() != null && !request.getEatenStatus().isBlank()) {
+            meal.setEatenStatus(compactText(request.getEatenStatus(), 30).toUpperCase(Locale.ROOT));
+        }
+        LocalDateTime now = LocalDateTime.now();
+        meal.setUpdatedAt(now);
+        plan.setUpdatedAt(now);
+
+        nutritionPlanMealRepository.save(meal);
+        return mapPlan(plan, false);
+    }
+
+    @Override
+    @Transactional
+    public void deletePlan(Long planId) {
+        NutritionPlan plan = nutritionPlanRepository.findById(planId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Không tìm thấy lịch ăn"));
+        validatePlanDeletable(plan);
+        validateCurrentUser(plan.getProfile().getUser().getId());
+        plan.setStatus(Constants.TABLE_STATUS.DELETED);
+        plan.setUpdatedAt(LocalDateTime.now());
+        nutritionPlanRepository.save(plan);
+    }
+
+    @Override
+    @Transactional
+    public NutritionPlanResponse completePlan(Long planId) {
+        NutritionPlan plan = nutritionPlanRepository.findById(planId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Không tìm thấy lịch ăn"));
+        validatePlanEditable(plan);
+        validateCurrentUser(plan.getProfile().getUser().getId());
+        plan.setStatus(Constants.TABLE_STATUS.SUCCESS);
+        plan.setUpdatedAt(LocalDateTime.now());
+        return mapPlan(nutritionPlanRepository.save(plan), false);
     }
 
     private Optional<AiPlan> callAiPlan(Map<String, Object> context) {
@@ -178,13 +302,35 @@ public class NutritionPlanServiceImpl implements NutritionPlanService {
                         .block();
                 String outputText = extractOutputText(response);
                 if (outputText.isBlank()) {
+                    log.warn("Gemini nutrition plan returned no text. model={}, finishReason={}",
+                            model, extractFinishReason(response));
                     continue;
                 }
-                return Optional.of(parseAiPlan(outputText, model));
+                try {
+                    return Optional.of(parseAiPlan(outputText, model));
+                } catch (Exception parseException) {
+                    log.warn(
+                            "Gemini nutrition plan returned malformed JSON. model={}, finishReason={}, outputChars={}, error={}",
+                            model,
+                            extractFinishReason(response),
+                            outputText.length(),
+                            compactText(rootCause(parseException).getMessage(), 220)
+                    );
+                    log.debug("Malformed Gemini nutrition plan output. model={}, output={}",
+                            model, compactText(outputText, 4000));
+                }
             } catch (WebClientResponseException exception) {
-                log.warn("Gemini nutrition plan failed. status={}, model={}", exception.getStatusCode(), model);
+                log.warn("Gemini nutrition plan failed. model={}, status={}, body={}",
+                        model,
+                        exception.getStatusCode(),
+                        compactText(exception.getResponseBodyAsString(), 300));
             } catch (Exception exception) {
-                log.warn("Gemini nutrition plan fallback used. model={}", model, exception);
+                Throwable cause = rootCause(exception);
+                log.warn("Gemini nutrition plan failed. model={}, error={}, message={}",
+                        model,
+                        cause.getClass().getSimpleName(),
+                        compactText(cause.getMessage(), 300));
+                log.debug("Gemini nutrition plan failure details. model={}", model, exception);
             }
         }
         return Optional.empty();
@@ -205,8 +351,15 @@ public class NutritionPlanServiceImpl implements NutritionPlanService {
                 t chỉ được là một trong req.mealTypes.
                 Nếu không thể tạo plan an toàn, trả status NEEDS_MORE_DATA và days rỗng.
                 Ưu tiên né các món hoặc nhóm thực phẩm được nhắc trong req.notes.
+                Tu dong can chinh p/khau phan theo h.tdee, h.weight, h.bmi, h.trend, req.goal va req.targetWeightKg; khong de nguoi dung bam nut chinh luong rieng.
+                Voi me: tong nang luong moi ngay khong vuot h.tdee; muc tieu giam can, de tieu hoac giu dang co the thap hon TDEE.
+                Voi be: p.complementaryKcal la muc nang luong toi da tu thuc an bo sung moi ngay, khong phai toan bo TDEE/EER; sua van la nguon dinh duong chinh.
+                Voi be: tong kcal cua cac bua khong vuot p.complementaryKcal va khong tang khau phan de bu toan bo h.tdee.
+                Voi be 6-11 thang: sua me van la nguon dinh duong chinh, cac bua an dam chi la phan bo sung.
+                Giu output ngan: summary toi da 20 tu; moi warning 15 tu; note 10 tu; p 6 tu; r 10 tu; w 10 tu.
+                w phai la chuoi, dung chuoi rong neu khong co canh bao.
                 Output compact:
-                {"status":"SUCCESS|NEEDS_MORE_DATA","summary":"string","warnings":["string"],"days":[{"date":"YYYY-MM-DD","i":1,"note":"string","meals":[{"t":"B|MS|L|AS|D|ES","fid":1,"p":"string","r":"string","w":null}]}]}
+                {"status":"SUCCESS|NEEDS_MORE_DATA","summary":"string","warnings":["string"],"days":[{"date":"YYYY-MM-DD","i":1,"note":"string","meals":[{"t":"B|MS|L|AS|D|ES","fid":1,"p":"string","r":"string","w":""}]}]}
 
                 Context:
                 %s
@@ -219,13 +372,61 @@ public class NutritionPlanServiceImpl implements NutritionPlanService {
         content.put("role", "user");
         content.put("parts", List.of(textPart));
         Map<String, Object> generationConfig = new LinkedHashMap<>();
-        generationConfig.put("temperature", 0.25);
-        generationConfig.put("maxOutputTokens", 4096);
+        generationConfig.put("temperature", 0.15);
+        generationConfig.put("maxOutputTokens", 8192);
         generationConfig.put("responseMimeType", "application/json");
+        generationConfig.put("responseSchema", nutritionPlanResponseSchema());
         Map<String, Object> body = new LinkedHashMap<>();
         body.put("contents", List.of(content));
         body.put("generationConfig", generationConfig);
         return body;
+    }
+
+    private Map<String, Object> nutritionPlanResponseSchema() {
+        Map<String, Object> mealSchema = schemaObject(
+                Map.of(
+                        "t", schemaString(List.of("B", "MS", "L", "AS", "D", "ES")),
+                        "fid", Map.of("type", "INTEGER"),
+                        "p", schemaString(),
+                        "r", schemaString(),
+                        "w", schemaString()
+                ),
+                List.of("t", "fid", "p", "r", "w")
+        );
+        Map<String, Object> daySchema = schemaObject(
+                Map.of(
+                        "date", schemaString(),
+                        "i", Map.of("type", "INTEGER"),
+                        "note", schemaString(),
+                        "meals", Map.of("type", "ARRAY", "items", mealSchema)
+                ),
+                List.of("date", "i", "note", "meals")
+        );
+        return schemaObject(
+                Map.of(
+                        "status", schemaString(List.of("SUCCESS", "NEEDS_MORE_DATA")),
+                        "summary", schemaString(),
+                        "warnings", Map.of("type", "ARRAY", "items", schemaString()),
+                        "days", Map.of("type", "ARRAY", "items", daySchema)
+                ),
+                List.of("status", "summary", "warnings", "days")
+        );
+    }
+
+    private Map<String, Object> schemaObject(Map<String, Object> properties, List<String> required) {
+        Map<String, Object> schema = new LinkedHashMap<>();
+        schema.put("type", "OBJECT");
+        schema.put("properties", properties);
+        schema.put("required", required);
+        return schema;
+    }
+
+    private Map<String, Object> schemaString() {
+        return Map.of("type", "STRING");
+    }
+
+    private Map<String, Object> schemaString(List<String> values) {
+        return Map.of("type", "STRING", "enum", values);
     }
 
     private AiPlan parseAiPlan(String outputText, String model) throws Exception {
@@ -300,8 +501,9 @@ public class NutritionPlanServiceImpl implements NutritionPlanService {
                     meals
             ));
         }
-        String summary = request.getCurrentGoal() != null && !request.getCurrentGoal().isBlank()
-                ? "Kế hoạch hỗ trợ mục tiêu: " + compactText(request.getCurrentGoal(), 80)
+        String resolvedGoal = resolveCurrentGoal(null, request);
+        String summary = resolvedGoal != null && !resolvedGoal.isBlank()
+                ? "Kế hoạch hỗ trợ mục tiêu: " + compactText(resolvedGoal, 80)
                 : "Kế hoạch ăn BabyOi theo món có sẵn trong thư viện.";
         return new AiPlan("SUCCESS", summary, warnings, planDays, apiKeyMissing ? "RULE_BASED_NO_AI_KEY" : "RULE_BASED_AI_FALLBACK");
     }
@@ -364,7 +566,8 @@ public class NutritionPlanServiceImpl implements NutritionPlanService {
         LocalDateTime now = LocalDateTime.now();
         NutritionPlan plan = NutritionPlan.builder()
                 .profile(profile)
-                .currentGoal(compactText(request.getCurrentGoal(), 2000))
+                .currentGoal(compactText(resolveCurrentGoal(profile, request), 2000))
+                .goalCode(compactText(resolveGoalCode(profile, request), 80))
                 .futureGoal(compactText(resolveUserNotes(request), 2000))
                 .startDate(startDate)
                 .endDate(endDate)
@@ -424,16 +627,20 @@ public class NutritionPlanServiceImpl implements NutritionPlanService {
             int mealsPerDay,
             List<String> mealTypes,
             NutritionPlanGenerateRequest request,
+            List<String> targetAdvanceFor,
             List<Long> favoriteIds,
             List<Long> restrictedIds,
             List<FoodLibrary> candidateFoods
     ) {
         Map<String, Object> context = new LinkedHashMap<>();
+        context.put("pv", PROMPT_VERSION);
         Map<String, Object> profileContext = new LinkedHashMap<>();
         profileContext.put("id", profile.getId());
         profileContext.put("name", defaultString(profile.getName()));
         profileContext.put("type", isMotherProfile(profile) ? "M" : "B");
         profileContext.put("ageM", resolveAgeMonths(profile));
+        profileContext.put("feedingStage", resolveFeedingStage(profile));
+        profileContext.put("complementaryKcal", resolveComplementaryFoodEnergyTarget(profile));
         profileContext.put("sex", profile.getSex() != null ? profile.getSex().name() : "UNKNOWN");
         context.put("p", profileContext);
         Map<String, Object> health = new LinkedHashMap<>();
@@ -450,37 +657,256 @@ public class NutritionPlanServiceImpl implements NutritionPlanService {
                 "start", event.getStartAt() != null ? event.getStartAt().toString() : "",
                 "end", event.getEndAt() != null ? event.getEndAt().toString() : ""
         )).toList());
-        context.put("req", Map.of(
-                "start", startDate.toString(),
-                "end", endDate.toString(),
-                "days", days,
-                "meals", mealsPerDay,
-                "mealTypes", mealTypes.stream().map(this::toCompactMealType).toList(),
-                "goal", defaultString(request.getCurrentGoal()),
-                "notes", defaultString(resolveUserNotes(request))
-        ));
+        Map<String, Object> requestContext = new LinkedHashMap<>();
+        requestContext.put("start", startDate.toString());
+        requestContext.put("end", endDate.toString());
+        requestContext.put("days", days);
+        requestContext.put("meals", mealsPerDay);
+        requestContext.put("mealTypes", mealTypes.stream().map(this::toCompactMealType).toList());
+        requestContext.put("goal", resolveCurrentGoal(profile, request));
+        requestContext.put("goalCode", resolveGoalCode(profile, request));
+        requestContext.put("targetWeightKg", request.getTargetWeightKg());
+        requestContext.put("advanceFor", targetAdvanceFor);
+        requestContext.put("notes", defaultString(resolveUserNotes(request)));
+        context.put("req", requestContext);
         context.put("favoriteIds", favoriteIds);
         context.put("restrictedIds", restrictedIds);
         context.put("foods", candidateFoods.stream().limit(50).map(this::compactFood).toList());
         return context;
     }
 
-    private List<FoodLibrary> resolveCandidateFoods(List<Long> requestedIds, List<Long> restrictedIds) {
+    private List<FoodLibrary> resolveCandidateFoods(
+            Profile profile,
+            NutritionPlanGenerateRequest request,
+            List<String> targetAdvanceFor,
+            List<Long> restrictedIds) {
         Set<Long> restrictedSet = new HashSet<>(restrictedIds);
-        List<FoodLibrary> foods;
-        if (requestedIds != null && !requestedIds.isEmpty()) {
-            List<Long> cleanIds = requestedIds.stream().filter(Objects::nonNull).distinct().limit(50).toList();
+        List<Long> requestedIds = request.getCandidateFoodIds();
+        boolean hasRequestedIds = requestedIds != null && !requestedIds.isEmpty();
+        List<FoodLibrary> foods = List.of();
+        if (hasRequestedIds) {
+            List<Long> cleanIds = requestedIds.stream()
+                    .filter(Objects::nonNull)
+                    .distinct()
+                    .limit(50)
+                    .toList();
             foods = foodLibraryRepository.findByIdInAndStatus(cleanIds, Constants.TABLE_STATUS.ACTIVE);
-        } else {
-            foods = foodLibraryRepository.findTop50ByStatusOrderByIdAsc(Constants.TABLE_STATUS.ACTIVE);
         }
+
+        if (foods.isEmpty() && !targetAdvanceFor.isEmpty()) {
+            foods = foodLibraryRepository.findByStatusAndAdvanceForInOrderByIdAsc(Constants.TABLE_STATUS.ACTIVE, targetAdvanceFor);
+        }
+
+        if (foods.isEmpty()) {
+            foods = foodLibraryRepository.findTop50ByStatusOrderByIdAsc(Constants.TABLE_STATUS.ACTIVE)
+                    .stream()
+                    .filter(food -> isFoodForProfile(food, profile))
+                    .toList();
+        }
+
         return foods.stream()
+                .filter(food -> isFoodForProfile(food, profile))
+                .filter(food -> targetAdvanceFor.isEmpty() || targetAdvanceFor.contains(food.getAdvanceFor()))
                 .filter(food -> !restrictedSet.contains(food.getId()))
                 .limit(50)
                 .toList();
     }
 
+    private List<String> resolveTargetAdvanceFor(Profile profile, NutritionPlanGenerateRequest request) {
+        String goalCode = resolveGoalCode(profile, request);
+        if (!goalCode.isBlank()) {
+            return expandGoalCode(goalCode);
+        }
+        if (!isMotherProfile(profile)) {
+            return babyAdvanceForByAge(resolveAgeMonths(profile));
+        }
+
+        String goal = request.getCurrentGoal();
+        if (isWeightLossGoal(goal) || containsNormalized(goal, "giu dang")) {
+            return List.of(Constants.FOOD_ADVICE_FOR.MOM_GET_BACK_IN_SHAPE);
+        }
+        if (containsNormalized(goal, "loi sua") || containsNormalized(goal, "sua")) {
+            return List.of(
+                    Constants.FOOD_ADVICE_FOR.MOM_INCREASE_MILK_SUPPLY,
+                    Constants.FOOD_ADVICE_FOR.MOM_POSTPARTUM_BREASTFEEDING
+            );
+        }
+        if (containsNormalized(goal, "tieu hoa")) {
+            return List.of(Constants.FOOD_ADVICE_FOR.MOM_DIGESTION_RECOVERY);
+        }
+        if (containsNormalized(goal, "nang luong") || containsNormalized(goal, "tang can")) {
+            return List.of(Constants.FOOD_ADVICE_FOR.MOM_HEALTHY_ENERGY);
+        }
+        if (containsNormalized(goal, "an ngon")) {
+            return List.of(Constants.FOOD_ADVICE_FOR.MOM_CHANGE_DIET);
+        }
+        return motherAdvanceForValues();
+    }
+
+    private String resolveGoalCode(Profile profile, NutritionPlanGenerateRequest request) {
+        if (!isMotherProfile(profile)) {
+            return babyAdvanceForByAge(resolveAgeMonths(profile)).get(0);
+        }
+        String requestedCode = request.getGoalCode() == null
+                ? ""
+                : request.getGoalCode().trim().toUpperCase(Locale.ROOT);
+        if (requestedCode.isBlank()) {
+            return "";
+        }
+        List<String> allowedCodes = motherAdvanceForValues();
+        if (!allowedCodes.contains(requestedCode)) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Mục tiêu không phù hợp với đối tượng hoặc độ tuổi của hồ sơ"
+            );
+        }
+        return requestedCode;
+    }
+
+    private String resolveCurrentGoal(Profile profile, NutritionPlanGenerateRequest request) {
+        if (profile != null && !isMotherProfile(profile)) {
+            return "Dinh dưỡng phù hợp độ tuổi";
+        }
+        return defaultString(request.getCurrentGoal());
+    }
+
+    private List<String> expandGoalCode(String goalCode) {
+        return switch (goalCode) {
+            case Constants.FOOD_ADVICE_FOR.BABY_6_TO_8_MONTHS -> List.of(
+                    goalCode,
+                    Constants.FOOD_ADVICE_FOR.BABY_6_TO_8_MONTHS_DEVELOPMENT
+            );
+            case Constants.FOOD_ADVICE_FOR.BABY_9_TO_11_MONTHS -> List.of(
+                    goalCode,
+                    Constants.FOOD_ADVICE_FOR.BABY_9_TO_11_MONTHS_DEVELOPMENT
+            );
+            case Constants.FOOD_ADVICE_FOR.BABY_12_TO_18_MONTHS -> List.of(
+                    goalCode,
+                    Constants.FOOD_ADVICE_FOR.BABY_12_TO_18_MONTHS_DEVELOPMENT
+            );
+            case Constants.FOOD_ADVICE_FOR.BABY_19_TO_24_MONTHS -> List.of(
+                    goalCode,
+                    Constants.FOOD_ADVICE_FOR.BABY_19_TO_24_MONTHS_DEVELOPMENT
+            );
+            default -> List.of(goalCode);
+        };
+    }
+
+    private List<String> babyAdvanceForByAge(Integer ageMonths) {
+        int months = ageMonths != null ? ageMonths : 12;
+        if (months <= 8) {
+            return List.of(Constants.FOOD_ADVICE_FOR.BABY_6_TO_8_MONTHS, Constants.FOOD_ADVICE_FOR.BABY_6_TO_8_MONTHS_DEVELOPMENT);
+        }
+        if (months <= 11) {
+            return List.of(Constants.FOOD_ADVICE_FOR.BABY_9_TO_11_MONTHS, Constants.FOOD_ADVICE_FOR.BABY_9_TO_11_MONTHS_DEVELOPMENT);
+        }
+        if (months <= 18) {
+            return List.of(Constants.FOOD_ADVICE_FOR.BABY_12_TO_18_MONTHS, Constants.FOOD_ADVICE_FOR.BABY_12_TO_18_MONTHS_DEVELOPMENT);
+        }
+        return List.of(Constants.FOOD_ADVICE_FOR.BABY_19_TO_24_MONTHS, Constants.FOOD_ADVICE_FOR.BABY_19_TO_24_MONTHS_DEVELOPMENT);
+    }
+
+    private void validateBabyPlanningAge(Profile profile) {
+        if (isMotherProfile(profile)) {
+            return;
+        }
+        Integer ageMonths = resolveAgeMonths(profile);
+        if (ageMonths == null || ageMonths < MIN_COMPLEMENTARY_FEEDING_AGE_MONTHS) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Bé dưới 6 tháng nên bú mẹ hoàn toàn; chưa thể tạo lịch ăn bổ sung"
+            );
+        }
+    }
+
+    private void validateTdeeAvailable(HealthRecord latestHealth, Profile profile) {
+        if (latestHealth == null || latestHealth.getTdee() == null || latestHealth.getTdee() <= 0) {
+            String message = isMotherProfile(profile)
+                    ? "Cần cập nhật chiều cao, cân nặng và mức vận động để tính TDEE trước khi tạo lịch ăn"
+                    : "Cần cập nhật cân nặng và ngày sinh để tính EER trước khi tạo lịch ăn bổ sung";
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    message
+            );
+        }
+    }
+
+    private String resolveFeedingStage(Profile profile) {
+        if (isMotherProfile(profile)) {
+            return "MOTHER";
+        }
+        Integer ageMonths = resolveAgeMonths(profile);
+        if (ageMonths == null) {
+            return "UNKNOWN";
+        }
+        if (ageMonths <= 8) {
+            return "WHO_COMPLEMENTARY_6_8_MONTHS";
+        }
+        if (ageMonths <= 11) {
+            return "WHO_COMPLEMENTARY_9_11_MONTHS";
+        }
+        if (ageMonths <= 23) {
+            return "WHO_COMPLEMENTARY_12_23_MONTHS";
+        }
+        return "BEYOND_WHO_COMPLEMENTARY_RANGE";
+    }
+
+    private Double resolveComplementaryFoodEnergyTarget(Profile profile) {
+        if (isMotherProfile(profile)) {
+            return null;
+        }
+        Integer ageMonths = resolveAgeMonths(profile);
+        if (ageMonths == null || ageMonths < MIN_COMPLEMENTARY_FEEDING_AGE_MONTHS) {
+            return null;
+        }
+        if (ageMonths <= 8) {
+            return WHO_COMPLEMENTARY_KCAL_6_TO_8_MONTHS;
+        }
+        if (ageMonths <= 11) {
+            return WHO_COMPLEMENTARY_KCAL_9_TO_11_MONTHS;
+        }
+        if (ageMonths <= 23) {
+            return WHO_COMPLEMENTARY_KCAL_12_TO_23_MONTHS;
+        }
+        return null;
+    }
+
+    private AiPlan appendComplementaryFeedingWarning(AiPlan plan, Profile profile) {
+        Double complementaryTarget = resolveComplementaryFoodEnergyTarget(profile);
+        if (complementaryTarget == null) {
+            return plan;
+        }
+
+        List<String> warnings = new ArrayList<>(plan.warnings() == null ? List.of() : plan.warnings());
+        Integer ageMonths = resolveAgeMonths(profile);
+        String warning = ageMonths != null && ageMonths < 12
+                ? "Bé từ 6 đến 11 tháng tuổi, sữa mẹ vẫn là dinh dưỡng chính; ăn dặm chỉ là phần bổ sung."
+                : "Kcal chỉ tính phần ăn bổ sung; tiếp tục bú mẹ theo nhu cầu.";
+        if (!warnings.contains(warning)) {
+            warnings.add(warning);
+        }
+        return new AiPlan(plan.status(), plan.summary(), warnings, plan.days(), plan.model());
+    }
+
+    private List<String> motherAdvanceForValues() {
+        return List.of(
+                Constants.FOOD_ADVICE_FOR.MOM_GET_BACK_IN_SHAPE,
+                Constants.FOOD_ADVICE_FOR.MOM_CHANGE_DIET,
+                Constants.FOOD_ADVICE_FOR.MOM_POSTPARTUM_BREASTFEEDING,
+                Constants.FOOD_ADVICE_FOR.MOM_HEALTHY_ENERGY,
+                Constants.FOOD_ADVICE_FOR.MOM_DIGESTION_RECOVERY,
+                Constants.FOOD_ADVICE_FOR.MOM_INCREASE_MILK_SUPPLY,
+                Constants.FOOD_ADVICE_FOR.MOM_SLEEP_STRESS_SUPPORT
+        );
+    }
+
+    private boolean isFoodForProfile(FoodLibrary food, Profile profile) {
+        String advanceFor = food.getAdvanceFor() != null ? food.getAdvanceFor().trim().toUpperCase(Locale.ROOT) : "";
+        return isMotherProfile(profile) ? advanceFor.startsWith("FOR_MOTHER_") : advanceFor.startsWith("FOR_BABY_");
+    }
+
     private NutritionPlanResponse mapPlan(NutritionPlan plan, boolean cached) {
+        PlanAdjustmentContext adjustment = buildPlanAdjustmentContext(plan);
         List<NutritionPlanDayResponse> days = plan.getDays() == null ? List.of() : plan.getDays().stream()
                 .sorted(Comparator.comparing(NutritionPlanDay::getPlanDate).thenComparing(NutritionPlanDay::getDayIndex))
                 .map(day -> NutritionPlanDayResponse.builder()
@@ -489,15 +915,21 @@ public class NutritionPlanServiceImpl implements NutritionPlanService {
                         .dayIndex(day.getDayIndex())
                         .note(day.getNote())
                         .meals(day.getMeals() == null ? List.of() : day.getMeals().stream()
-                                .map(this::mapMeal)
+                                .map(meal -> mapMeal(meal, adjustment))
                                 .toList())
                         .build())
                 .toList();
         return NutritionPlanResponse.builder()
                 .status("SUCCESS")
+                .lifecycleStatus(resolvePlanLifecycleStatus(plan))
                 .planId(plan.getId())
                 .profileId(plan.getProfile().getId())
                 .profileName(plan.getProfile().getName())
+                .profileType(plan.getProfile().getProfileType())
+                .currentGoal(plan.getCurrentGoal())
+                .goalCode(plan.getGoalCode())
+                .userNotes(plan.getFutureGoal())
+                .targetDailyCalories(adjustment.targetDailyCalories())
                 .startDate(plan.getStartDate().toString())
                 .endDate(plan.getEndDate().toString())
                 .mealsPerDay(plan.getMealsPerDay())
@@ -510,8 +942,21 @@ public class NutritionPlanServiceImpl implements NutritionPlanService {
                 .build();
     }
 
-    private NutritionPlanMealResponse mapMeal(NutritionPlanMeal meal) {
+    private String resolvePlanLifecycleStatus(NutritionPlan plan) {
+        if (Constants.TABLE_STATUS.ACTIVE.equals(plan.getStatus())) {
+            return "ACTIVE";
+        }
+        if (Constants.TABLE_STATUS.SUCCESS.equals(plan.getStatus())) {
+            return "COMPLETED";
+        }
+        return "UNKNOWN";
+    }
+
+    private NutritionPlanMealResponse mapMeal(NutritionPlanMeal meal, PlanAdjustmentContext adjustment) {
         FoodLibrary food = meal.getFoodLibrary();
+        Map<String, String> ingredientAmounts = food != null
+                ? adjustment.ingredientAmountsByFoodId().getOrDefault(food.getId(), Map.of())
+                : Map.of();
         return NutritionPlanMealResponse.builder()
                 .id(meal.getId())
                 .mealType(meal.getMealType())
@@ -519,11 +964,191 @@ public class NutritionPlanServiceImpl implements NutritionPlanService {
                 .foodName(food != null ? food.getName() : meal.getFoodNameSnapshot())
                 .foodImageUrl(food != null ? food.getImageUrl() : null)
                 .nutrition(food != null ? mapNutrition(food.getNutritionSummary()) : null)
+                .adjustedCalories(food != null ? adjustment.adjustedCaloriesByFoodId().get(food.getId()) : null)
+                .portionScale(adjustment.portionScale())
+                .ingredientStorageKey(food != null
+                        ? "babyoi_food_detail_amounts:" + meal.getPlanDay().getPlan().getProfile().getId() + ":" + food.getId()
+                        : null)
+                .ingredientAmounts(ingredientAmounts)
                 .portion(meal.getPortion())
                 .reason(meal.getReason())
                 .warning(meal.getWarning())
                 .eatenStatus(meal.getEatenStatus())
                 .build();
+    }
+
+    private PlanAdjustmentContext buildPlanAdjustmentContext(NutritionPlan plan) {
+        List<NutritionPlanDay> days = plan.getDays() == null ? List.of() : plan.getDays();
+        Set<Long> foodIds = days.stream()
+                .filter(Objects::nonNull)
+                .flatMap(day -> day.getMeals() == null ? java.util.stream.Stream.empty() : day.getMeals().stream())
+                .map(NutritionPlanMeal::getFoodLibrary)
+                .filter(Objects::nonNull)
+                .map(FoodLibrary::getId)
+                .collect(Collectors.toCollection(LinkedHashSet::new));
+        Map<Long, FoodLibrary> foodsById = days.stream()
+                .filter(Objects::nonNull)
+                .flatMap(day -> day.getMeals() == null ? java.util.stream.Stream.empty() : day.getMeals().stream())
+                .map(NutritionPlanMeal::getFoodLibrary)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toMap(FoodLibrary::getId, food -> food, (first, ignored) -> first, LinkedHashMap::new));
+        Map<Long, List<FoodLibraryIngredient>> ingredientsByFoodId = new LinkedHashMap<>();
+        Map<Long, Double> baseCaloriesByFoodId = new LinkedHashMap<>();
+        for (Long foodId : foodIds) {
+            List<FoodLibraryIngredient> ingredients = foodLibraryIngredientRepository.findByFoodLibraryId(foodId)
+                    .stream()
+                    .filter(ingredient -> !Constants.TABLE_STATUS.DELETED.equals(ingredient.getStatus()))
+                    .filter(ingredient -> ingredient.getAmountPerServing() != null && ingredient.getAmountPerServing() > 0)
+                    .toList();
+            ingredientsByFoodId.put(foodId, ingredients);
+            double ingredientCalories = ingredients.stream()
+                    .mapToDouble(this::ingredientCaloriesAtBaseServing)
+                    .sum();
+            if (ingredientCalories <= 0) {
+                FoodLibrary food = foodsById.get(foodId);
+                ingredientCalories = food != null && food.getNutritionSummary() != null
+                        && food.getNutritionSummary().getTotalCalories() != null
+                        ? food.getNutritionSummary().getTotalCalories()
+                        : 0D;
+            }
+            if (ingredientCalories > 0) {
+                baseCaloriesByFoodId.put(foodId, ingredientCalories);
+            }
+        }
+        List<Double> dailyBaseCalories = days.stream()
+                .map(day -> day.getMeals() == null ? 0D : day.getMeals().stream()
+                        .map(NutritionPlanMeal::getFoodLibrary)
+                        .filter(Objects::nonNull)
+                        .mapToDouble(food -> baseCaloriesByFoodId.getOrDefault(
+                                food.getId(),
+                                food.getNutritionSummary() != null && food.getNutritionSummary().getTotalCalories() != null
+                                        ? food.getNutritionSummary().getTotalCalories()
+                                        : 0D
+                        ))
+                        .sum())
+                .toList();
+        double maximumBaseCalories = dailyBaseCalories.stream()
+                .mapToDouble(Double::doubleValue)
+                .max()
+                .orElse(0D);
+        HealthRecord latestHealth = healthRecordRepository
+                .findFirstByProfileIdOrderByRecordDateDescIdDesc(plan.getProfile().getId())
+                .orElse(null);
+        Double tdee = latestHealth != null ? latestHealth.getTdee() : null;
+        Double targetDailyCalories;
+        if (isMotherProfile(plan.getProfile())) {
+            targetDailyCalories = tdee != null && tdee > 0
+                    ? roundOneDecimal(tdee * resolveGoalEnergyMultiplier(plan.getCurrentGoal(), plan.getGoalCode()))
+                    : null;
+        } else {
+            Double complementaryTarget = resolveComplementaryFoodEnergyTarget(plan.getProfile());
+            targetDailyCalories = complementaryTarget != null
+                    ? roundOneDecimal(tdee != null && tdee > 0 ? Math.min(tdee, complementaryTarget) : complementaryTarget)
+                    : tdee;
+        }
+        double portionScale = targetDailyCalories != null && maximumBaseCalories > 0
+                ? clamp(targetDailyCalories / maximumBaseCalories, 0.05D, 1.5D)
+                : 1D;
+        portionScale = floorThreeDecimals(portionScale);
+
+        Map<Long, Map<String, String>> ingredientAmountsByFoodId = new LinkedHashMap<>();
+        Map<Long, Double> adjustedCaloriesByFoodId = new LinkedHashMap<>();
+        for (Long foodId : foodIds) {
+            Map<String, String> amounts = new LinkedHashMap<>();
+            double adjustedCalories = 0D;
+            for (FoodLibraryIngredient ingredient : ingredientsByFoodId.getOrDefault(foodId, List.of())) {
+                String adjustedAmount = formatAmountDown(ingredient.getAmountPerServing() * portionScale);
+                amounts.put(
+                        String.valueOf(ingredient.getId()),
+                        adjustedAmount
+                );
+                adjustedCalories += ingredientCaloriesAtAmount(ingredient, Double.parseDouble(adjustedAmount));
+            }
+            if (!amounts.isEmpty()) {
+                ingredientAmountsByFoodId.put(foodId, amounts);
+            }
+            Double baseCalories = baseCaloriesByFoodId.get(foodId);
+            if (adjustedCalories > 0) {
+                adjustedCaloriesByFoodId.put(foodId, floorOneDecimal(adjustedCalories));
+            } else if (baseCalories != null && baseCalories > 0) {
+                adjustedCaloriesByFoodId.put(foodId, floorOneDecimal(baseCalories * portionScale));
+            }
+        }
+        return new PlanAdjustmentContext(
+                targetDailyCalories,
+                portionScale,
+                ingredientAmountsByFoodId,
+                adjustedCaloriesByFoodId
+        );
+    }
+
+    private double ingredientCaloriesAtBaseServing(FoodLibraryIngredient ingredient) {
+        IngredientNutrition nutrition = ingredient.getFoodIngredient() != null
+                ? ingredient.getFoodIngredient().getNutrition()
+                : null;
+        if (nutrition == null || nutrition.getCalories() == null || nutrition.getBaseAmount() == null
+                || nutrition.getBaseAmount() <= 0 || ingredient.getAmountPerServing() == null) {
+            return 0D;
+        }
+        return nutrition.getCalories() * ingredient.getAmountPerServing() / nutrition.getBaseAmount();
+    }
+
+    private double ingredientCaloriesAtAmount(FoodLibraryIngredient ingredient, double amount) {
+        IngredientNutrition nutrition = ingredient.getFoodIngredient() != null
+                ? ingredient.getFoodIngredient().getNutrition()
+                : null;
+        if (nutrition == null || nutrition.getCalories() == null || nutrition.getBaseAmount() == null
+                || nutrition.getBaseAmount() <= 0 || amount <= 0) {
+            return 0D;
+        }
+        return nutrition.getCalories() * amount / nutrition.getBaseAmount();
+    }
+
+    private double resolveGoalEnergyMultiplier(String goal, String goalCode) {
+        if (Constants.FOOD_ADVICE_FOR.MOM_GET_BACK_IN_SHAPE.equals(goalCode) || isWeightLossGoal(goal)) {
+            return 0.85D;
+        }
+        if (containsNormalized(goal, "giu dang")) {
+            return 0.95D;
+        }
+        if (Constants.FOOD_ADVICE_FOR.MOM_HEALTHY_ENERGY.equals(goalCode)
+                || Constants.FOOD_ADVICE_FOR.MOM_INCREASE_MILK_SUPPLY.equals(goalCode)
+                || containsNormalized(goal, "tang can")
+                || containsNormalized(goal, "nang luong")
+                || containsNormalized(goal, "loi sua")) {
+            return 1D;
+        }
+        if (Constants.FOOD_ADVICE_FOR.MOM_DIGESTION_RECOVERY.equals(goalCode)
+                || containsNormalized(goal, "de tieu")
+                || containsNormalized(goal, "tieu hoa")) {
+            return 0.95D;
+        }
+        return 1D;
+    }
+
+    private double clamp(double value, double min, double max) {
+        return Math.max(min, Math.min(max, value));
+    }
+
+    private Double roundOneDecimal(double value) {
+        return BigDecimal.valueOf(value).setScale(1, RoundingMode.HALF_UP).doubleValue();
+    }
+
+    private double floorThreeDecimals(double value) {
+        return BigDecimal.valueOf(value).setScale(3, RoundingMode.DOWN).doubleValue();
+    }
+
+    private Double floorOneDecimal(double value) {
+        return BigDecimal.valueOf(value).setScale(1, RoundingMode.DOWN).doubleValue();
+    }
+
+    private String formatAmountDown(double amount) {
+        BigDecimal value = BigDecimal.valueOf(amount)
+                .setScale(2, RoundingMode.DOWN)
+                .max(BigDecimal.valueOf(0.01D))
+                .stripTrailingZeros()
+                ;
+        return value.toPlainString();
     }
 
     private FoodNutritionResponse mapNutrition(FoodNutritionSummary nutrition) {
@@ -560,6 +1185,28 @@ public class NutritionPlanServiceImpl implements NutritionPlanService {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "auth.forbidden");
         }
         return profile;
+    }
+
+    private void validatePlanEditable(NutritionPlan plan) {
+        if (plan == null || !Constants.TABLE_STATUS.ACTIVE.equals(plan.getStatus())) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Không tìm thấy lịch ăn");
+        }
+    }
+
+    private void validatePlanDeletable(NutritionPlan plan) {
+        if (plan == null || (!Constants.TABLE_STATUS.ACTIVE.equals(plan.getStatus())
+                && !Constants.TABLE_STATUS.SUCCESS.equals(plan.getStatus()))) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Không tìm thấy lịch ăn");
+        }
+    }
+
+    private void validateCurrentUser(Long userId) {
+        Object principal = SecurityContextHolder.getContext().getAuthentication() != null
+                ? SecurityContextHolder.getContext().getAuthentication().getPrincipal()
+                : null;
+        if (principal instanceof CustomUserDetails userDetails && !userDetails.getId().equals(userId)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "auth.forbidden");
+        }
     }
 
     private Map<String, Object> compactFood(FoodLibrary food) {
@@ -603,7 +1250,26 @@ public class NutritionPlanServiceImpl implements NutritionPlanService {
         }
     }
 
-    private int resolveMealsPerDay(Integer mealsPerDay) {
+    private int resolveMealsPerDay(Integer mealsPerDay, Profile profile) {
+        if (isMotherProfile(profile)) {
+            int value = mealsPerDay != null ? mealsPerDay : 4;
+            if (value < 3 || value > 6) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "mealsPerDay của mẹ phải từ 3 đến 6");
+            }
+            return value;
+        }
+
+        Integer ageMonths = resolveAgeMonths(profile);
+        if (ageMonths != null && ageMonths < 6) {
+            return 1;
+        }
+        if (ageMonths != null && ageMonths <= 8) {
+            return 2;
+        }
+        if (ageMonths != null && ageMonths <= 24) {
+            return 3;
+        }
+
         int value = mealsPerDay != null ? mealsPerDay : 4;
         if (value < 3 || value > 6) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "mealsPerDay phải từ 3 đến 6");
@@ -613,7 +1279,7 @@ public class NutritionPlanServiceImpl implements NutritionPlanService {
 
     private List<String> resolveMealTypes(List<String> requestedMealTypes, int mealsPerDay) {
         List<String> mealTypes = requestedMealTypes == null || requestedMealTypes.isEmpty()
-                ? DEFAULT_MEAL_TYPES.subList(0, mealsPerDay)
+                ? defaultMealTypes(mealsPerDay)
                 : requestedMealTypes.stream()
                 .map(this::normalizeMealType)
                 .filter(value -> !value.isBlank())
@@ -626,6 +1292,17 @@ public class NutritionPlanServiceImpl implements NutritionPlanService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "allowedMealTypes có giá trị không hợp lệ");
         }
         return mealTypes;
+    }
+
+    private List<String> defaultMealTypes(int mealsPerDay) {
+        return switch (mealsPerDay) {
+            case 1 -> List.of("BREAKFAST");
+            case 2 -> List.of("BREAKFAST", "LUNCH");
+            case 3 -> List.of("BREAKFAST", "LUNCH", "DINNER");
+            case 4 -> List.of("BREAKFAST", "MORNING_SNACK", "LUNCH", "DINNER");
+            case 5 -> List.of("BREAKFAST", "MORNING_SNACK", "LUNCH", "AFTERNOON_SNACK", "DINNER");
+            default -> DEFAULT_MEAL_TYPES;
+        };
     }
 
     private Integer resolveAgeMonths(Profile profile) {
@@ -660,6 +1337,33 @@ public class NutritionPlanServiceImpl implements NutritionPlanService {
             return request.getUserNotes();
         }
         return request.getFutureGoal();
+    }
+
+    private void validateGoalTarget(Profile profile, NutritionPlanGenerateRequest request) {
+        if (!isMotherProfile(profile) || !isWeightLossGoal(request.getCurrentGoal())) {
+            return;
+        }
+        Double targetWeightKg = request.getTargetWeightKg();
+        if (targetWeightKg == null || targetWeightKg < 30D || targetWeightKg > 200D) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Cân nặng hướng đến là bắt buộc khi mục tiêu là giảm cân");
+        }
+    }
+
+    private boolean isWeightLossGoal(String goal) {
+        return containsNormalized(goal, "giam can");
+    }
+
+    private boolean containsNormalized(String value, String token) {
+        return normalizedText(value).contains(normalizedText(token));
+    }
+
+    private String normalizedText(String value) {
+        if (value == null || value.isBlank()) {
+            return "";
+        }
+        return Normalizer.normalize(value, Normalizer.Form.NFD)
+                .replaceAll("\\p{M}", "")
+                .toLowerCase(Locale.ROOT);
     }
 
     private String normalizeMealType(String value) {
@@ -751,6 +1455,17 @@ public class NutritionPlanServiceImpl implements NutritionPlanService {
         return builder.toString().trim();
     }
 
+    private String extractFinishReason(JsonNode response) {
+        if (response == null) {
+            return "UNKNOWN";
+        }
+        JsonNode candidates = response.get("candidates");
+        if (candidates != null && candidates.isArray() && !candidates.isEmpty()) {
+            return candidates.get(0).path("finishReason").asText("UNKNOWN");
+        }
+        return "UNKNOWN";
+    }
+
     private String cleanJsonText(String outputText) {
         String text = outputText == null ? "" : outputText.trim();
         if (text.startsWith("```")) {
@@ -777,7 +1492,15 @@ public class NutritionPlanServiceImpl implements NutritionPlanService {
     }
 
     private long resolveTimeoutSeconds() {
-        return timeoutSeconds != null && timeoutSeconds > 0 ? timeoutSeconds : 20L;
+        return timeoutSeconds != null && timeoutSeconds > 0 ? timeoutSeconds : 40L;
+    }
+
+    private Throwable rootCause(Throwable throwable) {
+        Throwable current = throwable;
+        while (current.getCause() != null && current.getCause() != current) {
+            current = current.getCause();
+        }
+        return current;
     }
 
     private String compactText(String text, int maxLength) {
@@ -842,5 +1565,13 @@ public class NutritionPlanServiceImpl implements NutritionPlanService {
     }
 
     private record AiMeal(String mealType, Long foodId, String portion, String reason, String warning) {
+    }
+
+    private record PlanAdjustmentContext(
+            Double targetDailyCalories,
+            double portionScale,
+            Map<Long, Map<String, String>> ingredientAmountsByFoodId,
+            Map<Long, Double> adjustedCaloriesByFoodId
+    ) {
     }
 }
