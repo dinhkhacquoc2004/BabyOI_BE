@@ -79,3 +79,5 @@ databaseChangeLog:
       file: db/changelog/changes/043_add_profile_activity_level.sql
   - include:
       file: db/changelog/changes/044_update_activity_level_labels.sql
+  - include:
+      file: db/changelog/changes/045_fix_notification_copy.sql

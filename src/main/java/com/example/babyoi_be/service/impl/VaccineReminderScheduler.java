@@ -87,18 +87,17 @@ public class VaccineReminderScheduler {
             return;
         }
 
-        String profileName = resolveProfileDisplayName(profile);
-        String subject = resolveProfileDisplaySubject(profile);
-        String sentenceSubject = resolveProfileSentenceSubject(profile);
+        String profileLabel = resolveProfileLabel(profile, false);
+        String sentenceProfileLabel = resolveProfileLabel(profile, true);
         String immunizationName = resolveImmunizationName(record);
         String doseLabel = record.getDoseOrder() == null ? "mũi theo lịch" : "mũi " + record.getDoseOrder();
         String title = daysBefore == 0
-                ? "Lịch tiêm hôm nay của " + subject + " " + profileName
-                : "Còn " + daysBefore + " ngày đến lịch tiêm của " + subject + " " + profileName;
+                ? "Lịch tiêm hôm nay của " + profileLabel
+                : "Còn " + daysBefore + " ngày đến lịch tiêm của " + profileLabel;
         String body = daysBefore == 0
-                ? "Hôm nay " + subject + " " + profileName + " tiêm " + immunizationName + ", " + doseLabel
+                ? "Hôm nay " + profileLabel + " tiêm " + immunizationName + ", " + doseLabel
                 + ". Mẹ nhớ kiểm tra giấy tờ và giờ hẹn nhé."
-                : sentenceSubject + " " + profileName + " sẽ tiêm " + immunizationName + ", " + doseLabel + " vào "
+                : sentenceProfileLabel + " sẽ tiêm " + immunizationName + ", " + doseLabel + " vào "
                 + record.getInjectionDate().format(DISPLAY_DATE) + ". Mẹ có thể sắp xếp thời gian từ bây giờ.";
         String dataJson = record.getDisease() != null
                 ? String.format(
@@ -124,17 +123,12 @@ public class VaccineReminderScheduler {
         );
     }
 
-    private String resolveProfileDisplayName(Profile profile) {
-        String fallback = isMotherProfile(profile) ? "mẹ" : "bé";
-        return profile.getName() == null || profile.getName().isBlank() ? fallback : profile.getName().trim();
-    }
-
-    private String resolveProfileDisplaySubject(Profile profile) {
-        return isMotherProfile(profile) ? "mẹ" : "bé";
-    }
-
-    private String resolveProfileSentenceSubject(Profile profile) {
-        return isMotherProfile(profile) ? "Mẹ" : "Bé";
+    private String resolveProfileLabel(Profile profile, boolean sentenceStart) {
+        String subject = isMotherProfile(profile)
+                ? (sentenceStart ? "Mẹ" : "mẹ")
+                : (sentenceStart ? "Bé" : "bé");
+        String name = normalize(profile.getName());
+        return name == null ? subject : subject + " " + name;
     }
 
     private boolean isMotherProfile(Profile profile) {

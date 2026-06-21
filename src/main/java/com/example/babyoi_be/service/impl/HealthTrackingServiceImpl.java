@@ -520,9 +520,8 @@ public class HealthTrackingServiceImpl implements HealthTrackingService {
             return;
         }
 
-        String profileName = resolveProfileDisplayName(profile);
         String title = updated ? "Đã cập nhật chỉ số sức khỏe" : "Đã ghi nhận chỉ số sức khỏe";
-        String body = buildHealthRecordBody(profile, profileName, record);
+        String body = buildHealthRecordBody(profile, record);
         String dataJson = String.format(
                 "{\"route\":\"/phattrien/health-detail?month=%d&year=%d\",\"screen\":\"HealthDetail\",\"recordId\":%d,\"profileId\":%d,\"month\":%d,\"year\":%d}",
                 record.getRecordDate().getMonthValue(),
@@ -546,7 +545,7 @@ public class HealthTrackingServiceImpl implements HealthTrackingService {
         );
     }
 
-    private String buildHealthRecordBody(Profile profile, String profileName, HealthRecord record) {
+    private String buildHealthRecordBody(Profile profile, HealthRecord record) {
         List<String> metrics = new java.util.ArrayList<>();
         if (record.getWeight() != null) {
             metrics.add("cân nặng " + formatNumber(record.getWeight()) + "kg");
@@ -558,13 +557,13 @@ public class HealthTrackingServiceImpl implements HealthTrackingService {
             metrics.add("BMI " + formatNumber(record.getBmi()));
         }
         if (record.getTdee() != null) {
-            metrics.add("TDEE " + formatNumber(record.getTdee()) + " kcal/ngay");
+            metrics.add("TDEE " + formatNumber(record.getTdee()) + " kcal/ngày");
         }
 
         if (metrics.isEmpty()) {
-            return "Hồ sơ sức khỏe của " + resolveProfileDisplaySubject(profile) + " " + profileName + " vừa được cập nhật ngày " + record.getRecordDate() + ".";
+            return "Hồ sơ sức khỏe của " + resolveProfileLabel(profile, false) + " vừa được cập nhật ngày " + record.getRecordDate() + ".";
         }
-        return resolveProfileSentenceSubject(profile) + " " + profileName + " vừa được cập nhật " + String.join(", ", metrics) + " ngày " + record.getRecordDate() + ".";
+        return resolveProfileLabel(profile, true) + " vừa được cập nhật " + String.join(", ", metrics) + " ngày " + record.getRecordDate() + ".";
     }
 
     private void createIllnessEventNotification(IllnessEvent event, boolean updated) {
@@ -573,10 +572,9 @@ public class HealthTrackingServiceImpl implements HealthTrackingService {
             return;
         }
 
-        String profileName = resolveProfileDisplayName(profile);
         String statusLabel = resolveIllnessStatusLabel(event.getStatus());
         String title = updated ? "Đã cập nhật hồ sơ bệnh" : "Đã thêm hồ sơ bệnh";
-        String body = resolveProfileSentenceSubject(profile) + " " + profileName + " có ghi nhận " + event.getIllnessType()
+        String body = resolveProfileLabel(profile, true) + " có ghi nhận " + event.getIllnessType()
                 + " từ " + event.getStartAt()
                 + ", mức độ: " + statusLabel + ".";
         String dataJson = String.format(
@@ -600,17 +598,12 @@ public class HealthTrackingServiceImpl implements HealthTrackingService {
         );
     }
 
-    private String resolveProfileDisplayName(Profile profile) {
-        String fallback = isMotherProfile(profile) ? "mẹ" : "bé";
-        return profile.getName() != null && !profile.getName().isBlank() ? profile.getName().trim() : fallback;
-    }
-
-    private String resolveProfileDisplaySubject(Profile profile) {
-        return isMotherProfile(profile) ? "mẹ" : "bé";
-    }
-
-    private String resolveProfileSentenceSubject(Profile profile) {
-        return isMotherProfile(profile) ? "Mẹ" : "Bé";
+    private String resolveProfileLabel(Profile profile, boolean sentenceStart) {
+        String subject = isMotherProfile(profile)
+                ? (sentenceStart ? "Mẹ" : "mẹ")
+                : (sentenceStart ? "Bé" : "bé");
+        String name = normalizeText(profile.getName());
+        return name == null ? subject : subject + " " + name;
     }
 
     private boolean isMotherProfile(Profile profile) {

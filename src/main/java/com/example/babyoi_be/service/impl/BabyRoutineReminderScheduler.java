@@ -26,8 +26,8 @@ import java.util.List;
 public class BabyRoutineReminderScheduler {
 
     private static final ZoneId APP_ZONE = ZoneId.of("Asia/Ho_Chi_Minh");
-    private static final int REMINDER_WINDOW_START_MINUTES = 55;
-    private static final int REMINDER_WINDOW_END_MINUTES = 65;
+    private static final int REMINDER_WINDOW_START_MINUTES = 20;
+    private static final int REMINDER_WINDOW_END_MINUTES = 25;
 
     private final BabyRoutineEntryRepository babyRoutineEntryRepository;
     private final ProfileRepository profileRepository;
@@ -107,12 +107,14 @@ public class BabyRoutineReminderScheduler {
             return false;
         }
 
-        String childName = normalize(profile.getName(), "be");
-        String activity = normalize(entry.getActivity(), "lich sinh hoat");
+        String childName = normalize(profile.getName(), null);
+        String childLabel = childName == null ? "bé" : "bé " + childName;
+        String sentenceChildLabel = childName == null ? "Bé" : "Bé " + childName;
+        String activity = normalize(entry.getActivity(), "hoạt động theo lịch");
         String plannedTime = formatTime(entry.getPlannedTime());
-        String title = "Sap den lich sinh hoat cua be " + childName;
-        String body = "Be " + childName + " co lich: " + activity + " luc " + plannedTime
-                + ". Me chuan bi truoc nhe.";
+        String title = "Sắp đến lịch sinh hoạt của " + childLabel;
+        String body = sentenceChildLabel + " có lịch: " + activity + " lúc " + plannedTime
+                + ". Mẹ chuẩn bị trước nhé.";
         String dataJson = String.format(
                 "{\"route\":\"/phattrien/daily-schedule\",\"screen\":\"BabyRoutine\",\"entryId\":%d,\"profileId\":%d,\"routineDate\":\"%s\",\"plannedTime\":\"%s\",\"type\":\"%s\"}",
                 entry.getId(),
