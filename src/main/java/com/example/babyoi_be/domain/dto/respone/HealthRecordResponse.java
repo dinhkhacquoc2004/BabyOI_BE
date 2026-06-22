@@ -16,6 +16,11 @@ public class HealthRecordResponse {
     private Double height;
     private Double weight;
     private Double bmi;
+    private String activityLevel;
+    private Double bmr;
+    private Double tdee;
+    private String tdeeFormula;
+    private String tdeeNote;
     private Long illnessCount;
 
     @JsonFormat(pattern = "yyyy-MM-dd")

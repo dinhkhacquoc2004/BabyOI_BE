@@ -3,6 +3,7 @@ package com.example.babyoi_be.domain.dto.request;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
+import jakarta.validation.constraints.Size;
 import lombok.*;
 
 import java.time.LocalDate;
@@ -23,6 +24,9 @@ public class HealthRecordRequest {
 
     @Positive(message = "BMI must be greater than 0")
     private Double bmi;
+
+    @Size(max = 32, message = "Activity level must not exceed 32 characters")
+    private String activityLevel; // Required for MOTHER: SEDENTARY, LIGHT, MODERATE, ACTIVE, VERY_ACTIVE
 
     @NotNull(message = "Record date is required")
     @JsonFormat(pattern = "yyyy-MM-dd")

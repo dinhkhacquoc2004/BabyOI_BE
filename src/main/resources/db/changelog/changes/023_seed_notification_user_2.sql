@@ -29,8 +29,8 @@ FROM (
     VALUES
         (
             'SYSTEM',
-            'Chao mung den voi BabyOi',
-            'Me co the theo doi lich tiem, dinh duong va cac thong bao quan trong tai day.',
+            'Chào mừng đến với BabyOi',
+            'Mẹ có thể theo dõi lịch tiêm, dinh dưỡng và các thông báo quan trọng tại đây.',
             '{"screen":"Home"}',
             2::BIGINT,
             'SYSTEM',

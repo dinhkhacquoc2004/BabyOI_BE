@@ -27,6 +27,9 @@ public class ProfileRequest {
 
     private String sex; // MALE, FEMALE, OTHER
 
+    @Size(max = 32, message = "Activity level must not exceed 32 characters")
+    private String activityLevel; // SEDENTARY, LIGHT, MODERATE, ACTIVE, VERY_ACTIVE
+
     @NotBlank(message = "Profile type is required")
     private String profileType; // MOTHER, CHILD
 

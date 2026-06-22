@@ -5,7 +5,9 @@ import com.example.babyoi_be.domain.dto.request.IllnessEventRequest;
 import com.example.babyoi_be.domain.dto.respone.HealthMonthlyDetailResponse;
 import com.example.babyoi_be.domain.dto.respone.HealthRecordResponse;
 import com.example.babyoi_be.domain.dto.respone.IllnessEventResponse;
+import com.example.babyoi_be.domain.dto.respone.TypeValueResponse;
 import com.example.babyoi_be.service.HealthTrackingService;
+import com.example.babyoi_be.service.TypeValueService;
 import jakarta.validation.Valid;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
@@ -13,14 +15,25 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 public class HealthTrackingController {
 
     private final HealthTrackingService healthTrackingService;
+    private final TypeValueService typeValueService;
 
-    public HealthTrackingController(HealthTrackingService healthTrackingService) {
+    public HealthTrackingController(
+            HealthTrackingService healthTrackingService,
+            TypeValueService typeValueService
+    ) {
         this.healthTrackingService = healthTrackingService;
+        this.typeValueService = typeValueService;
+    }
+
+    @GetMapping("/api/health-records/filter-options")
+    public Map<String, List<TypeValueResponse>> getHealthRecordFilterOptions() {
+        return typeValueService.getValuesByCodes(List.of("ACTIVITY_LEVEL"));
     }
 
     @PostMapping("/api/health-records")

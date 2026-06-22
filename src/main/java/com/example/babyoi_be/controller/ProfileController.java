@@ -38,7 +38,7 @@ public class ProfileController {
 
     @GetMapping("/filter-options")
     public Map<String, List<TypeValueResponse>> getFilterOptions() {
-        return typeValueService.getValuesByCodes(List.of("PROFILE_TYPE", "SEX"));
+        return typeValueService.getValuesByCodes(List.of("PROFILE_TYPE", "SEX", "ACTIVITY_LEVEL"));
     }
 
     @PutMapping("/{id}")

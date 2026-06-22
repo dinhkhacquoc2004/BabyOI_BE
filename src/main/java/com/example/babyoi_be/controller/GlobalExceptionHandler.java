@@ -2,6 +2,7 @@ package com.example.babyoi_be.controller;
 
 import com.example.babyoi_be.common.utils.MessageUtils;
 import com.example.babyoi_be.domain.message.ResponseMessage;
+import com.example.babyoi_be.exception.EmailVerificationRequiredException;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -14,6 +15,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.multipart.MultipartException;
+import org.springframework.web.multipart.support.MissingServletRequestPartException;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.LinkedHashMap;
@@ -61,6 +63,27 @@ public class GlobalExceptionHandler extends CommonController {
         );
     }
 
+    @ExceptionHandler(EmailVerificationRequiredException.class)
+    public ResponseEntity<ResponseMessage<Object>> handleEmailVerificationRequired(
+            EmailVerificationRequiredException exception,
+            HttpServletRequest request
+    ) {
+        log.warn("Email verification required at URI: {} - Email: {}", request.getRequestURI(), exception.getEmail());
+
+        Map<String, String> errors = new LinkedHashMap<>();
+        errors.put("code", EmailVerificationRequiredException.ERROR_CODE);
+        errors.put("action", EmailVerificationRequiredException.ACTION);
+        errors.put("email", exception.getEmail());
+        errors.put("expiresInMinutes", String.valueOf(exception.getExpiresInMinutes()));
+
+        return toExceptionResult(
+                messageUtils.getMessage(exception.getMessage()),
+                RETURN_CODE_FORBIDDEN,
+                HttpStatus.FORBIDDEN,
+                errors
+        );
+    }
+
     @ExceptionHandler(MultipartException.class)
     public ResponseEntity<ResponseMessage<Object>> handleMultipart(MultipartException exception, HttpServletRequest request) {
         log.error("Multipart error at URI: {} - Message: {}", request.getRequestURI(), exception.getMessage(), exception);
@@ -70,6 +93,21 @@ public class GlobalExceptionHandler extends CommonController {
                 RETURN_CODE_BAD_REQUEST,
                 HttpStatus.BAD_REQUEST,
                 null
+        );
+    }
+
+    @ExceptionHandler(MissingServletRequestPartException.class)
+    public ResponseEntity<ResponseMessage<Object>> handleMissingServletRequestPart(MissingServletRequestPartException exception, HttpServletRequest request) {
+        log.error("Missing multipart part at URI: {} - Part: {}", request.getRequestURI(), exception.getRequestPartName(), exception);
+
+        Map<String, String> errors = new LinkedHashMap<>();
+        errors.put(exception.getRequestPartName(), "File is required");
+
+        return toExceptionResult(
+                "Thiếu file ảnh cần tải lên",
+                RETURN_CODE_BAD_REQUEST,
+                HttpStatus.BAD_REQUEST,
+                errors
         );
     }
 

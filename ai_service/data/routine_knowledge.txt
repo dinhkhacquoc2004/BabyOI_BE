@@ -1,0 +1,57 @@
+# Phạm vi và nguồn
+Kho này hỗ trợ lịch sinh hoạt, ngủ, vận động, màn hình và tương tác theo profile trẻ đang chọn.
+Nguồn chính: WHO Guidelines on physical activity, sedentary behaviour and sleep for children under 5 years https://www.who.int/publications/i/item/9789241550536
+Nguồn bổ sung: WHO Infant and young child feeding https://www.who.int/news-room/fact-sheets/detail/infant-and-young-child-feeding
+UNICEF Early Childhood Development https://www.unicef.org/early-childhood-development
+Rà soát: 2026-06-22.
+
+# Nguyên tắc dùng lịch của BabyOi
+- Tuổi, lịch hôm nay, giờ dự kiến/thực tế và trạng thái hoàn thành phải lấy từ profile đang chọn.
+- Lịch mẫu là khung linh hoạt, không phải giờ bắt buộc. Ưu tiên tổng ngủ trong 24 giờ, tín hiệu đói-no, tín hiệu buồn ngủ và phản ứng của trẻ.
+- Chỉ đề xuất thay đổi nhỏ 10–30 phút mỗi vài ngày; không đảo toàn bộ lịch trong một ngày.
+- Khi trẻ sốt, khó thở, tiêu chảy, nôn, đau hoặc bú/ăn kém, ưu tiên đánh giá sức khỏe trước khi chỉnh lịch.
+
+# Trẻ 0–3 tháng
+- Nhịp ngày đêm chưa ổn định; ngủ chia nhiều đoạn và thức chủ yếu để bú/chăm sóc.
+- WHO nêu trẻ 0–3 tháng thường cần tổng 14–17 giờ ngủ chất lượng trong 24 giờ.
+- Cho trẻ vận động trên sàn an toàn nhiều lần trong ngày; khi thức và có giám sát, tập nằm sấp từng khoảng ngắn.
+- Không ép kéo dài cữ bú hoặc bỏ cữ đêm chỉ để khớp lịch. Trẻ tăng trưởng kém/có bệnh cần kế hoạch riêng từ bác sĩ.
+- Không dùng màn hình để dỗ; lúc trẻ phải ngồi yên nên đọc, kể chuyện hoặc tương tác trực tiếp.
+
+# Trẻ 4–11 tháng
+- WHO nêu tổng ngủ 12–16 giờ trong 24 giờ, gồm các giấc ngày.
+- Hoạt động nhiều lần mỗi ngày, đặc biệt chơi trên sàn; trẻ chưa di chuyển nên có ít nhất khoảng 30 phút nằm sấp khi thức, chia trong ngày và luôn giám sát.
+- Không giữ trẻ trong xe đẩy, ghế cao hoặc địu quá 1 giờ liên tục.
+- Không khuyến nghị thời gian màn hình thụ động. Khi ngồi yên, ưu tiên đọc sách/kể chuyện cùng người chăm sóc.
+- Khoảng 6 tháng bắt đầu ăn bổ sung nhưng sữa vẫn quan trọng; cữ ăn/bú đi theo đúng nhóm tuổi và tín hiệu của trẻ.
+
+# Trẻ 12–24 tháng
+- WHO nêu tổng ngủ 11–14 giờ trong 24 giờ, gồm giấc trưa, với giờ ngủ-thức tương đối đều.
+- Có ít nhất 180 phút hoạt động thể chất đa dạng trong ngày, chia thành nhiều lần; nhiều hơn càng tốt trong giới hạn an toàn.
+- Không bị giữ/ngồi cố định quá 1 giờ liên tục; tránh ngồi lâu.
+- Trẻ 1 tuổi: không khuyến nghị màn hình thụ động. Trẻ 2 tuổi: tối đa khoảng 1 giờ/ngày, ít hơn càng tốt.
+- Có thể dùng 3 bữa chính và 1–2 bữa phụ lành mạnh như khung tham khảo; vẫn tôn trọng đói-no và nhu cầu sữa.
+
+# Trẻ 3–4 tuổi
+- WHO nêu tổng ngủ 10–13 giờ trong 24 giờ, có thể gồm giấc trưa.
+- Có ít nhất 180 phút hoạt động đa dạng, trong đó ít nhất 60 phút ở mức vừa đến mạnh, chia trong ngày.
+- Màn hình thụ động tối đa khoảng 1 giờ/ngày, ít hơn càng tốt; tránh màn hình sát giờ ngủ.
+- Duy trì chuỗi trước ngủ ngắn, lặp lại: vệ sinh/tắm, đọc sách, ánh sáng dịu, lên giường.
+
+# Xây lịch linh hoạt
+- Bắt đầu từ giờ thức dậy tương đối ổn định, sau đó xếp ăn/bú, chơi và giấc ngày theo tuổi.
+- Quan sát dấu hiệu buồn ngủ: ngáp, nhìn tránh, dụi mắt, giảm tương tác, quấy; đưa trẻ vào routine trước khi quá mệt.
+- Sau một đêm xấu hoặc giấc ngày ngắn, điều chỉnh nhẹ thời điểm ngủ tiếp theo thay vì cố giữ giờ cứng.
+- Nếu giấc ngày quá muộn làm khó ngủ đêm, dịch sớm từng bước nhỏ; không cắt đột ngột tổng thời gian ngủ.
+- Lịch của anh/chị/em hoặc trẻ khác không được dùng thay lịch của profile hiện tại.
+
+# Môi trường ngủ và an toàn
+- Trẻ nhỏ ngủ nằm ngửa trên bề mặt phẳng, chắc, thoáng; tránh gối, chăn dày, thú nhồi bông và vật mềm quanh mặt.
+- Tránh khói thuốc, quá nóng và các sản phẩm ngủ không rõ độ an toàn.
+- Không để trẻ ngủ không giám sát trên ghế sofa, ghế ngồi, võng hoặc bề mặt có nguy cơ ngã/kẹt.
+
+# Khi cần hỏi bác sĩ
+- Ngáy to thường xuyên kèm ngừng thở/hụt hơi, tím tái, khó thở hoặc rất khó đánh thức.
+- Ngủ quá nhiều kèm bú/ăn kém, ít tiểu, sốt, li bì; hoặc mất ngủ kéo dài ảnh hưởng rõ đến trẻ/gia đình.
+- Thức đêm do đau, nôn, ho/khò khè, tiêu chảy, phát ban hoặc dấu bệnh khác.
+- Trẻ tăng trưởng kém trước khi giảm cữ bú/ăn hoặc áp dụng kế hoạch ngủ mới.

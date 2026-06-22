@@ -37,4 +37,6 @@ public interface AuthService {
     void logout(String authorizationHeader, RefreshTokenRequest request);
 
     UserProfileResponse getCurrentUser();
+
+    void deleteCurrentAccount();
 }

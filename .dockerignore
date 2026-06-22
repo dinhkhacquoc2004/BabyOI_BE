@@ -1,11 +1,9 @@
 target/
 .git/
 .idea/
-.vscode/
-*.iml
-*.iws
-*.ipr
-.DS_Store
-Dockerfile
-README.md
-HELP.md
+ai_service/.venv/
+ai_service/chroma_db/
+ai_service/**/__pycache__/
+ai_service/.pytest_cache/
+ai_service/.env
+admin-dashboard/node_modules/

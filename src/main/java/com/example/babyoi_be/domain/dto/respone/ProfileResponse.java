@@ -16,6 +16,7 @@ public class ProfileResponse {
     @JsonFormat(pattern = "dd/MM/yyyy")
     private LocalDate dateOfBirth;
     private String sex;
+    private String activityLevel;
     private String profileType;
     private String profileCode;
     private String functionCode;

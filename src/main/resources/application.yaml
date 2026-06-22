@@ -95,3 +95,8 @@
       enabled: ${ADMIN_DASHBOARD_ENABLED:true}
       port: ${ADMIN_PORT:8090}
       path: ${ADMIN_DASHBOARD_PATH:admin-dashboard}
+
+    agentic-rag:
+      base-url: ${AGENTIC_RAG_BASE_URL:http://localhost:8000}
+      chat-path: ${AGENTIC_RAG_CHAT_PATH:/api/chat}
+      timeout-seconds: ${AGENTIC_RAG_TIMEOUT_SECONDS:60}

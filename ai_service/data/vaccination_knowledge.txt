@@ -1,0 +1,38 @@
+# Phạm vi và nguồn
+Kho này hỗ trợ hiểu nguyên tắc tiêm chủng và theo dõi sau tiêm, không thay lịch tiêm quốc gia hoặc chỉ định tại cơ sở tiêm.
+Nguồn chính: WHO Vaccines and immunization https://www.who.int/health-topics/vaccines-and-immunization
+WHO vaccine position papers https://www.who.int/teams/immunization-vaccines-and-biologicals/policies/position-papers
+UNICEF Immunization https://www.unicef.org/immunization
+Rà soát: 2026-06-22.
+
+# Dùng đúng hồ sơ tiêm của profile
+- Luôn dựa vào ngày sinh và các mũi đã lưu của profile đang chọn.
+- Không suy đoán trẻ đã tiêm chỉ từ tuổi. Cần đối chiếu sổ/phiếu tiêm và dữ liệu cơ sở tiêm.
+- Tên vaccine thương mại, thành phần, số liều và khoảng cách có thể khác; cơ sở tiêm phải xác nhận lịch phù hợp tại Việt Nam.
+
+# Nguyên tắc tiêm đúng lịch
+- Tiêm chủng đúng lịch giúp bảo vệ trước khi trẻ có nguy cơ phơi nhiễm bệnh.
+- Nếu trễ hoặc bỏ lỡ mũi, không tự bắt đầu lại toàn bộ phác đồ. Mang hồ sơ tới cơ sở tiêm để lập lịch bắt kịp.
+- Nhiều vaccine có thể được tiêm cùng buổi theo hướng dẫn chuyên môn; không tự tách/ghép lịch.
+- Không dùng chatbot để quyết định chống chỉ định. Cung cấp tiền sử phản ứng nặng, dị ứng, bệnh nền và thuốc đang dùng cho nhân viên y tế.
+
+# Trước khi tiêm
+- Báo cho cơ sở tiêm nếu trẻ đang sốt, bệnh cấp, từng phản vệ sau vaccine/thành phần vaccine, suy giảm miễn dịch hoặc đang dùng thuốc ức chế miễn dịch.
+- Cảm nhẹ không sốt cao thường không tự động là chống chỉ định, nhưng nhân viên y tế phải khám sàng lọc và quyết định.
+- Mang theo sổ tiêm, thông tin mũi cũ và theo dõi đúng profile để tránh nhầm lịch giữa các trẻ.
+
+# Phản ứng thường gặp sau tiêm
+- Đau, đỏ hoặc sưng nhẹ tại chỗ; quấy; mệt; sốt nhẹ có thể xảy ra và thường tự giới hạn.
+- Cho trẻ nghỉ, bú/uống phù hợp tuổi và theo dõi trạng thái toàn thân.
+- Không tự dùng kháng sinh. Thuốc hạ sốt phải theo hướng dẫn của bác sĩ/cơ sở tiêm và đúng cân nặng; chatbot không đưa liều.
+
+# Dấu hiệu cần cấp cứu hoặc khám ngay
+- Khó thở, tím tái, sưng môi/lưỡi/mặt, nổi mề đay toàn thân, khò khè đột ngột, lơ mơ hoặc ngất.
+- Co giật, li bì khó đánh thức, khóc thét dai dẳng kèm trạng thái bất thường, bỏ bú hoàn toàn.
+- Sốt cao hoặc tình trạng xấu nhanh; vết tiêm sưng đỏ lan rộng, đau tăng hoặc có mủ cần được khám.
+- Khi có dấu hiệu nguy hiểm, không chờ chatbot và không tự lái nếu trẻ không ổn định; gọi cấp cứu/cơ sở y tế.
+
+# Ghi nhận trong BabyOi
+- Lưu ngày tiêm, tên vaccine, mũi số, cơ sở tiêm và phản ứng sau tiêm vào đúng profile.
+- Nếu dữ liệu app khác sổ tiêm/cơ sở tiêm, ưu tiên xác minh với cơ sở y tế trước khi cập nhật lịch.
+- Lịch quốc gia và khuyến cáo có thể thay đổi; dữ liệu RAG chỉ dùng giải thích, không phải lịch pháp lý hiện hành.

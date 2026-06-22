@@ -47,4 +47,6 @@ public interface NotificationRepository extends JpaRepository<Notification, Long
     @Modifying
     @Query("delete from Notification n where n.archivedAt is not null and n.archivedAt < :cutoff")
     int deleteArchivedBefore(LocalDateTime cutoff);
+
+    void deleteByUserId(Long userId);
 }

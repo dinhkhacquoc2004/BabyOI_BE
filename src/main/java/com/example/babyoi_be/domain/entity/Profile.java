@@ -33,6 +33,9 @@ public class Profile {
     @Enumerated(EnumType.STRING)
     private Sex sex;
 
+    @Column(name = "activity_level", length = 32)
+    private String activityLevel;
+
     @Column(name = "profile_type")
     private String profileType;
 

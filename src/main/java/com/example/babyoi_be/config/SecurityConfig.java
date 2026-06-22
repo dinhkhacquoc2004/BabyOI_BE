@@ -4,6 +4,7 @@ import com.example.babyoi_be.security.JwtAuthenticationFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
@@ -33,7 +34,26 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .httpBasic(AbstractHttpConfigurer::disable)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .authorizeHttpRequests(auth -> auth.anyRequest().permitAll())
+                .authorizeHttpRequests(auth -> auth
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                        .requestMatchers(
+                                "/privacy-policy.html",
+                                "/account-deletion.html"
+                        ).permitAll()
+                        .requestMatchers(
+                                "/api/auth/register",
+                                "/api/auth/register/**",
+                                "/api/auth/login",
+                                "/api/auth/token",
+                                "/api/auth/refresh-token",
+                                "/api/auth/social-login",
+                                "/api/auth/forgot-password",
+                                "/api/auth/forgot-password/**",
+                                "/api/auth/reset-password",
+                                "/api/admin/auth/login"
+                        ).permitAll()
+                        .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                        .anyRequest().authenticated())
                 .authenticationProvider(authenticationProvider)
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
