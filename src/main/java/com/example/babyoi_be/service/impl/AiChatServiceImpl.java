@@ -9,11 +9,19 @@ import com.example.babyoi_be.domain.dto.respone.AiChatResponse;
 import com.example.babyoi_be.domain.dto.respone.AgenticRagChatResponse;
 import com.example.babyoi_be.domain.entity.AiChatConversation;
 import com.example.babyoi_be.domain.entity.AiChatMessage;
+import com.example.babyoi_be.domain.entity.BabyRoutineEntry;
+import com.example.babyoi_be.domain.entity.FoodLibrary;
+import com.example.babyoi_be.domain.entity.FoodNutritionSummary;
+import com.example.babyoi_be.domain.entity.HealthRecord;
 import com.example.babyoi_be.domain.entity.Profile;
 import com.example.babyoi_be.domain.entity.Users;
 import com.example.babyoi_be.repository.AiChatConversationRepository;
 import com.example.babyoi_be.repository.AiChatMessageRepository;
+import com.example.babyoi_be.repository.BabyRoutineEntryRepository;
+import com.example.babyoi_be.repository.FoodLibraryRepository;
+import com.example.babyoi_be.repository.HealthRecordRepository;
 import com.example.babyoi_be.repository.ProfileRepository;
+import com.example.babyoi_be.repository.RestrictedFoodRepository;
 import com.example.babyoi_be.security.CustomUserDetails;
 import com.example.babyoi_be.service.AgenticRagClient;
 import com.example.babyoi_be.service.AiChatService;
@@ -24,12 +32,15 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -39,10 +50,22 @@ public class AiChatServiceImpl implements AiChatService {
 
     private static final String SENDER_USER = "USER";
     private static final String SENDER_ASSISTANT = "ASSISTANT";
+    private static final long MOTHER_FOOD_FUNCTION_CODE = 1L;
+    private static final long CHILD_FOOD_FUNCTION_CODE = 2L;
+    private static final Map<String, List<String>> CHILD_FOOD_AGE_GROUPS = Map.of(
+            "FOR_BABY_6_8_MONTHS", List.of("FOR_BABY_6_8_MONTHS", "FOR_BABY_6_8_MONTHS_DEVELOPMENT"),
+            "FOR_BABY_9_11_MONTHS", List.of("FOR_BABY_9_11_MONTHS", "FOR_BABY_9_11_MONTHS_DEVELOPMENT"),
+            "FOR_BABY_12_18_MONTHS", List.of("FOR_BABY_12_18_MONTHS", "FOR_BABY_12_18_MONTHS_DEVELOPMENT"),
+            "FOR_BABY_19_24_MONTHS", List.of("FOR_BABY_19_24_MONTHS", "FOR_BABY_19_24_MONTHS_DEVELOPMENT")
+    );
 
     private final AiChatConversationRepository conversationRepository;
     private final AiChatMessageRepository messageRepository;
+    private final BabyRoutineEntryRepository babyRoutineEntryRepository;
     private final ProfileRepository profileRepository;
+    private final HealthRecordRepository healthRecordRepository;
+    private final FoodLibraryRepository foodLibraryRepository;
+    private final RestrictedFoodRepository restrictedFoodRepository;
     private final AgenticRagClient agenticRagClient;
 
     @Override
@@ -263,10 +286,144 @@ public class AiChatServiceImpl implements AiChatService {
         profileContext.put("id", profile.getId());
         profileContext.put("name", profile.getName());
         profileContext.put("dateOfBirth", profile.getDateOfBirth());
+        profileContext.put("ageMonths", calculateAgeMonths(profile));
         profileContext.put("sex", profile.getSex() != null ? profile.getSex().name() : null);
         profileContext.put("profileType", profile.getProfileType());
         profileContext.put("profileCode", profile.getProfileCode());
+        appendFoodCatalogContext(profileContext, profile);
+        healthRecordRepository.findFirstByProfileIdOrderByRecordDateDescIdDesc(profile.getId())
+                .ifPresent(healthRecord -> appendHealthContext(profileContext, healthRecord));
+        appendTodayRoutineContext(profileContext, profile);
         return profileContext;
+    }
+
+    private void appendTodayRoutineContext(Map<String, Object> profileContext, Profile profile) {
+        if (!"CHILD".equalsIgnoreCase(profile.getProfileType())) {
+            return;
+        }
+        LocalDate today = LocalDate.now();
+        List<BabyRoutineEntry> entries =
+                babyRoutineEntryRepository.findByProfile_IdAndRoutineDateAndStatusOrderByPlannedTimeAscIdAsc(
+                        profile.getId(),
+                        today,
+                        Constants.TABLE_STATUS.ACTIVE
+                );
+        if (entries.isEmpty()) {
+            return;
+        }
+        String routine = entries.stream()
+                .limit(16)
+                .map(entry -> {
+                    String actual = entry.getActualTime() != null
+                            ? ", thực tế " + entry.getActualTime()
+                            : "";
+                    String completion = Boolean.TRUE.equals(entry.getCompleted())
+                            ? ", đã hoàn thành"
+                            : ", chưa hoàn thành";
+                    return entry.getPlannedTime() + " " + sanitizeCatalogValue(entry.getActivity())
+                            + " (" + sanitizeCatalogValue(entry.getType()) + actual + completion + ")";
+                })
+                .collect(Collectors.joining(" ;; "));
+        profileContext.put("profileRoutineDate", today);
+        profileContext.put("profileRoutineToday", routine);
+        profileContext.put("profileRoutineCount", entries.size());
+    }
+
+    private void appendFoodCatalogContext(Map<String, Object> profileContext, Profile profile) {
+        Long ageMonths = calculateAgeMonths(profile);
+        boolean childProfile = "CHILD".equalsIgnoreCase(profile.getProfileType());
+        String ageGroup = childProfile ? resolveChildFoodAgeGroup(ageMonths) : "MOTHER";
+        List<FoodLibrary> foods;
+
+        if (childProfile) {
+            List<String> advanceForValues = CHILD_FOOD_AGE_GROUPS.getOrDefault(ageGroup, List.of());
+            foods = advanceForValues.isEmpty()
+                    ? List.of()
+                    : foodLibraryRepository.findByStatusAndFunctionCodeAndAdvanceForInOrderByIdAsc(
+                            Constants.TABLE_STATUS.ACTIVE,
+                            CHILD_FOOD_FUNCTION_CODE,
+                            advanceForValues
+                    );
+        } else {
+            foods = foodLibraryRepository.findTop30ByStatusAndFunctionCodeOrderByIdAsc(
+                    Constants.TABLE_STATUS.ACTIVE,
+                    MOTHER_FOOD_FUNCTION_CODE
+            );
+        }
+
+        Set<Long> restrictedFoodIds = Set.copyOf(
+                restrictedFoodRepository.findFoodLibraryIdsByProfileId(profile.getId())
+        );
+        List<FoodLibrary> allowedFoods = foods.stream()
+                .filter(food -> !restrictedFoodIds.contains(food.getId()))
+                .limit(30)
+                .toList();
+
+        profileContext.put("foodAgeGroup", ageGroup);
+        profileContext.put("profileFoodCatalog", formatFoodCatalog(allowedFoods));
+        profileContext.put("profileFoodCatalogCount", allowedFoods.size());
+    }
+
+    private String resolveChildFoodAgeGroup(Long ageMonths) {
+        if (ageMonths == null || ageMonths < 6) {
+            return "BELOW_6_MONTHS";
+        }
+        if (ageMonths <= 8) {
+            return "FOR_BABY_6_8_MONTHS";
+        }
+        if (ageMonths <= 11) {
+            return "FOR_BABY_9_11_MONTHS";
+        }
+        if (ageMonths <= 18) {
+            return "FOR_BABY_12_18_MONTHS";
+        }
+        if (ageMonths <= 24) {
+            return "FOR_BABY_19_24_MONTHS";
+        }
+        return "ABOVE_24_MONTHS";
+    }
+
+    private String formatFoodCatalog(List<FoodLibrary> foods) {
+        return foods.stream()
+                .map(food -> {
+                    FoodNutritionSummary nutrition = food.getNutritionSummary();
+                    String calories = nutrition != null && nutrition.getTotalCalories() != null
+                            ? Math.round(nutrition.getTotalCalories()) + " kcal"
+                            : "";
+                    String protein = nutrition != null && nutrition.getTotalProtein() != null
+                            ? String.format(java.util.Locale.ROOT, "%.1f g protein", nutrition.getTotalProtein())
+                            : "";
+                    return food.getId() + "|" + sanitizeCatalogValue(food.getName()) + "|"
+                            + sanitizeCatalogValue(food.getAdvanceFor()) + "|" + calories + "|" + protein;
+                })
+                .collect(Collectors.joining(" ;; "));
+    }
+
+    private String sanitizeCatalogValue(String value) {
+        return value == null ? "" : value.replace("|", " ").replace(";;", " ").trim();
+    }
+
+    private Long calculateAgeMonths(Profile profile) {
+        if (profile.getDateOfBirth() == null) {
+            return null;
+        }
+        LocalDate birthDate = profile.getDateOfBirth();
+        LocalDate today = LocalDate.now();
+        if (birthDate.isAfter(today)) {
+            return null;
+        }
+        return ChronoUnit.MONTHS.between(birthDate, today);
+    }
+
+    private void appendHealthContext(Map<String, Object> profileContext, HealthRecord healthRecord) {
+        profileContext.put("healthRecordDate", healthRecord.getRecordDate());
+        profileContext.put("heightCm", healthRecord.getHeight());
+        profileContext.put("weightKg", healthRecord.getWeight());
+        profileContext.put("bmi", healthRecord.getBmi());
+        profileContext.put("activityLevel", healthRecord.getActivityLevel());
+        profileContext.put("bmrKcal", healthRecord.getBmr());
+        profileContext.put("tdeeKcal", healthRecord.getTdee());
+        profileContext.put("tdeeFormula", healthRecord.getTdeeFormula());
     }
 
     private List<AgenticRagChatHistoryItem> buildChatHistory(AiChatConversation conversation) {

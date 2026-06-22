@@ -50,6 +50,27 @@ services:
       - "${PORT:-8085}:${PORT:-8085}"
     command: ["java", "-jar", "/app/app.jar"]
 
+  ai:
+    build:
+      context: ./ai_service
+    container_name: babyoi-agentic-rag
+    restart: unless-stopped
+    environment:
+      GEMINI_API_KEY: ${GEMINI_API_KEY}
+      GEMINI_CHAT_MODEL: ${GEMINI_CHAT_MODEL:-gemini-2.5-flash}
+      GEMINI_EMBEDDING_MODEL: ${GEMINI_EMBEDDING_MODEL:-gemini-embedding-001}
+      CHROMA_PATH: /app/chroma_db
+      AUTO_INGEST_ON_STARTUP: ${AUTO_INGEST_ON_STARTUP:-true}
+      AUTO_INGEST_DOMAINS: ${AUTO_INGEST_DOMAINS:-nutrition,growth,vaccination,routine,general}
+    volumes:
+      - ai_chroma_data:/app/chroma_db
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health', timeout=3)"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+
   admin:
     image: node:22-bookworm-slim
     container_name: babyoi-admin

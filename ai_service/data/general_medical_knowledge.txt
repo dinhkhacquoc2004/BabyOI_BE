@@ -1,0 +1,101 @@
+# Phạm vi và nguồn
+Kho này hỗ trợ AI BabyOi trả lời câu hỏi chăm sóc sức khỏe, triệu chứng và bệnh thường gặp ở trẻ theo tinh thần WHO IMCI và UNICEF. Nội dung dùng để sàng lọc an toàn, hướng dẫn theo dõi/chăm sóc ban đầu và nhắc khi cần đi khám; không dùng để chẩn đoán xác định, kê đơn thuốc hoặc đưa liều thuốc.
+
+Nguồn chính: WHO IMCI Chart Booklet, WHO Integrated Management of Childhood Illness, WHO newborn health, UNICEF child health/childhood diseases, UNICEF ORS and zinc, UNICEF parenting illness guidance. Rà soát: 2026-06-22.
+
+# Nguyên tắc trả lời sức khỏe trẻ em
+- Luôn hỏi/ưu tiên tuổi của bé, cân nặng nếu có, thời điểm bắt đầu triệu chứng, mức tỉnh táo, ăn/bú/uống, số lần tiểu, phân/nôn, nhịp thở và bệnh nền/dị ứng/thuốc đã dùng.
+- Không chẩn đoán chắc chắn bệnh chỉ từ mô tả của phụ huynh. Nói theo mức nguy cơ: có thể chăm sóc hỗ trợ, nên khám sớm, hoặc cần cấp cứu.
+- Không tự kê kháng sinh, thuốc ho/cảm, thuốc chống nôn, thuốc tiêu chảy, corticoid, aspirin hoặc liều thuốc cụ thể cho trẻ.
+- Nếu phụ huynh mô tả bé “khác hẳn bình thường” hoặc xấu nhanh, ưu tiên khuyên khám dù chưa đủ dữ kiện.
+- Với trẻ nhỏ, đặc biệt dưới 3 tháng hoặc sơ sinh 0–28 ngày, ngưỡng đi khám phải thấp hơn vì tình trạng có thể chuyển nặng nhanh.
+- Thông tin chỉ mang tính tham khảo, không thay thế bác sĩ.
+
+# Dấu hiệu nguy hiểm chung theo WHO IMCI
+- Không uống/bú được hoặc bỏ bú hoàn toàn.
+- Nôn tất cả mọi thứ, không giữ được dịch.
+- Co giật, đang co giật hoặc có cơn co giật gần đây.
+- Li bì, khó đánh thức, lơ mơ hoặc bất tỉnh.
+- Khó thở rõ, thở rít khi nằm yên, rút lõm lồng ngực, tím tái môi/da hoặc ngưng thở.
+- Mất nước đáng lo: mắt trũng, rất ít/không tiểu, khát dữ hoặc uống kém, miệng rất khô, tay chân lạnh, da véo trở lại chậm, phản ứng kém.
+- Ban tím/đỏ không nhạt khi ấn kèm sốt hoặc trẻ mệt nhiều.
+- Có một trong các dấu hiệu trên: cần đưa trẻ đi cấp cứu/khám khẩn, không chờ chatbot.
+
+# Sốt ở trẻ
+- Cần biết tuổi, nhiệt độ đo được, cách đo, số ngày sốt, có sốt hằng ngày không, mức tỉnh táo, bú/ăn/uống, số lần tiểu và triệu chứng kèm như ho, khó thở, tiêu chảy, nôn, phát ban, đau tai.
+- Trẻ dưới 3 tháng có nhiệt độ từ 38°C trở lên cần được đánh giá y tế khẩn trong ngày.
+- Sốt kèm khó thở, co giật, li bì, cổ cứng, ban tím không mất khi ấn, mất nước, bỏ bú hoặc trẻ xấu nhanh cần đi khám/cấp cứu ngay.
+- Nếu sốt kéo dài nhiều ngày, tái diễn, hoặc phụ huynh không đo được nhưng trẻ mệt rõ, nên đi khám để tìm nguyên nhân.
+- Chăm sóc hỗ trợ: cho uống/bú thường xuyên theo khả năng, mặc thoáng, nghỉ ngơi, theo dõi nhiệt độ và nước tiểu. Không chườm lạnh/đá, không tự dùng aspirin hoặc kháng sinh.
+
+# Ho, sổ mũi, nghẹt mũi và cảm lạnh
+- Hỏi thời gian ho/sổ mũi, có sốt không, bé có bú/ăn được không, có thở nhanh/khò khè/rút lõm không, có nôn sau ho không và có tiếp xúc người bệnh không.
+- Cảm lạnh nhẹ thường có thể chăm sóc hỗ trợ: giữ bé thoáng, cho bú/uống đủ, vệ sinh mũi nhẹ nhàng khi nghẹt làm bé khó bú/ngủ, tránh khói thuốc và không khí ô nhiễm.
+- Không tự dùng thuốc ho/cảm cho trẻ nhỏ nếu chưa có chỉ định y tế; nhiều thuốc không phù hợp cho trẻ nhỏ và có thể gây hại.
+- Cần khám nếu ho kéo dài, sốt cao hoặc kéo dài, bú/ăn kém, nôn nhiều, đau tai, khò khè, hoặc bé dưới 3 tháng có triệu chứng hô hấp.
+- Cấp cứu nếu khó thở, tím môi, rút lõm lồng ngực, thở rít khi nghỉ, ngưng thở, kiệt sức hoặc li bì.
+
+# Khó thở, thở nhanh và nghi viêm phổi
+- WHO IMCI nhấn mạnh đánh giá trẻ ho/khó thở bằng khả năng uống/bú, nhịp thở, rút lõm lồng ngực, thở rít, tím tái và trạng thái toàn thân.
+- Phụ huynh có thể đếm nhịp thở trong 1 phút khi bé yên, không vừa khóc/chạy/ăn. Nếu thấy thở nhanh bất thường so với mọi ngày hoặc bé gắng sức khi thở, nên đi khám.
+- Dấu hiệu đáng lo: rút lõm lồng ngực, phập phồng cánh mũi, rên, tím tái, không bú/uống được, li bì, ngưng thở, hoặc thở rít khi nằm yên.
+- Không tự dùng kháng sinh hoặc khí dung/thuốc giãn phế quản theo đơn cũ. Cần nhân viên y tế đánh giá để phân biệt cảm lạnh, viêm tiểu phế quản, viêm phổi, hen/khò khè hoặc bệnh khác.
+
+# Tiêu chảy và mất nước
+- Hỏi số lần đi ngoài trong ngày, số ngày tiêu chảy, phân lỏng nước hay có máu/nhầy, có nôn/sốt không, số lần tiểu, bé có khát/uống được không và mức tỉnh táo.
+- Nguy cơ chính của tiêu chảy ở trẻ là mất nước và suy dinh dưỡng sau đợt bệnh.
+- Tiếp tục bú mẹ; tiếp tục cho ăn phù hợp tuổi nếu bé ăn được. Không bắt nhịn ăn.
+- Có thể dùng dung dịch bù nước đường uống ORS đúng hướng dẫn trên gói hoặc theo nhân viên y tế; không tự pha đặc/loãng tùy ý. ORS hữu ích hơn khi đi kèm kẽm theo hướng dẫn y tế tại địa phương.
+- Dấu mất nước cần chú ý: mắt trũng, môi/miệng khô, tiểu ít, khóc ít nước mắt, khát nhiều, uống kém, lừ đừ, tay chân lạnh, da véo trở lại chậm.
+- Cần khám sớm/khẩn nếu phân có máu, nôn liên tục, không uống/bú được, trẻ rất nhỏ, sốt cao, tiêu chảy kéo dài, hoặc có dấu mất nước.
+
+# Nôn, ói và trớ
+- Phân biệt trớ ít sau bú với nôn bệnh lý. Trớ ít nhưng bé vẫn tỉnh, bú tốt, tăng trưởng tốt thường ít đáng lo hơn nôn nhiều.
+- Hỏi bé nôn bao nhiêu lần, có nôn mọi thứ không, màu nôn trắng/sữa/vàng/xanh/máu, có đau bụng/chướng bụng/sốt/tiêu chảy không, bé có tiểu và tỉnh không.
+- Nôn xanh, nôn máu, nôn vọt lặp lại, bụng chướng/đau dữ, li bì, mất nước, không giữ được dịch hoặc nôn kèm chấn thương đầu cần đi khám/cấp cứu ngay.
+- Chăm sóc hỗ trợ khi nhẹ: cho bú/uống từng lượng nhỏ thường xuyên theo khả năng, theo dõi tiểu và trạng thái toàn thân. Không tự dùng thuốc chống nôn.
+- Ngủ an toàn vẫn là đặt trẻ nằm ngửa trên mặt phẳng chắc, không kê gối/nghiêng nôi để “chống trớ” nếu không có chỉ định chuyên môn.
+
+# Phát ban, mẩn đỏ và dị ứng
+- Hỏi ban bắt đầu khi nào, có sốt không, ban có ngứa/đau/phồng rộp không, có thuốc/thức ăn/vaccine mới không, ban có nhạt khi ấn không, có sưng môi/mặt/lưỡi hay khó thở không.
+- Cấp cứu nếu ban kèm khó thở, khò khè, sưng môi/lưỡi/mặt, nôn liên tục, lơ mơ, tụt trạng thái hoặc tím tái vì có thể là phản ứng dị ứng nặng.
+- Ban tím/đỏ không nhạt khi ấn, đặc biệt kèm sốt hoặc trẻ mệt nhiều, cần khám ngay.
+- Ghi lại ảnh ban, thời điểm xuất hiện và tác nhân nghi ngờ nếu an toàn. Không tự thử lại thức ăn/thuốc nghi gây dị ứng nặng.
+- Hăm tã nhẹ: thay tã thường xuyên, giữ sạch và khô, tránh chà xát mạnh. Loét, chảy mủ, sốt, lan nhanh hoặc bé đau nhiều cần khám.
+
+# Đau tai, chảy mủ tai
+- Hỏi bé có kéo tai/quấy khóc khi nằm, sốt, chảy dịch/mủ tai, nghe kém, sưng sau tai hoặc vừa cảm lạnh không.
+- Đau tai kèm sốt, chảy mủ tai, sưng/đỏ sau tai, bé rất mệt hoặc dưới 6 tháng nên khám.
+- Không tự nhỏ thuốc tai, dầu, mẹo dân gian hoặc dùng kháng sinh còn thừa nếu chưa được bác sĩ chỉ định.
+
+# Đỏ mắt, ghèn mắt và dấu hiệu mắt cần khám
+- Đỏ mắt nhẹ có thể do kích ứng hoặc nhiễm trùng thông thường, nhưng cần hỏi có đau nhiều, sợ sáng, giảm nhìn, chấn thương, hóa chất, sưng quanh mắt hoặc trẻ sơ sinh không.
+- Cần đánh giá khẩn nếu đau mắt nhiều, sợ ánh sáng, giảm thị lực, mắt bị hóa chất/chấn thương, sưng đỏ quanh mắt, hoặc trẻ sơ sinh có ghèn nhiều.
+- Vệ sinh tay, không dùng chung khăn, không tự nhỏ thuốc chứa kháng sinh/corticoid khi chưa khám.
+
+# Vàng da, rốn và dấu hiệu nguy hiểm ở trẻ sơ sinh 0–28 ngày
+- Sơ sinh cần đi khám ngay nếu bú kém/bỏ bú, sốt hoặc hạ nhiệt, thở nhanh/khó thở, co giật, ít cử động, li bì, vàng da tăng nhanh, vàng tới lòng bàn tay/bàn chân, rốn đỏ lan/chảy mủ hoặc da quanh rốn sưng đau.
+- Vàng da trong 24 giờ đầu sau sinh, vàng tăng nhanh, vàng kèm lừ đừ/bú kém, hoặc nước tiểu sẫm/phân bạc màu cần đánh giá y tế.
+- Rốn cần sạch và khô; không đắp lá, bột, dầu hoặc chất không được nhân viên y tế hướng dẫn.
+- Với trẻ sơ sinh, không chờ theo dõi lâu tại nhà nếu phụ huynh thấy bé yếu, bú kém hoặc thở bất thường.
+
+# Dinh dưỡng khi bé ốm và sau ốm
+- Khi ốm, trẻ thường ăn/bú kém nhưng vẫn cần dịch và năng lượng để hồi phục. Tiếp tục bú mẹ; chia nhỏ bữa, chọn món mềm/dễ ăn phù hợp tuổi.
+- Không ép ăn mạnh khi bé mệt, nhưng cần mời ăn/bú thường xuyên hơn, theo tín hiệu của bé.
+- Trong tiêu chảy, không bắt nhịn sữa mẹ hoặc thức ăn phù hợp tuổi; mục tiêu là bù nước và tránh sụt cân.
+- Sau khi khỏi, trẻ có thể cần ăn thêm bữa hoặc tăng dần lượng ăn trong khoảng thời gian hồi phục để bắt kịp tăng trưởng, nếu bé chấp nhận.
+- Cần khám/chuyên gia dinh dưỡng nếu sụt cân, không tăng cân sau đợt bệnh, biếng ăn kéo dài, nôn/tiêu chảy kéo dài hoặc thường xuyên ốm.
+
+# Theo dõi tại nhà khi bé bị ốm
+- Ghi thời điểm bắt đầu triệu chứng, nhiệt độ và cách đo, thuốc đã dùng, lượng bú/ăn/uống, số lần tiểu, số lần đi ngoài/nôn, màu phân/nôn, ban da và nhịp thở khi bé yên.
+- Theo dõi số lần thay tã ướt/tiểu để nhận biết nguy cơ mất nước.
+- Quan sát trạng thái toàn thân: bé có tỉnh, giao tiếp/khóc như mọi ngày, dỗ được không, ngủ có đánh thức được không.
+- Chụp ảnh ban da/phân/nôn nếu cần và an toàn để cung cấp cho bác sĩ, nhưng không trì hoãn đi khám nếu có dấu hiệu nguy hiểm.
+- Tách trẻ khỏi khói thuốc, giữ vệ sinh tay, làm sạch bề mặt thường chạm và tránh cho bé tiếp xúc người đang bệnh khi có thể.
+- Nếu triệu chứng nhẹ nhưng kéo dài, tái diễn nhiều lần hoặc phụ huynh lo lắng, nên đặt lịch khám thay vì chỉ hỏi chatbot.
+
+# Phòng bệnh thường gặp
+- Nuôi con bằng sữa mẹ, ăn bổ sung phù hợp tuổi, tiêm chủng đầy đủ, rửa tay, nước sạch, vệ sinh thực phẩm và tránh khói thuốc giúp giảm nguy cơ nhiều bệnh nhiễm trùng.
+- Không dùng chung bình sữa, muỗng, khăn mặt khi có người bệnh; vệ sinh đồ dùng ăn uống của trẻ đúng cách.
+- Tiêm chủng giúp phòng các bệnh truyền nhiễm nặng; nếu trễ lịch, liên hệ cơ sở tiêm chủng để được sắp lịch bù, không tự bỏ mũi.
+- Với trẻ đi nhà trẻ, cần theo dõi sốt, ho, tiêu chảy, phát ban và thông báo cơ sở chăm sóc khi trẻ có bệnh lây nhiễm nghi ngờ.
