@@ -11,15 +11,19 @@ import com.example.babyoi_be.domain.entity.AiChatConversation;
 import com.example.babyoi_be.domain.entity.AiChatMessage;
 import com.example.babyoi_be.domain.entity.BabyRoutineEntry;
 import com.example.babyoi_be.domain.entity.FoodLibrary;
+import com.example.babyoi_be.domain.entity.FoodLibraryIngredient;
 import com.example.babyoi_be.domain.entity.FoodNutritionSummary;
 import com.example.babyoi_be.domain.entity.HealthRecord;
+import com.example.babyoi_be.domain.entity.IllnessEvent;
 import com.example.babyoi_be.domain.entity.Profile;
+import com.example.babyoi_be.domain.entity.RestrictedFood;
 import com.example.babyoi_be.domain.entity.Users;
 import com.example.babyoi_be.repository.AiChatConversationRepository;
 import com.example.babyoi_be.repository.AiChatMessageRepository;
 import com.example.babyoi_be.repository.BabyRoutineEntryRepository;
 import com.example.babyoi_be.repository.FoodLibraryRepository;
 import com.example.babyoi_be.repository.HealthRecordRepository;
+import com.example.babyoi_be.repository.IllnessEventRepository;
 import com.example.babyoi_be.repository.ProfileRepository;
 import com.example.babyoi_be.repository.RestrictedFoodRepository;
 import com.example.babyoi_be.security.CustomUserDetails;
@@ -35,9 +39,11 @@ import org.springframework.web.server.ResponseStatusException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
+import java.text.Normalizer;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -64,6 +70,7 @@ public class AiChatServiceImpl implements AiChatService {
     private final BabyRoutineEntryRepository babyRoutineEntryRepository;
     private final ProfileRepository profileRepository;
     private final HealthRecordRepository healthRecordRepository;
+    private final IllnessEventRepository illnessEventRepository;
     private final FoodLibraryRepository foodLibraryRepository;
     private final RestrictedFoodRepository restrictedFoodRepository;
     private final AgenticRagClient agenticRagClient;
@@ -83,8 +90,11 @@ public class AiChatServiceImpl implements AiChatService {
                 .map(existingConversation -> validateConversationOwner(existingConversation, currentUser, profile))
                 .orElseGet(() -> createConversation(conversationId, currentUser.getUser(), profile, userMessage));
 
-        Map<String, Object> profileContext = buildProfileContext(profile);
         List<AgenticRagChatHistoryItem> chatHistory = buildChatHistory(conversation);
+        Map<String, Object> profileContext = buildProfileContext(
+                profile,
+                buildCatalogQuery(userMessage, chatHistory)
+        );
 
         LocalDateTime now = LocalDateTime.now();
         messageRepository.save(AiChatMessage.builder()
@@ -278,7 +288,7 @@ public class AiChatServiceImpl implements AiChatService {
         return botReply.trim();
     }
 
-    private Map<String, Object> buildProfileContext(Profile profile) {
+    private Map<String, Object> buildProfileContext(Profile profile, String currentQuestion) {
         if (profile == null) {
             return null;
         }
@@ -290,9 +300,16 @@ public class AiChatServiceImpl implements AiChatService {
         profileContext.put("sex", profile.getSex() != null ? profile.getSex().name() : null);
         profileContext.put("profileType", profile.getProfileType());
         profileContext.put("profileCode", profile.getProfileCode());
-        appendFoodCatalogContext(profileContext, profile);
-        healthRecordRepository.findFirstByProfileIdOrderByRecordDateDescIdDesc(profile.getId())
-                .ifPresent(healthRecord -> appendHealthContext(profileContext, healthRecord));
+        appendFoodCatalogContext(profileContext, profile, currentQuestion);
+        List<HealthRecord> recentHealthRecords = healthRecordRepository
+                .findTop2ByProfileIdOrderByRecordDateDescIdDesc(profile.getId());
+        if (!recentHealthRecords.isEmpty()) {
+            appendHealthContext(profileContext, recentHealthRecords.get(0));
+            if (recentHealthRecords.size() > 1) {
+                appendPreviousHealthContext(profileContext, recentHealthRecords.get(0), recentHealthRecords.get(1));
+            }
+        }
+        appendRecentIllnessContext(profileContext, profile);
         appendTodayRoutineContext(profileContext, profile);
         return profileContext;
     }
@@ -329,7 +346,11 @@ public class AiChatServiceImpl implements AiChatService {
         profileContext.put("profileRoutineCount", entries.size());
     }
 
-    private void appendFoodCatalogContext(Map<String, Object> profileContext, Profile profile) {
+    private void appendFoodCatalogContext(
+            Map<String, Object> profileContext,
+            Profile profile,
+            String currentQuestion
+    ) {
         Long ageMonths = calculateAgeMonths(profile);
         boolean childProfile = "CHILD".equalsIgnoreCase(profile.getProfileType());
         String ageGroup = childProfile ? resolveChildFoodAgeGroup(ageMonths) : "MOTHER";
@@ -345,23 +366,76 @@ public class AiChatServiceImpl implements AiChatService {
                             advanceForValues
                     );
         } else {
-            foods = foodLibraryRepository.findTop30ByStatusAndFunctionCodeOrderByIdAsc(
+            foods = foodLibraryRepository.findByStatusAndFunctionCodeOrderByIdAsc(
                     Constants.TABLE_STATUS.ACTIVE,
                     MOTHER_FOOD_FUNCTION_CODE
             );
         }
 
-        Set<Long> restrictedFoodIds = Set.copyOf(
-                restrictedFoodRepository.findFoodLibraryIdsByProfileId(profile.getId())
-        );
-        List<FoodLibrary> allowedFoods = foods.stream()
+        String motherGoalCode = childProfile ? null : resolveMotherGoalCode(currentQuestion);
+        List<String> requestedIngredients = resolveRequestedIngredients(foods, currentQuestion);
+        List<String> requestedFoodNames = resolveRequestedFoodNames(foods, currentQuestion);
+        boolean analysisRequest = isFoodAnalysisRequest(currentQuestion);
+
+        List<RestrictedFood> restrictedFoods = restrictedFoodRepository.findByProfileId(profile.getId());
+        Set<Long> restrictedFoodIds = restrictedFoods.stream()
+                .filter(item -> item.getFoodLibrary() != null)
+                .map(item -> item.getFoodLibrary().getId())
+                .collect(Collectors.toUnmodifiableSet());
+        List<FoodLibrary> profileEligibleFoods = foods.stream()
                 .filter(food -> !restrictedFoodIds.contains(food.getId()))
-                .limit(30)
+                .toList();
+        List<FoodLibrary> allowedFoods = profileEligibleFoods.stream()
+                .filter(food -> motherGoalCode == null || motherGoalCode.equalsIgnoreCase(food.getAdvanceFor()))
+                .filter(food -> requestedIngredients.isEmpty() || containsAllIngredients(food, requestedIngredients))
+                .filter(food -> requestedFoodNames.isEmpty() || requestedFoodNames.contains(food.getName()))
+                .limit(analysisRequest ? 5 : 30)
                 .toList();
 
         profileContext.put("foodAgeGroup", ageGroup);
-        profileContext.put("profileFoodCatalog", formatFoodCatalog(allowedFoods));
+        profileContext.put("profileFoodCatalog", formatFoodCatalog(allowedFoods, analysisRequest));
         profileContext.put("profileFoodCatalogCount", allowedFoods.size());
+        profileContext.put("profileFoodCatalogIndex", formatFoodCatalogIndex(
+                profileEligibleFoods.stream().limit(160).toList()
+        ));
+        appendCrossSubjectCatalogs(profileContext, childProfile, profileEligibleFoods);
+        profileContext.put("catalogGoalCode", motherGoalCode);
+        profileContext.put("catalogGoalLabel", motherGoalLabel(motherGoalCode));
+        profileContext.put("requestedIngredients", String.join(" ;; ", requestedIngredients));
+        profileContext.put("requestedFoodNames", String.join(" ;; ", requestedFoodNames));
+        profileContext.put("foodAnalysisRequested", analysisRequest);
+        profileContext.put("restrictedFoods", restrictedFoods.stream()
+                .filter(item -> item.getFoodLibrary() != null)
+                .map(item -> sanitizeCatalogValue(item.getFoodLibrary().getName()))
+                .filter(name -> !name.isBlank())
+                .collect(Collectors.joining(" ;; ")));
+        profileContext.put("restrictedFoodCount", restrictedFoods.size());
+    }
+
+    private void appendCrossSubjectCatalogs(
+            Map<String, Object> profileContext,
+            boolean selectedProfileIsChild,
+            List<FoodLibrary> selectedProfileFoods
+    ) {
+        List<FoodLibrary> motherFoods = selectedProfileIsChild
+                ? foodLibraryRepository.findByStatusAndFunctionCodeOrderByIdAsc(
+                        Constants.TABLE_STATUS.ACTIVE,
+                        MOTHER_FOOD_FUNCTION_CODE
+                )
+                : selectedProfileFoods;
+        List<FoodLibrary> childFoods = selectedProfileIsChild
+                ? selectedProfileFoods
+                : foodLibraryRepository.findByStatusAndFunctionCodeOrderByIdAsc(
+                        Constants.TABLE_STATUS.ACTIVE,
+                        CHILD_FOOD_FUNCTION_CODE
+                );
+
+        profileContext.put("motherFoodCatalogIndex", formatFoodCatalogIndex(
+                motherFoods.stream().limit(160).toList()
+        ));
+        profileContext.put("childFoodCatalogIndex", formatFoodCatalogIndex(
+                childFoods.stream().limit(160).toList()
+        ));
     }
 
     private String resolveChildFoodAgeGroup(Long ageMonths) {
@@ -383,7 +457,7 @@ public class AiChatServiceImpl implements AiChatService {
         return "ABOVE_24_MONTHS";
     }
 
-    private String formatFoodCatalog(List<FoodLibrary> foods) {
+    private String formatFoodCatalog(List<FoodLibrary> foods, boolean includeAnalysisDetails) {
         return foods.stream()
                 .map(food -> {
                     FoodNutritionSummary nutrition = food.getNutritionSummary();
@@ -393,14 +467,222 @@ public class AiChatServiceImpl implements AiChatService {
                     String protein = nutrition != null && nutrition.getTotalProtein() != null
                             ? String.format(java.util.Locale.ROOT, "%.1f g protein", nutrition.getTotalProtein())
                             : "";
+                    String ingredients = food.getIngredients() == null ? "" : food.getIngredients().stream()
+                            .filter(item -> item.getFoodIngredient() != null)
+                            .map(item -> sanitizeCatalogValue(item.getFoodIngredient().getNameIngredients()))
+                            .filter(name -> !name.isBlank())
+                            .distinct()
+                            .collect(Collectors.joining(", "));
+                    FoodNutritionSummary summary = food.getNutritionSummary();
+                    String carbs = nutritionValue(summary != null ? summary.getTotalCarbs() : null, "g carbs");
+                    String fat = nutritionValue(summary != null ? summary.getTotalFat() : null, "g fat");
+                    String fiber = nutritionValue(summary != null ? summary.getTotalFiber() : null, "g fiber");
+                    String sugar = nutritionValue(summary != null ? summary.getTotalSugar() : null, "g sugar");
+                    String sodium = nutritionValue(summary != null ? summary.getTotalSodium() : null, "mg sodium");
+                    String goodPoints = includeAnalysisDetails && food.getRecommendation() != null
+                            ? compactCatalogText(food.getRecommendation().getGoodPoints()) : "";
+                    String badPoints = includeAnalysisDetails && food.getRecommendation() != null
+                            ? compactCatalogText(food.getRecommendation().getBadPoints()) : "";
+                    String advice = includeAnalysisDetails && food.getRecommendation() != null
+                            ? compactCatalogText(food.getRecommendation().getAdvice()) : "";
+                    String cookingWay = includeAnalysisDetails && food.getRecommendation() != null
+                            ? compactCatalogText(food.getRecommendation().getCookingWay()) : "";
                     return food.getId() + "|" + sanitizeCatalogValue(food.getName()) + "|"
-                            + sanitizeCatalogValue(food.getAdvanceFor()) + "|" + calories + "|" + protein;
+                            + sanitizeCatalogValue(food.getAdvanceFor()) + "|" + calories + "|" + protein
+                            + "|" + ingredients + "|" + carbs + "|" + fat + "|" + fiber
+                            + "|" + sugar + "|" + sodium + "|" + goodPoints + "|" + badPoints
+                            + "|" + advice + "|" + cookingWay;
                 })
                 .collect(Collectors.joining(" ;; "));
     }
 
+    private List<String> resolveRequestedFoodNames(List<FoodLibrary> foods, String question) {
+        String normalizedQuestion = normalizeSearchText(question);
+        if (normalizedQuestion.isBlank()) {
+            return List.of();
+        }
+        return foods.stream()
+                .filter(food -> containsNormalizedPhrase(normalizedQuestion, normalizeSearchText(food.getName())))
+                .map(FoodLibrary::getName)
+                .distinct()
+                .limit(5)
+                .toList();
+    }
+
+    private String formatFoodCatalogIndex(List<FoodLibrary> foods) {
+        return foods.stream()
+                .map(food -> {
+                    FoodNutritionSummary nutrition = food.getNutritionSummary();
+                    String calories = nutrition != null && nutrition.getTotalCalories() != null
+                            ? Math.round(nutrition.getTotalCalories()) + " kcal" : "";
+                    String protein = nutrition != null && nutrition.getTotalProtein() != null
+                            ? String.format(java.util.Locale.ROOT, "%.1f g protein", nutrition.getTotalProtein()) : "";
+                    String ingredients = food.getIngredients() == null ? "" : food.getIngredients().stream()
+                            .filter(item -> item.getFoodIngredient() != null)
+                            .map(item -> sanitizeCatalogValue(item.getFoodIngredient().getNameIngredients()))
+                            .filter(name -> !name.isBlank())
+                            .distinct()
+                            .collect(Collectors.joining(", "));
+                    return food.getId() + "|" + sanitizeCatalogValue(food.getName()) + "|"
+                            + sanitizeCatalogValue(food.getAdvanceFor()) + "|" + calories + "|" + protein
+                            + "|" + ingredients;
+                })
+                .collect(Collectors.joining(" ;; "));
+    }
+
+    private boolean isFoodAnalysisRequest(String question) {
+        String text = normalizeSearchText(question);
+        return containsAny(text, "phan tich", "danh gia", "diem manh", "diem yeu", "diem han che", "uu diem", "nhuoc diem", "luu y mon")
+                || containsAny(text, "thong tin chi tiet", "chi tiet cua no", "mon nay co gi");
+    }
+
+    private String buildCatalogQuery(
+            String currentQuestion,
+            List<AgenticRagChatHistoryItem> chatHistory
+    ) {
+        if (!isReferentialFollowUp(currentQuestion)) {
+            return currentQuestion;
+        }
+        String previousUserQuestions = chatHistory.stream()
+                .filter(item -> "USER".equalsIgnoreCase(item.getSender()))
+                .map(AgenticRagChatHistoryItem::getMessage)
+                .filter(message -> message != null && !message.isBlank())
+                .collect(Collectors.joining(" "));
+        return (previousUserQuestions + " " + currentQuestion).trim();
+    }
+
+    private boolean isReferentialFollowUp(String question) {
+        String text = normalizeSearchText(question);
+        return containsAny(text, "mon do", "mon nay", "cai do", "cai nay", "cua no", "chi tiet cua no", "vua noi", "vua goi y");
+    }
+
+    private String nutritionValue(Double value, String unit) {
+        return value == null ? "" : String.format(java.util.Locale.ROOT, "%.1f %s", value, unit);
+    }
+
+    private String compactCatalogText(String value) {
+        String clean = sanitizeCatalogValue(value);
+        return clean.length() <= 320 ? clean : clean.substring(0, 317) + "...";
+    }
+
+    private List<String> resolveRequestedIngredients(List<FoodLibrary> foods, String question) {
+        String normalizedQuestion = normalizeSearchText(question);
+        if (normalizedQuestion.isBlank()) {
+            return List.of();
+        }
+        LinkedHashSet<String> result = foods.stream()
+                .flatMap(food -> food.getIngredients() == null
+                        ? java.util.stream.Stream.<FoodLibraryIngredient>empty()
+                        : food.getIngredients().stream())
+                .filter(item -> item.getFoodIngredient() != null)
+                .map(item -> item.getFoodIngredient().getNameIngredients())
+                .filter(name -> name != null && !name.isBlank())
+                .filter(name -> containsNormalizedPhrase(normalizedQuestion, normalizeSearchText(name)))
+                .collect(Collectors.toCollection(LinkedHashSet::new));
+        if (!containsNormalizedPhrase(normalizedQuestion, "trung ga")
+                && containsNormalizedPhrase(normalizedQuestion, "ga")) {
+            result.add("gà");
+        }
+        if (containsNormalizedPhrase(normalizedQuestion, "bo")) result.add("bò");
+        if (containsNormalizedPhrase(normalizedQuestion, "heo") || containsNormalizedPhrase(normalizedQuestion, "lon")) result.add("heo");
+        if (containsNormalizedPhrase(normalizedQuestion, "ca") && result.stream().noneMatch(item -> normalizeSearchText(item).startsWith("ca "))) result.add("cá");
+        return result.stream().limit(5).toList();
+    }
+
+    private boolean containsAllIngredients(FoodLibrary food, List<String> requestedIngredients) {
+        if (food.getIngredients() == null) {
+            return false;
+        }
+        List<String> foodIngredients = food.getIngredients().stream()
+                .filter(item -> item.getFoodIngredient() != null)
+                .map(item -> normalizeSearchText(item.getFoodIngredient().getNameIngredients()))
+                .toList();
+        return requestedIngredients.stream()
+                .map(this::normalizeSearchText)
+                .allMatch(requested -> foodIngredients.stream()
+                        .anyMatch(actual -> ingredientMatches(requested, actual)));
+    }
+
+    private boolean ingredientMatches(String requested, String actual) {
+        if (requested.equals(actual)) return true;
+        return switch (requested) {
+            case "ga" -> actual.matches(".*(?:thit|uc|dui|canh|gan) ga.*") || actual.equals("ga");
+            case "bo" -> actual.contains("thit bo") || actual.equals("bo");
+            case "heo", "lon" -> actual.contains("thit heo") || actual.contains("thit lon") || actual.equals("heo");
+            case "ca" -> actual.startsWith("ca ") || actual.equals("ca");
+            default -> false;
+        };
+    }
+
+    private String resolveMotherGoalCode(String question) {
+        String text = normalizeSearchText(question);
+        if (containsAny(text, "tang sua", "loi sua", "nhieu sua", "kich sua")) {
+            return Constants.FOOD_ADVICE_FOR.MOM_INCREASE_MILK_SUPPLY;
+        }
+        if (containsAny(text, "giu dang", "lay lai voc dang", "giam can", "an kieng")) {
+            return Constants.FOOD_ADVICE_FOR.MOM_GET_BACK_IN_SHAPE;
+        }
+        if (containsAny(text, "sau sinh", "cho con bu")) {
+            return Constants.FOOD_ADVICE_FOR.MOM_POSTPARTUM_BREASTFEEDING;
+        }
+        if (containsAny(text, "tieu hoa", "tao bon", "de tieu")) {
+            return Constants.FOOD_ADVICE_FOR.MOM_DIGESTION_RECOVERY;
+        }
+        if (containsAny(text, "tang nang luong", "tang can", "met moi")) {
+            return Constants.FOOD_ADVICE_FOR.MOM_HEALTHY_ENERGY;
+        }
+        if (containsAny(text, "doi mon", "da dang mon", "an ngon")) {
+            return Constants.FOOD_ADVICE_FOR.MOM_CHANGE_DIET;
+        }
+        if (containsAny(text, "mat ngu", "giac ngu", "stress", "cang thang")) {
+            return Constants.FOOD_ADVICE_FOR.MOM_SLEEP_STRESS_SUPPORT;
+        }
+        return null;
+    }
+
+    private String motherGoalLabel(String goalCode) {
+        if (goalCode == null) return null;
+        return switch (goalCode) {
+            case Constants.FOOD_ADVICE_FOR.MOM_INCREASE_MILK_SUPPLY -> "tăng tiết sữa";
+            case Constants.FOOD_ADVICE_FOR.MOM_GET_BACK_IN_SHAPE -> "giữ dáng/giảm cân lành mạnh";
+            case Constants.FOOD_ADVICE_FOR.MOM_POSTPARTUM_BREASTFEEDING -> "sau sinh, đang cho con bú";
+            case Constants.FOOD_ADVICE_FOR.MOM_DIGESTION_RECOVERY -> "hỗ trợ tiêu hóa";
+            case Constants.FOOD_ADVICE_FOR.MOM_HEALTHY_ENERGY -> "tăng năng lượng";
+            case Constants.FOOD_ADVICE_FOR.MOM_CHANGE_DIET -> "đổi món";
+            case Constants.FOOD_ADVICE_FOR.MOM_SLEEP_STRESS_SUPPORT -> "giấc ngủ/giảm stress";
+            default -> goalCode;
+        };
+    }
+
+    private boolean containsAny(String text, String... phrases) {
+        return Arrays.stream(phrases).anyMatch(phrase -> containsNormalizedPhrase(text, phrase));
+    }
+
+    private boolean containsNormalizedPhrase(String normalizedText, String normalizedPhrase) {
+        if (normalizedPhrase == null || normalizedPhrase.isBlank()) {
+            return false;
+        }
+        return (" " + normalizedText + " ").contains(" " + normalizedPhrase + " ");
+    }
+
+    private String normalizeSearchText(String value) {
+        if (value == null) {
+            return "";
+        }
+        String normalized = Normalizer.normalize(value.toLowerCase(java.util.Locale.ROOT), Normalizer.Form.NFD)
+                .replace("đ", "d")
+                .replaceAll("\\p{M}+", "")
+                .replaceAll("[^a-z0-9]+", " ")
+                .trim();
+        return normalized.replaceAll("\\s+", " ");
+    }
+
     private String sanitizeCatalogValue(String value) {
-        return value == null ? "" : value.replace("|", " ").replace(";;", " ").trim();
+        return value == null ? "" : value.replace("|", " ")
+                .replace(";;", " ")
+                .replaceAll("[\\r\\n]+", " ")
+                .replaceAll("\\s+", " ")
+                .trim();
     }
 
     private Long calculateAgeMonths(Profile profile) {
@@ -424,6 +706,48 @@ public class AiChatServiceImpl implements AiChatService {
         profileContext.put("bmrKcal", healthRecord.getBmr());
         profileContext.put("tdeeKcal", healthRecord.getTdee());
         profileContext.put("tdeeFormula", healthRecord.getTdeeFormula());
+    }
+
+    private void appendRecentIllnessContext(Map<String, Object> profileContext, Profile profile) {
+        List<IllnessEvent> events = illnessEventRepository
+                .findTop3ByProfileIdOrderByStartAtDescIdDesc(profile.getId());
+        if (events.isEmpty()) {
+            return;
+        }
+
+        String illnessHistory = events.stream()
+                .map(event -> {
+                    String endDate = event.getEndAt() != null ? event.getEndAt().toString() : "đang theo dõi";
+                    String description = sanitizeCatalogValue(event.getDescription());
+                    return event.getStartAt() + " đến " + endDate
+                            + ": " + sanitizeCatalogValue(event.getIllnessType())
+                            + (description.isBlank() ? "" : " (" + description + ")");
+                })
+                .collect(Collectors.joining(" ;; "));
+        profileContext.put("profileIllnessHistory", illnessHistory);
+        profileContext.put("profileIllnessCount", events.size());
+    }
+
+    private void appendPreviousHealthContext(
+            Map<String, Object> profileContext,
+            HealthRecord latest,
+            HealthRecord previous
+    ) {
+        profileContext.put("previousHealthRecordDate", previous.getRecordDate());
+        profileContext.put("previousHeightCm", previous.getHeight());
+        profileContext.put("previousWeightKg", previous.getWeight());
+        profileContext.put("previousBmi", previous.getBmi());
+
+        if (latest.getWeight() != null && previous.getWeight() != null) {
+            profileContext.put("weightChangeKg", roundToOneDecimal(latest.getWeight() - previous.getWeight()));
+        }
+        if (latest.getHeight() != null && previous.getHeight() != null) {
+            profileContext.put("heightChangeCm", roundToOneDecimal(latest.getHeight() - previous.getHeight()));
+        }
+    }
+
+    private double roundToOneDecimal(double value) {
+        return Math.round(value * 10.0d) / 10.0d;
     }
 
     private List<AgenticRagChatHistoryItem> buildChatHistory(AiChatConversation conversation) {

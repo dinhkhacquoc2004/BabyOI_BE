@@ -20,6 +20,16 @@ from src.text_splitter import split_text
 from src.vector_store import VectorStore
 
 
+def _configure_utf8_output() -> None:
+    """Keep Vietnamese ingest progress logs safe on Windows redirected output."""
+    for stream in (sys.stdout, sys.stderr):
+        if hasattr(stream, "reconfigure"):
+            stream.reconfigure(encoding="utf-8", errors="backslashreplace")
+
+
+_configure_utf8_output()
+
+
 SUPPORTED_DOMAINS = (
     DOMAIN_NUTRITION,
     DOMAIN_GROWTH,
@@ -73,15 +83,18 @@ def ingest_domain(domain: str) -> int:
         print(f"Total documents in collection: {vector_store.collection.count()}")
         return 0
 
-    if vector_store.has_documents():
-        print(f"Knowledge changed for '{collection_name}', rebuilding collection.")
-        vector_store.client.delete_collection(collection_name)
-        vector_store = VectorStore(settings, collection_name=collection_name)
-
     chunk_ids = [chunk["id"] for chunk in chunks]
-    existing_ids = vector_store.get_existing_ids(chunk_ids)
-    new_chunks = [chunk for chunk in chunks if chunk["id"] not in existing_ids]
-    skipped_count = len(chunks) - len(new_chunks)
+    rebuild_required = vector_store.has_documents()
+    if rebuild_required:
+        # Do not delete the last known-good collection until every embedding is
+        # ready. An interrupted request must not leave the RAG domain empty.
+        new_chunks = chunks
+        skipped_count = 0
+        print(f"Knowledge changed for '{collection_name}', preparing a safe rebuild.")
+    else:
+        existing_ids = vector_store.get_existing_ids(chunk_ids)
+        new_chunks = [chunk for chunk in chunks if chunk["id"] not in existing_ids]
+        skipped_count = len(chunks) - len(new_chunks)
 
     print(f"Total chunks: {len(chunks)}")
     print(f"Skipped existing chunks: {skipped_count}")
@@ -97,6 +110,10 @@ def ingest_domain(domain: str) -> int:
     for index, chunk in enumerate(new_chunks, start=1):
         print(f"Embedding {domain} chunk {index}/{len(new_chunks)}: {chunk['metadata']['topic']}")
         embeddings.append(gemini.embed_text(chunk["text"]))
+
+    if rebuild_required:
+        vector_store.client.delete_collection(collection_name)
+        vector_store = VectorStore(settings, collection_name=collection_name)
 
     added = vector_store.add_documents(new_chunks, embeddings)
     vector_store.collection.modify(metadata={

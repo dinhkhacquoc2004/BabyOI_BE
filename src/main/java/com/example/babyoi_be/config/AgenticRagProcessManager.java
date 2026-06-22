@@ -76,6 +76,11 @@ public class AgenticRagProcessManager {
                     "--host", "127.0.0.1", "--port", String.valueOf(port)
             );
             builder.directory(serviceDir.toFile());
+            // The RAG knowledge files and ingest progress contain Vietnamese.
+            // ProcessBuilder redirects stdout/stderr to files, which otherwise
+            // uses the Windows cp1252 default and aborts ingest on Unicode text.
+            builder.environment().put("PYTHONUTF8", "1");
+            builder.environment().put("PYTHONIOENCODING", "utf-8");
             if (geminiApiKey != null && !geminiApiKey.isBlank()) {
                 builder.environment().put("GEMINI_API_KEY", geminiApiKey);
             }

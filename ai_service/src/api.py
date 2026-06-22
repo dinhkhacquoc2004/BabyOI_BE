@@ -158,8 +158,81 @@ def chat(request_body: ChatApiRequest, request: Request) -> ChatApiResponse:
         safetyLevel=str(safety_result.get("safety_level") or "unknown"),
         usedDomains=_string_list(result.get("used_domains")),
         debugLog=debug_log,
-        rawResult=result,
+        rawResult=_compact_raw_result(result),
     )
+
+
+def _compact_raw_result(result: dict[str, Any]) -> dict[str, Any]:
+    """Return diagnostics without echoing catalogs, prompts or full RAG documents."""
+    cleaned = _dict_value(result.get("cleaned_input"))
+    intent = _dict_value(result.get("intent_result"))
+    routing = _dict_value(result.get("routing_result"))
+    safety = _dict_value(result.get("safety_result"))
+    retrieval = _dict_value(result.get("retrieval_debug"))
+    validation = _dict_value(result.get("validation_result"))
+
+    compact_cleaned = {
+        key: cleaned.get(key)
+        for key in (
+            "patient_type",
+            "subject_label",
+            "selected_profile_type",
+            "explicit_subject",
+            "uses_selected_profile_data",
+            "request_purpose",
+            "profile_id",
+            "profile_age_months",
+            "child_age_months",
+            "goal_label",
+            "requested_ingredients",
+            "requested_food_names",
+            "food_analysis_requested",
+            "main_symptoms",
+            "missing_important_fields",
+        )
+        if cleaned.get(key) not in (None, "", [], {})
+    }
+    compact_retrieval = {
+        key: retrieval.get(key)
+        for key in (
+            "original_candidate_domains",
+            "final_selected_domains",
+            "domain_selection_reason",
+            "selected_collections",
+            "retrieved_counts",
+            "final_context_count",
+            "errors",
+        )
+        if retrieval.get(key) not in (None, "", [], {})
+    }
+    context_topics: list[dict[str, str]] = []
+    for item in result.get("retrieved_contexts") or []:
+        metadata = item.get("metadata") or {}
+        context_topics.append({
+            "domain": str(item.get("domain") or metadata.get("domain") or ""),
+            "source": str(item.get("source") or metadata.get("source") or ""),
+            "topic": str(item.get("topic") or metadata.get("topic") or ""),
+        })
+
+    return {
+        "cleaned_input": compact_cleaned,
+        "intent_result": intent,
+        "routing_result": {
+            key: routing.get(key)
+            for key in ("primary_domain", "candidate_domains", "selected_domains", "confidence")
+            if routing.get(key) not in (None, "", [], {})
+        },
+        "safety_result": safety,
+        "selected_agent": result.get("selected_agent"),
+        "used_domains": result.get("used_domains") or [],
+        "retrieval_debug": compact_retrieval,
+        "retrieved_contexts": context_topics,
+        "validation_result": {
+            key: validation.get(key)
+            for key in ("is_valid", "validation_decision", "issues")
+            if validation.get(key) not in (None, "", [], {})
+        },
+    }
 
 
 def _dict_value(value: Any) -> dict[str, Any]:
@@ -261,6 +334,7 @@ def build_user_friendly_answer(result: dict) -> str:
     answer = _remove_source_section(answer)
     answer = _remove_debug_lines(answer)
     answer = _remove_internal_context_sections(answer)
+    answer = _replace_internal_type_codes(answer)
     answer = _normalize_blank_lines(answer)
     answer = _preserve_disclaimer(answer, raw_answer)
 
@@ -272,6 +346,30 @@ def build_user_friendly_answer(result: dict) -> str:
         answer = _preserve_disclaimer(answer, raw_answer)
 
     return answer.strip()
+
+
+def _replace_internal_type_codes(answer: str) -> str:
+    labels = {
+        "FOR_MOTHER_DIET": "giữ dáng/giảm cân lành mạnh",
+        "FOR_MOTHER_CHANGE_DIET": "đổi món",
+        "FOR_MOTHER_POSTPARTUM_BREASTFEEDING": "sau sinh, đang cho con bú",
+        "FOR_MOTHER_HEALTHY_ENERGY": "tăng năng lượng lành mạnh",
+        "FOR_MOTHER_DIGESTION_RECOVERY": "hỗ trợ tiêu hóa",
+        "FOR_MOTHER_INCREASE_MILK_SUPPLY": "hỗ trợ duy trì nguồn sữa",
+        "FOR_MOTHER_SLEEP_STRESS_SUPPORT": "hỗ trợ giấc ngủ và giảm căng thẳng",
+        "FOR_BABY_6_8_MONTHS_DEVELOPMENT": "bé 6–8 tháng",
+        "FOR_BABY_9_11_MONTHS_DEVELOPMENT": "bé 9–11 tháng",
+        "FOR_BABY_12_18_MONTHS_DEVELOPMENT": "bé 12–18 tháng",
+        "FOR_BABY_19_24_MONTHS_DEVELOPMENT": "bé 19–24 tháng",
+        "FOR_BABY_6_8_MONTHS": "bé 6–8 tháng",
+        "FOR_BABY_9_11_MONTHS": "bé 9–11 tháng",
+        "FOR_BABY_12_18_MONTHS": "bé 12–18 tháng",
+        "FOR_BABY_19_24_MONTHS": "bé 19–24 tháng",
+    }
+    result = answer
+    for code, label in labels.items():
+        result = result.replace(code, label)
+    return result
 
 
 def _extract_answer_section(text: str) -> str:

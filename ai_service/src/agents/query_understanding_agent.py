@@ -232,6 +232,7 @@ Intent hợp lệ:
 - nutrition
 - growth
 - vaccination
+- routine
 - symptom
 - general_care
 - out_of_scope
@@ -240,6 +241,7 @@ Domain retrieval hợp lệ:
 - nutrition
 - growth
 - vaccination
+- routine
 - general
 
 Luật:
@@ -254,6 +256,11 @@ Luật:
 - Nếu user chỉ hỏi dinh dưỡng, bú, sữa, ăn dặm và không nêu triệu chứng thì mentioned_symptoms phải là [].
 - Câu single-domain nutrition không có triệu chứng phải trả candidate_domains=["nutrition"], không tự thêm "general".
 - Chỉ thêm "general" khi user thật sự nêu triệu chứng hoặc câu hỏi là chăm sóc/y tế tổng quát.
+- Với câu hỏi dinh dưỡng/món ăn, hiểu ý nghĩa tự nhiên thay vì chỉ dò từ khóa. Trích xuất nguyên liệu, tên món và mục tiêu mẹ nếu có.
+- nutrition_goal_code chỉ được là một trong: FOR_MOTHER_DIET, FOR_MOTHER_CHANGE_DIET, FOR_MOTHER_POSTPARTUM_BREASTFEEDING, FOR_MOTHER_HEALTHY_ENERGY, FOR_MOTHER_DIGESTION_RECOVERY, FOR_MOTHER_INCREASE_MILK_SUPPLY, FOR_MOTHER_SLEEP_STRESS_SUPPORT hoặc null.
+- Nếu câu hiện tại dùng "món đó/nó/món vừa nói" thì đọc lịch sử hội thoại để điền requested_food_name và refers_to_previous_food=true.
+- Câu hỏi hiện tại luôn ưu tiên hơn lịch sử. Không mang goal, domain, triệu chứng hoặc chủ thể cũ sang khi user đã hỏi chủ đề mới rõ ràng.
+- explicit_subject là "mother" nếu user hỏi rõ về mẹ/bản thân mẹ, "baby" nếu hỏi rõ về bé/con/trẻ, còn không rõ thì "selected_profile". Profile đang chọn chỉ là mặc định, không khóa chủ thể câu hỏi.
 
 Trả về JSON thuần, không markdown, đúng schema:
 {{
@@ -263,6 +270,14 @@ Trả về JSON thuần, không markdown, đúng schema:
   "child_age_months": null,
   "mentioned_symptoms": [],
   "mentioned_conditions": [],
+  "nutrition_goal_code": null,
+  "nutrition_goal_label": null,
+  "requested_ingredients": [],
+  "requested_food_name": null,
+  "food_analysis_requested": false,
+  "refers_to_previous_food": false,
+  "explicit_subject": "selected_profile",
+  "request_purpose": "information",
   "missing_critical_info": [],
   "intent": "general_care",
   "primary_domain": "general",
@@ -322,6 +337,34 @@ Câu hỏi: {user_question}
             user_question,
         ) or fallback["mentioned_symptoms"]
         conditions = self._string_list(parsed.get("mentioned_conditions"))
+        goal_code = str(parsed.get("nutrition_goal_code") or "").strip().upper() or None
+        valid_goal_codes = {
+            "FOR_MOTHER_DIET", "FOR_MOTHER_CHANGE_DIET", "FOR_MOTHER_POSTPARTUM_BREASTFEEDING",
+            "FOR_MOTHER_HEALTHY_ENERGY", "FOR_MOTHER_DIGESTION_RECOVERY",
+            "FOR_MOTHER_INCREASE_MILK_SUPPLY", "FOR_MOTHER_SLEEP_STRESS_SUPPORT",
+        }
+        if goal_code not in valid_goal_codes:
+            goal_code = None
+        requested_food_name = str(parsed.get("requested_food_name") or "").strip() or None
+        fallback_subject = str(fallback.get("explicit_subject") or "selected_profile")
+        explicit_subject = str(parsed.get("explicit_subject") or fallback_subject).strip().lower()
+        if explicit_subject not in {"mother", "baby", "selected_profile"}:
+            explicit_subject = fallback_subject
+        # A subject explicitly written in the current question is stronger than
+        # the model's interpretation and stronger than the selected profile.
+        if fallback_subject in {"mother", "baby"}:
+            explicit_subject = fallback_subject
+        request_purpose = str(parsed.get("request_purpose") or "").strip().lower()
+        valid_purposes = {
+            "information", "recommend_food", "analyze_food", "symptom_care",
+            "growth_assessment", "routine_planning", "vaccination_guidance",
+            "compare_options", "follow_up",
+        }
+        if request_purpose not in valid_purposes:
+            request_purpose = self._request_purpose(
+                self._normalize_search(self._current_question_text(user_question)),
+                intent,
+            )
         missing = self._string_list(parsed.get("missing_critical_info")) or fallback["missing_critical_info"]
 
         if out_of_scope:
@@ -345,7 +388,17 @@ Câu hỏi: {user_question}
             "child_age_months": child_age_months,
             "mentioned_symptoms": symptoms,
             "mentioned_conditions": conditions,
-            "missing_critical_info": self._merge_missing(missing, intent, child_age_months),
+            "nutrition_goal_code": goal_code,
+            "nutrition_goal_label": str(parsed.get("nutrition_goal_label") or "").strip() or None,
+            "requested_ingredients": self._string_list(parsed.get("requested_ingredients")),
+            "requested_food_name": requested_food_name,
+            "food_analysis_requested": bool(parsed.get("food_analysis_requested", False)),
+            "refers_to_previous_food": bool(parsed.get("refers_to_previous_food", False)),
+            "explicit_subject": explicit_subject,
+            "request_purpose": request_purpose,
+            "missing_critical_info": self._merge_missing(
+                missing, intent, child_age_months, explicit_subject
+            ),
             "intent": intent,
             "primary_domain": primary_domain,
             "candidate_domains": candidate_domains[:4],
@@ -362,14 +415,25 @@ Câu hỏi: {user_question}
         lowered = current_question.lower()
         search_text = self._normalize_search(current_question)
         full_search_text = self._normalize_search(user_question)
-        profile_age_months = self._extract_number(
-            full_search_text,
-            r"(?:^|\s|-)agemonths\s*:\s*(\d+(?:[,.]\d+)?)",
+        profile_age_months = self._to_float_or_none(
+            self._extract_profile_value(user_question, "ageMonths")
+        )
+        stated_age_months = self._extract_age_months(search_text)
+        selected_profile_type = (
+            self._extract_profile_value(user_question, "profileType") or ""
+        ).strip().upper()
+        explicit_subject = self._explicit_subject(search_text)
+        asking_cross_profile_baby = (
+            explicit_subject == "baby"
+            and selected_profile_type in {"MOTHER", "MOM", "M", "MẸ"}
         )
         child_age_months = (
-            profile_age_months
+            stated_age_months
+            if asking_cross_profile_baby and stated_age_months is not None
+            else profile_age_months
             if profile_age_months is not None
-            else self._extract_age_months(search_text)
+            and selected_profile_type not in {"MOTHER", "MOM", "M", "MẸ"}
+            else stated_age_months
         )
         symptoms = [
             keyword
@@ -404,6 +468,11 @@ Câu hỏi: {user_question}
             for keyword in ROUTINE_KEYWORDS
         ):
             intent = "routine"
+        elif symptoms or any(
+            self._contains_search_keyword(search_text, self._normalize_search(keyword))
+            for keyword in GENERAL_SAFETY_KEYWORDS
+        ):
+            intent = "symptom"
         elif (
             any(self._contains_search_keyword(search_text, keyword) for keyword in NUTRITION_SEARCH_KEYWORDS)
             or self._looks_like_nutrition(search_text)
@@ -414,11 +483,6 @@ Câu hỏi: {user_question}
             )
         ):
             intent = "nutrition"
-        elif symptoms or any(
-            self._contains_search_keyword(search_text, self._normalize_search(keyword))
-            for keyword in GENERAL_SAFETY_KEYWORDS
-        ):
-            intent = "symptom"
         else:
             intent = "general_care"
 
@@ -433,7 +497,9 @@ Câu hỏi: {user_question}
             "child_age_months": child_age_months,
             "mentioned_symptoms": symptoms,
             "mentioned_conditions": [],
-            "missing_critical_info": self._merge_missing([], intent, child_age_months),
+            "missing_critical_info": self._merge_missing(
+                [], intent, child_age_months, self._explicit_subject(search_text)
+            ),
             "intent": intent,
             "primary_domain": domains[0],
             "candidate_domains": domains,
@@ -442,6 +508,8 @@ Câu hỏi: {user_question}
             "confidence": 0.58,
             "reasoning_summary": "Fallback rule-based query understanding.",
             "source": "fallback",
+            "explicit_subject": explicit_subject,
+            "request_purpose": self._request_purpose(search_text, intent),
         }
 
     def to_cleaned_input(self, result: dict[str, Any]) -> dict[str, Any]:
@@ -453,21 +521,106 @@ Câu hỏi: {user_question}
         profile_type = self._extract_profile_value(original_input, "profileType")
         food_age_group = self._extract_profile_value(original_input, "foodAgeGroup")
         profile_food_catalog = self._extract_profile_value(original_input, "profileFoodCatalog")
+        profile_food_catalog_index = self._extract_profile_value(original_input, "profileFoodCatalogIndex")
+        mother_food_catalog_index = self._extract_profile_value(original_input, "motherFoodCatalogIndex")
+        child_food_catalog_index = self._extract_profile_value(original_input, "childFoodCatalogIndex")
         profile_routine_today = self._extract_profile_value(original_input, "profileRoutineToday")
+        profile_name = self._extract_profile_value(original_input, "name")
+        profile_sex = self._extract_profile_value(original_input, "sex")
+        health_record_date = self._extract_profile_value(original_input, "healthRecordDate")
+        profile_weight_kg = self._to_float_or_none(self._extract_profile_value(original_input, "weightKg"))
+        profile_height_cm = self._to_float_or_none(self._extract_profile_value(original_input, "heightCm"))
+        profile_bmi = self._to_float_or_none(self._extract_profile_value(original_input, "bmi"))
+        profile_bmr_kcal = self._to_float_or_none(self._extract_profile_value(original_input, "bmrKcal"))
+        profile_tdee_kcal = self._to_float_or_none(self._extract_profile_value(original_input, "tdeeKcal"))
+        profile_activity_level = self._extract_profile_value(original_input, "activityLevel")
+        previous_health_record_date = self._extract_profile_value(original_input, "previousHealthRecordDate")
+        previous_weight_kg = self._to_float_or_none(self._extract_profile_value(original_input, "previousWeightKg"))
+        previous_height_cm = self._to_float_or_none(self._extract_profile_value(original_input, "previousHeightCm"))
+        weight_change_kg = self._to_float_or_none(self._extract_profile_value(original_input, "weightChangeKg"))
+        height_change_cm = self._to_float_or_none(self._extract_profile_value(original_input, "heightChangeCm"))
+        profile_illness_history = self._extract_profile_value(original_input, "profileIllnessHistory")
+        restricted_foods_raw = self._extract_profile_value(original_input, "restrictedFoods") or ""
+        restricted_foods = [item.strip() for item in restricted_foods_raw.split(";;") if item.strip()]
+        catalog_goal_code = self._extract_profile_value(original_input, "catalogGoalCode")
+        catalog_goal_label = self._extract_profile_value(original_input, "catalogGoalLabel")
+        requested_ingredients_raw = self._extract_profile_value(original_input, "requestedIngredients") or ""
+        requested_ingredients = self._string_list(result.get("requested_ingredients")) or [
+            item.strip() for item in requested_ingredients_raw.split(";;") if item.strip()
+        ]
+        requested_food_names_raw = self._extract_profile_value(original_input, "requestedFoodNames") or ""
+        requested_food_names = [item.strip() for item in requested_food_names_raw.split(";;") if item.strip()]
+        parsed_food_name = str(result.get("requested_food_name") or "").strip()
+        if parsed_food_name and parsed_food_name not in requested_food_names:
+            requested_food_names.append(parsed_food_name)
+        food_analysis_requested = str(
+            self._extract_profile_value(original_input, "foodAnalysisRequested") or "false"
+        ).lower() == "true"
         profile_id = self._extract_profile_value(original_input, "id")
         profile_age_raw = self._extract_profile_value(original_input, "ageMonths")
         profile_age_months = self._to_float_or_none(profile_age_raw)
         if profile_age_months is None:
             profile_age_months = age_months
 
-        normalized_profile_type = (profile_type or "").strip().upper()
-        is_mother = normalized_profile_type in {"MOTHER", "MOM", "M", "MẸ"}
+        selected_profile_type = profile_type
+        selected_profile_name = profile_name
+        normalized_profile_type = (selected_profile_type or "").strip().upper()
+        selected_is_mother = normalized_profile_type in {"MOTHER", "MOM", "M", "MẸ"}
+        explicit_subject = str(result.get("explicit_subject") or "selected_profile").strip().lower()
+        is_mother = (
+            True if explicit_subject == "mother"
+            else False if explicit_subject == "baby"
+            else selected_is_mother
+        )
+        uses_selected_profile_data = (
+            explicit_subject == "selected_profile"
+            or (explicit_subject == "mother" and selected_is_mother)
+            or (explicit_subject == "baby" and not selected_is_mother)
+        )
+        if not uses_selected_profile_data:
+            profile_name = None
+            profile_sex = None
+            profile_age_months = age_months if not is_mother else None
+            health_record_date = None
+            profile_weight_kg = None
+            profile_height_cm = None
+            profile_bmi = None
+            profile_bmr_kcal = None
+            profile_tdee_kcal = None
+            profile_activity_level = None
+            previous_health_record_date = None
+            previous_weight_kg = None
+            previous_height_cm = None
+            weight_change_kg = None
+            height_change_cm = None
+            profile_illness_history = None
+            food_age_group = None
+            profile_food_catalog = None
+            profile_food_catalog_index = (
+                mother_food_catalog_index if is_mother else child_food_catalog_index
+            )
+            profile_routine_today = None
+            restricted_foods = []
+            catalog_goal_code = None
+            catalog_goal_label = None
+        elif is_mother:
+            profile_age_months = None
+            profile_food_catalog_index = mother_food_catalog_index or profile_food_catalog_index
+        else:
+            profile_food_catalog_index = child_food_catalog_index or profile_food_catalog_index
+        profile_type = "MOTHER" if is_mother else "CHILD"
         patient_type = "mother" if is_mother else "baby"
         subject_label = "mẹ" if is_mother else "bé"
 
         current_question = self._current_question_text(original_input)
         normalized_question = self._normalize_search(current_question)
-        goal_code, goal_label = self._extract_goal(normalized_question, is_mother)
+        goal_code = str(result.get("nutrition_goal_code") or "").strip() or None
+        goal_label = str(result.get("nutrition_goal_label") or "").strip() or None
+        fallback_goal_code, fallback_goal_label = self._extract_goal(normalized_question, is_mother)
+        goal_code = goal_code or fallback_goal_code
+        goal_label = goal_label or fallback_goal_label
+        goal_code = goal_code or catalog_goal_code
+        goal_label = goal_label or catalog_goal_label
 
         if isinstance(profile_age_months, (int, float)) and not is_mother:
             retrieval_query = f"{text} Bé {profile_age_months:g} tháng"
@@ -484,25 +637,53 @@ Câu hỏi: {user_question}
             "patient_type": patient_type,
             "subject_label": subject_label,
             "profile_id": profile_id,
+            "selected_profile_type": selected_profile_type,
+            "selected_profile_name": selected_profile_name,
+            "explicit_subject": explicit_subject,
+            "uses_selected_profile_data": uses_selected_profile_data,
+            "request_purpose": result.get("request_purpose") or "information",
             "profile_type": profile_type,
+            "profile_name": profile_name,
+            "profile_sex": profile_sex,
             "profile_age_months": profile_age_months,
+            "health_record_date": health_record_date,
+            "profile_weight_kg": profile_weight_kg,
+            "profile_height_cm": profile_height_cm,
+            "profile_bmi": profile_bmi,
+            "profile_bmr_kcal": profile_bmr_kcal,
+            "profile_tdee_kcal": profile_tdee_kcal,
+            "profile_activity_level": profile_activity_level,
+            "previous_health_record_date": previous_health_record_date,
+            "previous_weight_kg": previous_weight_kg,
+            "previous_height_cm": previous_height_cm,
+            "weight_change_kg": weight_change_kg,
+            "height_change_cm": height_change_cm,
+            "profile_illness_history": profile_illness_history,
             "food_age_group": food_age_group,
             "profile_food_catalog": profile_food_catalog,
+            "profile_food_catalog_index": profile_food_catalog_index,
             "profile_routine_today": profile_routine_today,
             "goal_code": goal_code,
             "goal_label": goal_label,
-            "child_age_months": result.get("child_age_months") if not is_mother else None,
-            "child_gender": None,
-            "weight_kg": self._extract_number(text.lower(), r"(\d+(?:[,.]\d+)?)\s*kg"),
-            "height_cm": self._extract_number(text.lower(), r"(\d+(?:[,.]\d+)?)\s*cm"),
+            "requested_ingredients": requested_ingredients,
+            "requested_food_names": requested_food_names,
+            "food_analysis_requested": food_analysis_requested or bool(result.get("food_analysis_requested")),
+            "refers_to_previous_food": bool(result.get("refers_to_previous_food")),
+            "child_age_months": profile_age_months if not is_mother else None,
+            "child_gender": profile_sex if not is_mother else None,
+            "weight_kg": profile_weight_kg if profile_weight_kg is not None else self._extract_number(text.lower(), r"(\d+(?:[,.]\d+)?)\s*kg"),
+            "height_cm": profile_height_cm if profile_height_cm is not None else self._extract_number(text.lower(), r"(\d+(?:[,.]\d+)?)\s*cm"),
             "gestational_week": None,
             "main_symptoms": symptoms,
             "symptom_duration": self._extract_duration(text.lower()),
             "temperature_c": self._extract_number(text.lower(), r"(\d+(?:[,.]\d+)?)\s*(?:độ|°c|c)"),
-            "feeding_status": self._extract_status(text.lower(), ["bú kém", "bỏ bú", "ăn kém", "bú tốt"]),
+            "feeding_status": self._extract_status(
+                text.lower(),
+                ["bỏ bú", "bú kém", "biếng ăn", "không chịu ăn", "bỏ ăn", "ăn kém", "ăn ít", "bú tốt"],
+            ),
             "stool_status": self._extract_status(text.lower(), ["tiêu chảy", "táo bón", "phân có máu"]),
             "vomit_status": self._extract_status(text.lower(), ["nôn", "ói", "trớ"]),
-            "allergies": [],
+            "allergies": restricted_foods,
             "medical_history": self._string_list(result.get("mentioned_conditions")),
             "medications_used": [],
             "vaccination_info": text if result.get("intent") == "vaccination" else None,
@@ -579,8 +760,18 @@ Câu hỏi: {user_question}
 
         return self._dedupe_domains(domains) or [DOMAIN_GENERAL]
 
-    def _merge_missing(self, missing: list[str], intent: str, child_age_months: Any) -> list[str]:
+    def _merge_missing(
+        self,
+        missing: list[str],
+        intent: str,
+        child_age_months: Any,
+        explicit_subject: str = "selected_profile",
+    ) -> list[str]:
         values = set(missing)
+        if explicit_subject == "mother":
+            values.discard("child_age_months")
+            values.discard("child_gender")
+            return sorted(value for value in values if value)
         if child_age_months is not None:
             values.discard("child_age_months")
         if intent in {"nutrition", "growth", "vaccination", "routine", "symptom"} and child_age_months is None:
@@ -590,6 +781,23 @@ Câu hỏi: {user_question}
         if intent == "symptom":
             values.update(["symptom_duration", "temperature_c", "feeding_status"])
         return sorted(value for value in values if value)
+
+    def _request_purpose(self, normalized_question: str, intent: str) -> str:
+        if any(term in normalized_question for term in ("phan tich", "danh gia mon", "diem manh", "diem yeu", "diem han che")):
+            return "analyze_food"
+        if any(term in normalized_question for term in ("goi y mon", "mon gi", "an gi", "thuc don", "vai mon")):
+            return "recommend_food"
+        if intent == "symptom":
+            return "symptom_care"
+        if intent == "growth":
+            return "growth_assessment"
+        if intent == "routine":
+            return "routine_planning"
+        if intent == "vaccination":
+            return "vaccination_guidance"
+        if any(term in normalized_question for term in ("so sanh", "khac nhau", "tot hon")):
+            return "compare_options"
+        return "information"
 
     def _dedupe_domains(self, domains: list[str]) -> list[str]:
         result: list[str] = []
@@ -685,6 +893,7 @@ Câu hỏi: {user_question}
         ("sau sinh", "FOR_MOTHER_POSTPARTUM_BREASTFEEDING", "sau sinh, đang cho con bú"),
         ("cho con bu", "FOR_MOTHER_POSTPARTUM_BREASTFEEDING", "đang cho con bú"),
         ("giam can", "FOR_MOTHER_DIET", "giảm cân"),
+        ("giu dang", "FOR_MOTHER_DIET", "giữ dáng"),
         ("lay lai voc dang", "FOR_MOTHER_DIET", "lấy lại vóc dáng"),
         ("an kieng", "FOR_MOTHER_DIET", "ăn kiêng"),
         ("tieu hoa", "FOR_MOTHER_DIGESTION_RECOVERY", "hỗ trợ tiêu hóa"),
@@ -707,6 +916,20 @@ Câu hỏi: {user_question}
                 if keyword in normalized_question:
                     return code, label
         return None, None
+
+    def _explicit_subject(self, normalized_question: str) -> str:
+        baby_terms = (
+            "be", "em be", "con toi", "con em", "con minh", "tre nho", "chau be",
+        )
+        if any(self._contains_search_keyword(normalized_question, term) for term in baby_terms):
+            return "baby"
+        mother_terms = (
+            "me", "sau sinh", "cho con bu", "tang sua", "loi sua", "giu dang",
+            "giam can", "kinh nguyet", "mang thai",
+        )
+        if any(self._contains_search_keyword(normalized_question, term) for term in mother_terms):
+            return "mother"
+        return "selected_profile"
 
     def _tighten_candidate_domains(
         self,

@@ -7,7 +7,21 @@ from src.agents.base_specialized_agent import BaseSpecializedAgent
 
 class GrowthAgent(BaseSpecializedAgent):
     agent_name = "growth"
-    required_fields = ("child_age_months", "child_gender", "weight_kg", "height_cm")
+    required_fields = ()
+
+    def _missing_fields(self, cleaned_input: dict[str, Any]) -> list[str]:
+        missing = set(super()._missing_fields(cleaned_input))
+        if cleaned_input.get("patient_type") == "mother":
+            for field in ("child_age_months", "child_gender"):
+                missing.discard(field)
+            for field in ("weight_kg", "height_cm"):
+                if cleaned_input.get(field) in (None, ""):
+                    missing.add(field)
+        else:
+            for field in ("child_age_months", "child_gender", "weight_kg", "height_cm"):
+                if cleaned_input.get(field) in (None, ""):
+                    missing.add(field)
+        return sorted(missing)
 
     def _build_prompt(
         self,
@@ -22,6 +36,10 @@ Bạn là GrowthAgent cho chatbot y khoa mẹ & bé. Chỉ trả lời về tăn
 
 Quy tắc bắt buộc:
 - Trả lời bằng tiếng Việt.
+- Chủ thể duy nhất là cleaned_input.patient_type/subject_label đã được QueryUnderstanding giải quyết. Không tự đổi lại theo selected_profile_type.
+- Nếu patient_type=mother, đánh giá số đo người lớn/mẹ và không yêu cầu tuổi tháng hay biểu đồ tăng trưởng trẻ em.
+- Nếu patient_type=baby, chỉ dùng dữ liệu bé. Nếu đang chọn profile mẹ nhưng user hỏi bé, không dùng cân nặng/chiều cao/BMI của mẹ.
+- Bám sát request_purpose của câu hiện tại; không mang mục tiêu của câu trước sang.
 - Chỉ dựa trên retrieved context. Context có thể đến từ nhiều domain nếu câu hỏi cần.
 - Trả lời bằng cách tổng hợp các domain liên quan; nếu context khác domain mâu thuẫn hoặc chưa đủ, nói rõ chưa đủ dữ liệu và ưu tiên an toàn y khoa.
 - Không kết luận "suy dinh dưỡng", "béo phì", "chậm phát triển" một cách chắc chắn.

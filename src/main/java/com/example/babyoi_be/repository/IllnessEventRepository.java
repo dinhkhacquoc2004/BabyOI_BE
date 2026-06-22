@@ -11,6 +11,8 @@ import java.util.List;
 
 @Repository
 public interface IllnessEventRepository extends JpaRepository<IllnessEvent, Long> {
+    List<IllnessEvent> findTop3ByProfileIdOrderByStartAtDescIdDesc(Long profileId);
+
     @Query("""
             select event from IllnessEvent event
             where event.profile.id = :profileId

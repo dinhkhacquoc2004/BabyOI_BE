@@ -99,3 +99,48 @@ Nguồn chính: WHO IMCI Chart Booklet, WHO Integrated Management of Childhood I
 - Không dùng chung bình sữa, muỗng, khăn mặt khi có người bệnh; vệ sinh đồ dùng ăn uống của trẻ đúng cách.
 - Tiêm chủng giúp phòng các bệnh truyền nhiễm nặng; nếu trễ lịch, liên hệ cơ sở tiêm chủng để được sắp lịch bù, không tự bỏ mũi.
 - Với trẻ đi nhà trẻ, cần theo dõi sốt, ho, tiêu chảy, phát ban và thông báo cơ sở chăm sóc khi trẻ có bệnh lây nhiễm nghi ngờ.
+
+# Đau họng, viêm họng và loét miệng
+- Hỏi tuổi, sốt, ho/sổ mũi, đau khi nuốt, chảy dãi, khàn tiếng, có ăn/bú/uống được không, có ban da hay tiếp xúc người bệnh không.
+- Phần lớn đau họng đi kèm nhiễm siêu vi có thể cần chăm sóc hỗ trợ; không thể xác định viêm họng do vi khuẩn hay cần kháng sinh chỉ bằng chatbot.
+- Có thể cho bé bú/uống từng ít một thường xuyên, chọn thức ăn mềm và mát phù hợp tuổi, giữ không khí không có khói thuốc. Không ép ăn khi đau nhưng phải theo dõi lượng dịch, số lần tiểu và mức tỉnh táo.
+- Không tự dùng kháng sinh, thuốc ngậm, thuốc xịt họng hoặc mẹo có nguy cơ gây bỏng/hóc cho trẻ.
+- Cần khám khẩn nếu bé khó thở, tím tái, chảy dãi nhiều kèm không nuốt được, cổ sưng nhanh, không uống/bú được, li bì hoặc có dấu mất nước. Trẻ nhỏ có sốt cần được đánh giá sớm hơn.
+
+# Tay chân miệng
+- Gợi ý hỏi: bé sốt từ khi nào, có vết loét trong miệng, ban/bóng nước ở lòng bàn tay, lòng bàn chân, mông/đầu gối hay không, có giật mình, lừ đừ, thở bất thường, nôn nhiều hoặc bỏ bú không.
+- Tay chân miệng có thể lây; cho bé nghỉ tại nhà, rửa tay cho người chăm sóc và bé, không dùng chung ly/muỗng/khăn, vệ sinh đồ chơi và bề mặt thường chạm.
+- Chăm sóc hỗ trợ gồm tiếp tục cho bú/uống từng ít một, đồ mềm phù hợp tuổi khi đau miệng và theo dõi nhiệt độ, ăn/bú, tiểu, mức tỉnh táo. Không chọc vỡ bóng nước, không bôi thuốc/thuốc dân gian vào miệng hoặc da khi chưa được hướng dẫn.
+- Cần khám ngay nếu trẻ giật mình liên tục, run chi, lừ đừ/kích thích bất thường, thở nhanh/khó thở, sốt cao khó chịu rõ, nôn nhiều, bỏ bú/không uống được hoặc tiểu ít.
+
+# Sốt phát ban, thủy đậu và ban do nhiễm trùng
+- Cần mô tả trình tự sốt và ban, vị trí ban, dạng chấm đỏ/bóng nước, có ngứa/đau hay không, có nhạt khi ấn không, tình trạng tiêm chủng, thuốc/thức ăn mới và tiếp xúc người bệnh.
+- Không thể kết luận nguyên nhân chỉ theo ảnh hoặc mô tả. Ban có thể do siêu vi, kích ứng, dị ứng hoặc nguyên nhân cần khám trực tiếp.
+- Nếu nghi bệnh lây, hạn chế tiếp xúc gần với trẻ khác, rửa tay, không dùng chung đồ cá nhân và hỏi cơ sở y tế/nhà trẻ về thời điểm đi học lại.
+- Không tự bôi kháng sinh/corticoid, không chọc bóng nước, không cho dùng aspirin. Giữ da sạch, móng tay ngắn để hạn chế trầy xước khi ngứa.
+- Ban tím/đỏ không nhạt khi ấn kèm sốt, phồng rộp rộng, tổn thương mắt/miệng, đau nhiều, khó thở, sưng mặt/môi hoặc trẻ mệt/lừ đừ cần khám ngay.
+
+# Sốt xuất huyết hoặc sốt chưa rõ nguyên nhân
+- Sốt không thể tự quy là sốt xuất huyết. Hỏi ngày bệnh, nhiệt độ, đau bụng, nôn, chảy máu mũi/lợi, chấm xuất huyết, tay chân lạnh, tiểu ít, mức tỉnh táo và vùng có dịch/tiếp xúc muỗi.
+- Khi bé sốt, tiếp tục bú/uống theo khả năng, theo dõi nhiệt độ, nước tiểu và trạng thái. Không tự dùng aspirin hoặc ibuprofen khi chưa được nhân viên y tế đánh giá nguyên nhân sốt; không tự truyền dịch tại nhà.
+- Cần khám trong ngày nếu sốt cao, sốt kéo dài, trẻ nhỏ, ăn/bú kém, nôn nhiều hoặc phụ huynh lo ngại.
+- Cấp cứu/khám khẩn nếu đau bụng nhiều, nôn liên tục, chảy máu bất thường, lừ đừ/kích thích nhiều, tay chân lạnh, khó thở, tiểu rất ít hoặc trẻ xấu nhanh.
+
+# Táo bón, đau bụng và đầy hơi
+- Hỏi tuổi, số ngày không đi ngoài, phân có cứng/đau/ra máu không, bé có nôn, chướng bụng, sốt, bỏ bú/ăn hoặc không xì hơi không; với trẻ bú mẹ cần hỏi thay đổi phân so với bình thường.
+- Tần suất đi ngoài một mình không đủ để kết luận táo bón. Táo bón thường đáng chú ý hơn khi phân cứng, đi đau hoặc khó đi.
+- Với trẻ đang ăn bổ sung, duy trì nước và bữa ăn phù hợp tuổi, có rau quả/thực phẩm giàu chất xơ theo khả năng nhai nuốt; duy trì vận động/chơi phù hợp. Không tự thụt hậu môn, dùng thuốc nhuận tràng, thuốc xổ hay mẹo dân gian.
+- Cần khám sớm nếu táo bón kéo dài/tái diễn, có máu trong phân, đau khi đi ngoài nhiều hoặc ảnh hưởng ăn/bú/tăng trưởng.
+- Cần khám khẩn nếu bụng chướng nhiều, đau dữ dội, nôn xanh/vàng, nôn liên tục, sốt, li bì, không xì hơi/đi ngoài kèm xấu nhanh.
+
+# Tiểu buốt, nước tiểu bất thường và nghi nhiễm trùng tiểu
+- Hỏi bé sốt không rõ ổ, quấy khi tiểu, tiểu ít/nhiều bất thường, nước tiểu hôi/đổi màu, đau bụng/lưng, nôn, tình trạng uống/bú và số tã ướt.
+- Ở trẻ nhỏ, nhiễm trùng tiểu có thể chỉ biểu hiện sốt, quấy hoặc bú kém nên không tự chẩn đoán hay tự dùng kháng sinh còn thừa.
+- Khuyến khích cho bú/uống phù hợp, thay tã thường xuyên, vệ sinh nhẹ nhàng từ trước ra sau. Không tự dùng dung dịch vệ sinh gây kích ứng.
+- Cần khám trong ngày nếu sốt kèm triệu chứng tiểu, trẻ nhỏ sốt không rõ nguyên nhân, tiểu máu hoặc đau nhiều. Cần khám khẩn nếu không tiểu/tiểu rất ít, nôn, lừ đừ, đau nhiều hoặc có dấu mất nước.
+
+# Theo dõi dinh dưỡng dựa trên hồ sơ sức khỏe
+- Khi hồ sơ có ngày đo, cân nặng, chiều cao, BMI, BMR hoặc TDEE, AI chỉ được dùng đúng các giá trị và phải nêu ngày đo. Đây là dữ liệu theo hồ sơ đang chọn, không thay bằng tuổi/cân nặng người dùng gõ trong hội thoại.
+- Nếu có hai lần đo và chênh lệch cân nặng/chiều cao, chỉ mô tả đó là thay đổi giữa hai ngày đo; không kết luận bé suy dinh dưỡng, thừa cân hay tăng trưởng bình thường nếu chưa có biểu đồ tăng trưởng theo tuổi/giới và đánh giá chuyên môn.
+- Với bé đang ốm, ưu tiên duy trì bú/uống, chia nhỏ bữa phù hợp tuổi và theo dõi tiểu. Không áp dụng mục tiêu giảm cân hay cắt năng lượng của người lớn cho trẻ.
+- Với mẹ, BMR/TDEE chỉ là ước tính theo lần đo; cần nêu rõ ngày ghi nhận, mức vận động và mục tiêu. Không dùng chúng để thay thế tư vấn khi mang thai, cho con bú, sụt cân không chủ ý hoặc có bệnh nền.

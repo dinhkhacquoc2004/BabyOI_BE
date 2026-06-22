@@ -5,6 +5,11 @@ Rà soát gần nhất: 2026-06-22.
 | Domain | Tổ chức | Nguồn |
 |---|---|---|
 | Dinh dưỡng | WHO | https://www.who.int/news-room/fact-sheets/detail/infant-and-young-child-feeding |
+| Chế độ ăn lành mạnh người lớn/mẹ | WHO | https://www.who.int/news-room/fact-sheets/detail/healthy-diet |
+| Vận động người lớn và sau sinh | WHO | https://www.who.int/news-room/fact-sheets/detail/physical-activity |
+| Chế độ ăn khi cho con bú | CDC | https://www.cdc.gov/breastfeeding-special-circumstances/hcp/diet-micronutrients/maternal-diet.html |
+| Dinh dưỡng và lối sống khi cho bú | NHS | https://www.nhs.uk/baby/breastfeeding-and-bottle-feeding/breastfeeding-and-lifestyle/diet/ |
+| Sức khỏe tinh thần mẹ | WHO | https://www.who.int/teams/mental-health-and-substance-use/promotion-prevention/maternal-mental-health |
 | Dinh dưỡng 6–23 tháng | WHO | https://www.who.int/publications/i/item/9789240081864 |
 | Ăn bổ sung | UNICEF | https://www.unicef.org/parenting/food-nutrition/feeding-your-baby-when-to-start-solid-foods |
 | Ăn 6–12 tháng | UNICEF | https://www.unicef.org/parenting/food-nutrition/feeding-your-baby-6-12-months |
@@ -14,6 +19,8 @@ Rà soát gần nhất: 2026-06-22.
 | Triệu chứng/bệnh trẻ em | WHO IMCI | https://cdn.who.int/media/docs/default-source/mca-documents/child/imci-integrated-management-of-childhood-illness/imci-in-service-training/imci-chart-booklet.pdf |
 | Quản lý trẻ bệnh IMCI | WHO | https://www.who.int/teams/maternal-newborn-child-adolescent-health-and-ageing/child-health/integrated-management-of-childhood-illness |
 | Bệnh trẻ em thường gặp | UNICEF | https://www.unicef.org/health/childhood-diseases |
+| Sốt xuất huyết và dấu hiệu cảnh báo | WHO | https://www.who.int/news-room/fact-sheets/detail/dengue-and-severe-dengue |
+| Tay chân miệng | WHO | https://www.who.int/westernpacific/health-topics/hand-foot-and-mouth-disease |
 | ORS và kẽm khi tiêu chảy | UNICEF | https://www.unicef.org/supply/oral-rehydration-salts-ors-and-zinc |
 | Sức khỏe sơ sinh | WHO | https://www.who.int/health-topics/newborn-health |
 | Tiêm chủng | WHO | https://www.who.int/health-topics/vaccines-and-immunization |

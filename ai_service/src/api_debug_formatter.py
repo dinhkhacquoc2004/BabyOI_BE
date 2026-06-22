@@ -10,6 +10,26 @@ def format_debug_log(result: dict) -> str:
     used_collection = result.get("used_collection")
     routing_result = _dict_value(result.get("routing_result"))
     query_understanding = _dict_value(result.get("query_understanding_result"))
+    compact_query_understanding = {
+        key: query_understanding.get(key)
+        for key in (
+            "intent",
+            "primary_domain",
+            "candidate_domains",
+            "child_age_months",
+            "mentioned_symptoms",
+            "nutrition_goal_label",
+            "requested_ingredients",
+            "requested_food_name",
+            "food_analysis_requested",
+            "explicit_subject",
+            "request_purpose",
+            "confidence",
+            "reasoning_summary",
+            "source",
+        )
+        if query_understanding.get(key) not in (None, "", [], {})
+    }
     retrieval_debug = _dict_value(result.get("retrieval_debug"))
     candidate_domains = _string_list(routing_result.get("candidate_domains"))
     used_domains = _string_list(result.get("used_domains"))
@@ -36,7 +56,7 @@ def format_debug_log(result: dict) -> str:
     lines = [
         "--- Kết quả ---",
         f"Intent: {intent}",
-        f"Query understanding: {query_understanding or '(none)'}",
+        f"Query understanding: {compact_query_understanding or '(none)'}",
         f"Safety level: {safety_level}",
         f"Selected agent: {selected_agent}",
         f"Final selected domains: {_join_or(final_selected_domains, '(none)')}",

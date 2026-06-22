@@ -81,3 +81,5 @@ databaseChangeLog:
       file: db/changelog/changes/044_update_activity_level_labels.sql
   - include:
       file: db/changelog/changes/045_fix_notification_copy.sql
+  - include:
+      file: db/changelog/changes/046_limit_routine_to_profile_lifetime.sql

@@ -101,6 +101,9 @@ public interface FoodLibraryRepository extends JpaRepository<FoodLibrary, Long> 
     @EntityGraph(attributePaths = {"nutritionSummary", "recommendation"})
     List<FoodLibrary> findTop30ByStatusAndFunctionCodeOrderByIdAsc(Long status, Long functionCode);
 
+    @EntityGraph(attributePaths = {"nutritionSummary", "recommendation", "ingredients", "ingredients.foodIngredient"})
+    List<FoodLibrary> findByStatusAndFunctionCodeOrderByIdAsc(Long status, Long functionCode);
+
     @EntityGraph(attributePaths = {"nutritionSummary", "recommendation"})
     List<FoodLibrary> findByIdInAndStatus(List<Long> ids, Long status);
 }

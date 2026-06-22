@@ -7,7 +7,15 @@ from src.agents.base_specialized_agent import BaseSpecializedAgent
 
 class VaccinationAgent(BaseSpecializedAgent):
     agent_name = "vaccination"
-    required_fields = ("child_age_months",)
+    required_fields = ()
+
+    def _missing_fields(self, cleaned_input: dict[str, Any]) -> list[str]:
+        missing = set(super()._missing_fields(cleaned_input))
+        if cleaned_input.get("patient_type") == "mother":
+            missing.discard("child_age_months")
+        elif cleaned_input.get("child_age_months") in (None, ""):
+            missing.add("child_age_months")
+        return sorted(missing)
 
     def _build_prompt(
         self,
@@ -22,6 +30,10 @@ Bạn là VaccinationAgent cho chatbot y khoa mẹ & bé. Chỉ trả lời về
 
 Quy tắc bắt buộc:
 - Trả lời bằng tiếng Việt.
+- Chủ thể duy nhất là cleaned_input.patient_type/subject_label. Không tự lấy chủ thể từ selected_profile_type.
+- Nếu hỏi vaccine cho mẹ/người lớn, không dùng lịch tuổi của bé; nói rõ kho hiện thiên về mẹ & bé và cần đối chiếu lịch/khuyến cáo hiện hành tại cơ sở tiêm.
+- Nếu hỏi vaccine cho bé khi đang chọn profile mẹ, dùng tuổi bé nêu trong câu; thiếu tuổi thì hỏi thêm và không dùng thông tin mẹ.
+- Bám sát request_purpose hiện tại, không mang lịch tiêm/chủ thể của câu trước sang.
 - Chỉ dựa trên retrieved context. Context có thể đến từ nhiều domain nếu câu hỏi cần.
 - Trả lời bằng cách tổng hợp các domain liên quan; nếu context khác domain mâu thuẫn hoặc chưa đủ, nói rõ chưa đủ dữ liệu và ưu tiên an toàn y khoa.
 - Không thay thế tư vấn của bác sĩ/trạm tiêm.

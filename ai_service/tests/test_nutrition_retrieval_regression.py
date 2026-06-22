@@ -7,7 +7,8 @@ from src.agents.answer_validation_agent import AnswerValidationAgent
 from src.agents.medical_knowledge_retrieval_agent import MedicalKnowledgeRetrievalAgent
 from src.agents.nutrition_agent import NutritionAgent
 from src.agents.query_understanding_agent import QueryUnderstandingAgent
-from src.api import build_user_friendly_answer
+from src.api import _compact_raw_result, build_user_friendly_answer
+from src.api_debug_formatter import format_debug_log
 from src.retrieval.domain_selector import select_retrieval_domains
 
 
@@ -180,6 +181,240 @@ class NutritionRetrievalRegressionTest(unittest.TestCase):
         self.assertIn("Cháo mịn cá hồi bí đỏ", answer)
         self.assertNotIn("cơm mềm", answer.lower())
 
+    def test_dish_suggestion_filters_requested_ingredient_not_first_items(self) -> None:
+        agent = NutritionAgent.__new__(NutritionAgent)
+        answer = agent._dish_suggestion(
+            cleaned_input={
+                "profile_type": "CHILD",
+                "food_age_group": "FOR_BABY_9_11_MONTHS",
+                "requested_ingredients": ["Cá hồi"],
+                "profile_food_catalog": (
+                    "250|Cháo gà cà rốt|FOR_BABY_9_11_MONTHS|140 kcal|8 g protein|Thịt gà, Gạo tẻ, Cà rốt ;; "
+                    "251|Cháo cá hồi khoai lang|FOR_BABY_9_11_MONTHS|155 kcal|9 g protein|Cá hồi, Khoai lang, Bông cải"
+                ),
+            },
+            age_months=9,
+        )
+
+        self.assertIn("Cháo cá hồi khoai lang", answer)
+        self.assertNotIn("Cháo gà cà rốt", answer)
+
+    def test_generic_chicken_alias_matches_chicken_parts(self) -> None:
+        agent = NutritionAgent.__new__(NutritionAgent)
+        answer = agent._dish_suggestion(
+            cleaned_input={
+                "profile_type": "MOTHER",
+                "goal_code": "FOR_MOTHER_DIET",
+                "goal_label": "giảm cân",
+                "requested_ingredients": ["gà"],
+                "profile_food_catalog": (
+                    "1|Cá hồi áp chảo|FOR_MOTHER_DIET|420 kcal|30 g protein|Cá hồi, Khoai tây ;; "
+                    "2|Salad ức gà gạo lứt|FOR_MOTHER_DIET|430 kcal|34 g protein|Ức gà, Gạo lứt, Bơ"
+                ),
+            },
+            age_months=0,
+        )
+
+        self.assertIn("Salad ức gà gạo lứt", answer)
+        self.assertNotIn("Cá hồi áp chảo", answer)
+
+    def test_mother_keep_shape_goal_is_extracted_and_filters_catalog(self) -> None:
+        agent = QueryUnderstandingAgent(StaticGemini("not json"))
+        enriched_question = (
+            "[Thông tin hồ sơ]\n- profileType: MOTHER\n- name: Lan\n\n"
+            "[Câu hỏi hiện tại]\nGợi ý món giúp mẹ giữ dáng"
+        )
+        cleaned = agent.to_cleaned_input(agent.understand(enriched_question))
+
+        self.assertEqual(cleaned["goal_code"], "FOR_MOTHER_DIET")
+        self.assertEqual(cleaned["goal_label"], "giữ dáng")
+
+    def test_mother_increase_milk_goal_does_not_request_child_age(self) -> None:
+        query_agent = QueryUnderstandingAgent(StaticGemini("not json"))
+        enriched_question = (
+            "[Thông tin hồ sơ]\n- profileType: MOTHER\n- name: Lan\n"
+            "- profileFoodCatalog: 201|Cháo yến mạch cá hồi rau ngót|FOR_MOTHER_INCREASE_MILK_SUPPLY|455 kcal|31 g protein|Cá hồi, Yến mạch, Rau ngót\n\n"
+            "[Câu hỏi hiện tại]\nTôi muốn tăng sữa"
+        )
+        cleaned = query_agent.to_cleaned_input(query_agent.understand(enriched_question))
+        nutrition_agent = NutritionAgent.__new__(NutritionAgent)
+        nutrition_agent.collection_name = "baby_oi_nutrition_knowledge"
+        result = nutrition_agent.answer(cleaned, {"red_flags": []}, pre_retrieved_contexts=[])
+
+        self.assertEqual(cleaned["goal_code"], "FOR_MOTHER_INCREASE_MILK_SUPPLY")
+        self.assertIn("Cháo yến mạch cá hồi rau ngót", result["answer"])
+        self.assertNotIn("bé hiện bao nhiêu tháng", result["answer"])
+
+    def test_food_analysis_uses_database_fields_and_marks_missing_data(self) -> None:
+        agent = NutritionAgent.__new__(NutritionAgent)
+        answer = agent._food_analysis({
+            "requested_food_names": ["Cháo cá hồi bí đỏ"],
+            "profile_food_catalog": (
+                "201|Cháo cá hồi bí đỏ|FOR_MOTHER_DIET|420 kcal|28 g protein|Cá hồi, Bí đỏ, Gạo tẻ|"
+                "45 g carbs|14 g fat|6 g fiber|4 g sugar|320 mg sodium|Giàu đạm theo dữ liệu món||"
+                "Dùng khẩu phần vừa|Nấu chín kỹ"
+            ),
+        })
+
+        self.assertIn("Điểm mạnh: Giàu đạm theo dữ liệu món", answer)
+        self.assertIn("Điểm hạn chế: Database chưa có", answer)
+        self.assertIn("Lưu ý: Dùng khẩu phần vừa", answer)
+        self.assertIn("Chế biến: Nấu chín kỹ", answer)
+
+    def test_analysis_intent_accepts_natural_and_follow_up_phrases(self) -> None:
+        agent = NutritionAgent.__new__(NutritionAgent)
+
+        self.assertTrue(agent._asks_for_analysis("Phân tích tôi món súp bí đỏ cá hồi", {}))
+        self.assertTrue(agent._asks_for_analysis("Thông tin chi tiết của nó như nào?", {}))
+
+    def test_current_goal_overrides_previous_conversation_goal(self) -> None:
+        agent = QueryUnderstandingAgent(StaticGemini("not json"))
+        enriched = (
+            "[Thông tin hồ sơ]\n- profileType: MOTHER\n- name: Linh\n\n"
+            "[Lịch sử hội thoại gần đây]\nUSER: Cho tôi món giảm cân\nASSISTANT: Đây là các món giữ dáng.\n\n"
+            "[Câu hỏi hiện tại]\nTôi muốn tăng sữa"
+        )
+        cleaned = agent.to_cleaned_input(agent.understand(enriched))
+
+        self.assertEqual(cleaned["goal_code"], "FOR_MOTHER_INCREASE_MILK_SUPPLY")
+        self.assertEqual(cleaned["patient_type"], "mother")
+
+    def test_mother_profile_can_ask_about_baby_without_profile_switch(self) -> None:
+        agent = QueryUnderstandingAgent(StaticGemini("not json"))
+        enriched = (
+            "[Thông tin hồ sơ]\n- profileType: MOTHER\n- name: Linh\n"
+            "- ageMonths: 360\n- weightKg: 55\n- tdeeKcal: 1900\n"
+            "- profileFoodCatalog: 1|Salad|FOR_MOTHER_DIET|400 kcal|20 g protein|Ức gà\n\n"
+            "[Câu hỏi hiện tại]\nBé 8 tháng đang sốt thì theo dõi thế nào?"
+        )
+        query = agent.understand(enriched)
+        cleaned = agent.to_cleaned_input(query)
+
+        self.assertEqual(query["intent"], "symptom")
+        self.assertEqual(cleaned["patient_type"], "baby")
+        self.assertEqual(cleaned["profile_type"], "CHILD")
+        self.assertEqual(cleaned["child_age_months"], 8.0)
+        self.assertFalse(cleaned["uses_selected_profile_data"])
+        self.assertIsNone(cleaned["profile_weight_kg"])
+        self.assertIsNone(cleaned["profile_food_catalog"])
+        self.assertEqual(cleaned["request_purpose"], "symptom_care")
+
+    def test_child_profile_can_ask_about_mother_without_profile_switch(self) -> None:
+        agent = QueryUnderstandingAgent(StaticGemini("not json"))
+        enriched = (
+            "[Thông tin hồ sơ]\n- profileType: CHILD\n- name: An\n- ageMonths: 8\n\n"
+            "[Câu hỏi hiện tại]\nMẹ sau sinh muốn tăng sữa nên ăn thế nào?"
+        )
+        cleaned = agent.to_cleaned_input(agent.understand(enriched))
+
+        self.assertEqual(cleaned["patient_type"], "mother")
+        self.assertEqual(cleaned["profile_type"], "MOTHER")
+        self.assertFalse(cleaned["uses_selected_profile_data"])
+        self.assertIsNone(cleaned["child_age_months"])
+
+    def test_child_profile_mother_question_uses_cross_mother_catalog(self) -> None:
+        agent = QueryUnderstandingAgent(StaticGemini("not json"))
+        enriched = (
+            "[Thông tin hồ sơ]\n- profileType: CHILD\n- name: An\n- ageMonths: 8\n"
+            "- childFoodCatalogIndex: 101|Cháo gà|FOR_BABY_6_8_MONTHS|110 kcal|7 g protein|Thịt gà\n"
+            "- motherFoodCatalogIndex: "
+            "1|Salad ức gà gạo lứt|FOR_MOTHER_DIET|430 kcal|34 g protein|Ức gà, Gạo lứt ;; "
+            "201|Cháo yến mạch cá hồi rau ngót|FOR_MOTHER_INCREASE_MILK_SUPPLY|455 kcal|31 g protein|Cá hồi, Yến mạch, Rau ngót\n\n"
+            "[Câu hỏi hiện tại]\nMẹ muốn giảm cân, gợi ý món gà"
+        )
+        cleaned = agent.to_cleaned_input(agent.understand(enriched))
+        nutrition_agent = NutritionAgent.__new__(NutritionAgent)
+        answer = nutrition_agent._dish_suggestion(cleaned, age_months=0)
+
+        self.assertEqual(cleaned["patient_type"], "mother")
+        self.assertFalse(cleaned["uses_selected_profile_data"])
+        self.assertIn("Salad ức gà gạo lứt", answer)
+        self.assertNotIn("Cháo gà", answer)
+        self.assertNotIn("FOR_MOTHER", answer)
+
+    def test_mother_profile_baby_question_uses_cross_child_catalog(self) -> None:
+        agent = QueryUnderstandingAgent(StaticGemini("not json"))
+        enriched = (
+            "[Thông tin hồ sơ]\n- profileType: MOTHER\n- name: Linh\n"
+            "- motherFoodCatalogIndex: 1|Salad|FOR_MOTHER_DIET|400 kcal|20 g protein|Ức gà\n"
+            "- childFoodCatalogIndex: "
+            "101|Cháo mịn cá hồi bí đỏ|FOR_BABY_6_8_MONTHS|110 kcal|7 g protein|Cá hồi, Bí đỏ ;; "
+            "251|Cháo đặc cá hồi khoai lang|FOR_BABY_9_11_MONTHS|155 kcal|9 g protein|Cá hồi, Khoai lang\n\n"
+            "[Câu hỏi hiện tại]\nBé 8 tháng ăn món cá hồi nào?"
+        )
+        cleaned = agent.to_cleaned_input(agent.understand(enriched))
+        nutrition_agent = NutritionAgent.__new__(NutritionAgent)
+        answer = nutrition_agent._dish_suggestion(cleaned, age_months=8)
+
+        self.assertEqual(cleaned["patient_type"], "baby")
+        self.assertIn("Cháo mịn cá hồi bí đỏ", answer)
+        self.assertNotIn("Cháo đặc cá hồi khoai lang", answer)
+        self.assertNotIn("FOR_BABY", answer)
+
+    def test_complete_catalog_index_prevents_first_thirty_goal_false_negative(self) -> None:
+        agent = NutritionAgent.__new__(NutritionAgent)
+        answer = agent._dish_suggestion({
+            "profile_type": "MOTHER",
+            "goal_code": "FOR_MOTHER_INCREASE_MILK_SUPPLY",
+            "goal_label": "tăng tiết sữa",
+            "profile_food_catalog": "1|Salad|FOR_MOTHER_DIET|400 kcal|20 g protein|Ức gà",
+            "profile_food_catalog_index": (
+                "1|Salad|FOR_MOTHER_DIET|400 kcal|20 g protein|Ức gà ;; "
+                "201|Cháo yến mạch cá hồi rau ngót|FOR_MOTHER_INCREASE_MILK_SUPPLY|455 kcal|31 g protein|Cá hồi, Yến mạch, Rau ngót"
+            ),
+        }, age_months=0)
+
+        self.assertIn("Cháo yến mạch cá hồi rau ngót", answer)
+        self.assertNotIn("chưa có món chuyên", answer)
+
+    def test_current_health_topic_overrides_previous_nutrition_topic(self) -> None:
+        agent = QueryUnderstandingAgent(StaticGemini("not json"))
+        enriched = (
+            "[Thông tin hồ sơ]\n- profileType: MOTHER\n- name: Linh\n- ageMonths: 360\n\n"
+            "[Lịch sử hội thoại gần đây]\n"
+            "USER: Tôi muốn giảm cân\nASSISTANT: Đây là gợi ý dinh dưỡng.\n\n"
+            "[Câu hỏi hiện tại]\nBé 6 tháng sốt 38.5 độ thì theo dõi sao?"
+        )
+        query = agent.understand(enriched)
+        cleaned = agent.to_cleaned_input(query)
+        domains = select_retrieval_domains(query, {"safety_level": "urgent"})
+
+        self.assertEqual(query["intent"], "symptom")
+        self.assertEqual(cleaned["patient_type"], "baby")
+        self.assertEqual(cleaned["child_age_months"], 6.0)
+        self.assertEqual(cleaned["request_purpose"], "symptom_care")
+        self.assertIn("general", domains)
+        self.assertIsNone(cleaned["goal_code"])
+
+    def test_current_routine_topic_overrides_previous_vaccination_topic(self) -> None:
+        agent = QueryUnderstandingAgent(StaticGemini("not json"))
+        enriched = (
+            "[Thông tin hồ sơ]\n- profileType: CHILD\n- name: An\n- ageMonths: 9\n\n"
+            "[Lịch sử hội thoại gần đây]\n"
+            "USER: Lịch tiêm của bé thế nào?\nASSISTANT: Đây là thông tin tiêm chủng.\n\n"
+            "[Câu hỏi hiện tại]\nGiờ ngủ cho bé hôm nay nên sắp xếp sao?"
+        )
+        query = agent.understand(enriched)
+        cleaned = agent.to_cleaned_input(query)
+
+        self.assertEqual(query["intent"], "routine")
+        self.assertEqual(cleaned["request_purpose"], "routine_planning")
+        self.assertEqual(cleaned["patient_type"], "baby")
+
+    def test_mother_subject_does_not_require_child_age_for_growth(self) -> None:
+        from src.agents.growth_agent import GrowthAgent
+
+        agent = GrowthAgent.__new__(GrowthAgent)
+        missing = agent._missing_fields({
+            "patient_type": "mother",
+            "weight_kg": 55.0,
+            "height_cm": 160.0,
+            "missing_important_fields": ["child_age_months", "child_gender"],
+        })
+
+        self.assertNotIn("child_age_months", missing)
+        self.assertNotIn("child_gender", missing)
+
     def test_user_answer_removes_dangling_number_before_internal_sources(self) -> None:
         answer = build_user_friendly_answer({
             "answer": "3. Gợi ý món ăn\n\n5. Nguồn nội bộ đã dùng: nutrition_knowledge.txt",
@@ -188,6 +423,52 @@ class NutritionRetrievalRegressionTest(unittest.TestCase):
         })
 
         self.assertEqual(answer, "3. Gợi ý món ăn")
+
+    def test_user_answer_never_exposes_internal_food_type_code(self) -> None:
+        answer = build_user_friendly_answer({
+            "answer": "Món này thuộc FOR_MOTHER_INCREASE_MILK_SUPPLY.",
+            "safety_result": {"safety_level": "normal"},
+            "selected_agent": "nutrition",
+        })
+
+        self.assertNotIn("FOR_MOTHER", answer)
+        self.assertIn("hỗ trợ duy trì nguồn sữa", answer)
+
+    def test_api_diagnostics_do_not_echo_large_catalogs(self) -> None:
+        large_catalog = "food|" * 100_000
+        result = {
+            "cleaned_input": {
+                "patient_type": "mother",
+                "profile_food_catalog": large_catalog,
+                "profile_food_catalog_index": large_catalog,
+            },
+            "query_understanding_result": {
+                "original_input": large_catalog,
+                "cleaned_input": large_catalog,
+                "intent": "nutrition",
+                "primary_domain": "nutrition",
+                "candidate_domains": ["nutrition"],
+            },
+            "intent_result": {"intent": "nutrition"},
+            "routing_result": {"primary_domain": "nutrition"},
+            "safety_result": {"safety_level": "normal"},
+            "retrieval_debug": {"final_context_count": 0},
+            "validation_result": {},
+            "retrieved_contexts": [],
+            "selected_agent": "nutrition",
+            "used_domains": [],
+            "answer": "Câu trả lời ngắn.",
+            "used_collection": "nutrition",
+        }
+
+        compact = _compact_raw_result(result)
+        debug = format_debug_log(result)
+
+        self.assertNotIn("profile_food_catalog", str(compact))
+        self.assertNotIn(large_catalog[:100], str(compact))
+        self.assertNotIn(large_catalog[:100], debug)
+        self.assertLess(len(str(compact)), 10_000)
+        self.assertLess(len(debug), 10_000)
 
     def test_validation_gate_skips_simple_nutrition_under_three_months(self) -> None:
         validator = AnswerValidationAgent(StaticGemini("not json"))
@@ -272,12 +553,56 @@ class NutritionRetrievalRegressionTest(unittest.TestCase):
         self.assertEqual(query["child_age_months"], 8.0)
         self.assertEqual(domains, ["general"])
 
+    def test_sick_and_poor_appetite_uses_profile_and_both_domains(self) -> None:
+        agent = QueryUnderstandingAgent(StaticGemini("not json"))
+        enriched_question = (
+            "[Thông tin hồ sơ]\n"
+            "- name: Thao\n"
+            "- profileType: CHILD\n"
+            "- ageMonths: 7\n"
+            "- sex: MALE\n"
+            "- healthRecordDate: 2026-06-20\n"
+            "- weightKg: 10.0\n"
+            "- heightCm: 70.0\n"
+            "- previousHealthRecordDate: 2026-05-20\n"
+            "- previousWeightKg: 9.4\n"
+            "- weightChangeKg: 0.6\n"
+            "- profileIllnessHistory: 2026-06-01 đến 2026-06-03: Cảm lạnh\n"
+            "- restrictedFoods: Tôm ;; Trứng\n\n"
+            "[Câu hỏi hiện tại]\n"
+            "Bé đang bị ốm và biếng ăn tôi nên làm như nào?"
+        )
+
+        query = agent.understand(enriched_question)
+        cleaned = agent.to_cleaned_input(query)
+        domains = select_retrieval_domains(query, {"safety_level": "urgent"})
+
+        self.assertEqual(query["intent"], "symptom")
+        self.assertEqual(cleaned["profile_name"], "Thao")
+        self.assertEqual(cleaned["profile_age_months"], 7.0)
+        self.assertEqual(cleaned["child_age_months"], 7.0)
+        self.assertEqual(cleaned["profile_weight_kg"], 10.0)
+        self.assertEqual(cleaned["health_record_date"], "2026-06-20")
+        self.assertEqual(cleaned["feeding_status"], "biếng ăn")
+        self.assertEqual(cleaned["allergies"], ["Tôm", "Trứng"])
+        self.assertIn("Cảm lạnh", cleaned["profile_illness_history"])
+        self.assertEqual(domains, ["nutrition", "general"])
+
     def test_general_medical_fallback_uses_retrieved_checklist_when_model_fails(self) -> None:
         agent = MedicalKnowledgeRetrievalAgent(RaisingGemini(), DummyVectorStore())
 
         result = agent.answer(
             user_question="Bé sốt và tiêu chảy thì chăm sóc sao?",
             intent="general_care",
+            cleaned_input={
+                "profile_type": "CHILD",
+                "profile_name": "Thao",
+                "profile_age_months": 7.0,
+                "profile_weight_kg": 10.0,
+                "profile_height_cm": 70.0,
+                "health_record_date": "2026-06-20",
+                "allergies": ["Tôm"],
+            },
             pre_retrieved_contexts=[
                 {
                     "document": "- Tiếp tục bú mẹ; tiếp tục cho ăn phù hợp tuổi nếu bé ăn được.\n"
@@ -292,6 +617,9 @@ class NutritionRetrievalRegressionTest(unittest.TestCase):
 
         self.assertIn("Tiếp tục bú mẹ", result["answer"])
         self.assertIn("dấu mất nước", result["answer"])
+        self.assertIn("bé Thao, hiện 7 tháng", result["answer"])
+        self.assertIn("ngày 2026-06-20: 10 kg, 70 cm", result["answer"])
+        self.assertIn("Hồ sơ đang hạn chế: Tôm", result["answer"])
         self.assertNotIn("quota", result["answer"])
 
 

@@ -25,6 +25,9 @@ URGENT_KEYWORDS = [
     "nôn nhiều",
     "bú kém",
     "ăn kém",
+    "biếng ăn",
+    "không chịu ăn",
+    "bỏ ăn",
     "kéo dài",
     "nhiều lần",
     "phân có máu",
@@ -53,7 +56,7 @@ class SafetyTriageAgent:
         return rule_result
 
     def _rule_based_triage(self, user_question: str) -> dict[str, Any]:
-        text = user_question.lower()
+        text = self._current_question(user_question).lower()
         red_flags = []
         for label, keywords in EMERGENCY_RULES.items():
             if any(keyword in text for keyword in keywords):
@@ -90,6 +93,12 @@ class SafetyTriageAgent:
             "action": f"Có thể tham khảo thông tin chăm sóc chung. {MEDICAL_DISCLAIMER}",
             "can_continue_rag": True,
         }
+
+    def _current_question(self, text: str) -> str:
+        for marker in ("[Câu hỏi hiện tại]", "[Cau hoi hien tai]"):
+            if marker in text:
+                return text.rsplit(marker, 1)[1].strip()
+        return text
 
     def _gemini_triage(self, user_question: str) -> dict[str, Any]:
         prompt = f"""
