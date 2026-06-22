@@ -179,6 +179,10 @@ public class VaccineRecordServiceImpl implements VaccineRecordService {
     }
 
     private Long resolveStatusByInjectionDate(Long requestedStatus, LocalDate injectionDate) {
+        if (requestedStatus != null && !Constants.TABLE_STATUS.SUCCESS.equals(requestedStatus)) {
+            return requestedStatus;
+        }
+
         Long status = requestedStatus != null ? requestedStatus : Constants.TABLE_STATUS.PENDING;
         if (injectionDate != null && injectionDate.isAfter(LocalDate.now())) {
             return Constants.TABLE_STATUS.PENDING;

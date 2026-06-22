@@ -85,3 +85,7 @@ databaseChangeLog:
       file: db/changelog/changes/045_fix_notification_copy.sql
   - include:
       file: db/changelog/changes/046_limit_routine_to_profile_lifetime.sql
+  - include:
+      file: db/changelog/changes/047_split_notification_channel_settings.sql
+  - include:
+      file: db/changelog/changes/048_mark_past_standard_vaccine_records_not_updated.sql

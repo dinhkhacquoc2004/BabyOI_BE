@@ -267,16 +267,19 @@ public class ProfileServiceImpl implements ProfileService {
                                 .doseOrder(schedule.getDoseOrder())
                                 .source(VaccineRuleConstants.RECORD_SOURCE.STANDARD)
                                 .injectionDate(expectedInjectionDate)
-                                .status(Constants.TABLE_STATUS.PENDING)
+                                .status(resolveInitialStandardVaccineStatus(expectedInjectionDate))
                                 .createdAt(LocalDate.now())
                                 .createdBy(actorId)
                                 .build());
                         return;
                     }
 
+                    Long resolvedStatus = resolveInitialStandardVaccineStatus(expectedInjectionDate);
                     if (Constants.TABLE_STATUS.PENDING.equals(existingRecord.getStatus())
-                            && !expectedInjectionDate.equals(existingRecord.getInjectionDate())) {
+                            && (!expectedInjectionDate.equals(existingRecord.getInjectionDate())
+                            || !resolvedStatus.equals(existingRecord.getStatus()))) {
                         existingRecord.setInjectionDate(expectedInjectionDate);
+                        existingRecord.setStatus(resolvedStatus);
                         existingRecord.setUpdatedAt(LocalDate.now());
                         existingRecord.setUpdatedBy(actorId);
                         recordsToSave.add(existingRecord);
@@ -290,6 +293,12 @@ public class ProfileServiceImpl implements ProfileService {
 
     private String recordKey(Long diseaseId, Integer doseOrder) {
         return diseaseId + ":" + doseOrder;
+    }
+
+    private Long resolveInitialStandardVaccineStatus(LocalDate expectedInjectionDate) {
+        return expectedInjectionDate != null && expectedInjectionDate.isBefore(LocalDate.now())
+                ? Constants.TABLE_STATUS.INACTIVE
+                : Constants.TABLE_STATUS.PENDING;
     }
 
     private String resolveSex(String profileType, String sex) {

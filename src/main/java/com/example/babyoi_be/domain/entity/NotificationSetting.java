@@ -39,6 +39,36 @@ public class NotificationSetting {
     @Column(name = "system_enabled", nullable = false)
     private Boolean systemEnabled;
 
+    @Column(name = "vaccine_in_app_enabled", nullable = false)
+    private Boolean vaccineInAppEnabled;
+
+    @Column(name = "vaccine_push_enabled", nullable = false)
+    private Boolean vaccinePushEnabled;
+
+    @Column(name = "appointment_in_app_enabled", nullable = false)
+    private Boolean appointmentInAppEnabled;
+
+    @Column(name = "appointment_push_enabled", nullable = false)
+    private Boolean appointmentPushEnabled;
+
+    @Column(name = "chat_in_app_enabled", nullable = false)
+    private Boolean chatInAppEnabled;
+
+    @Column(name = "chat_push_enabled", nullable = false)
+    private Boolean chatPushEnabled;
+
+    @Column(name = "promotion_in_app_enabled", nullable = false)
+    private Boolean promotionInAppEnabled;
+
+    @Column(name = "promotion_push_enabled", nullable = false)
+    private Boolean promotionPushEnabled;
+
+    @Column(name = "system_in_app_enabled", nullable = false)
+    private Boolean systemInAppEnabled;
+
+    @Column(name = "system_push_enabled", nullable = false)
+    private Boolean systemPushEnabled;
+
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
 

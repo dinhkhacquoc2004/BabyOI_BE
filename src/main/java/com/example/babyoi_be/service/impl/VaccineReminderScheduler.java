@@ -1,9 +1,12 @@
 package com.example.babyoi_be.service.impl;
 
 import com.example.babyoi_be.common.Constants;
+import com.example.babyoi_be.common.VaccineRuleConstants;
 import com.example.babyoi_be.domain.entity.Profile;
+import com.example.babyoi_be.domain.entity.ProfileVaccineDiseaseStatus;
 import com.example.babyoi_be.domain.entity.VaccineRecord;
 import com.example.babyoi_be.repository.NotificationRepository;
+import com.example.babyoi_be.repository.ProfileVaccineDiseaseStatusRepository;
 import com.example.babyoi_be.repository.ProfileRepository;
 import com.example.babyoi_be.repository.VaccineRecordRepository;
 import com.example.babyoi_be.service.NotificationService;
@@ -27,9 +30,11 @@ public class VaccineReminderScheduler {
     private static final ZoneId VIETNAM_ZONE = ZoneId.of("Asia/Ho_Chi_Minh");
     private static final DateTimeFormatter DISPLAY_DATE = DateTimeFormatter.ofPattern("dd/MM/yyyy");
     private static final int[] EARLY_REMINDER_DAYS = {7, 3};
+    private static final int[] OVERDUE_REMINDER_DAYS = {1, 3, 7, 14, 30};
 
     private final VaccineRecordRepository vaccineRecordRepository;
     private final ProfileRepository profileRepository;
+    private final ProfileVaccineDiseaseStatusRepository profileVaccineDiseaseStatusRepository;
     private final NotificationRepository notificationRepository;
     private final NotificationService notificationService;
 
@@ -48,6 +53,21 @@ public class VaccineReminderScheduler {
         for (int daysBefore : EARLY_REMINDER_DAYS) {
             sendRemindersForDate(today.plusDays(daysBefore), daysBefore, currentSlot);
         }
+    }
+
+    @Scheduled(cron = "0 */10 10-11 * * *", zone = "Asia/Ho_Chi_Minh")
+    @Transactional
+    public void sendOverdueReminders() {
+        sendOverdueReminders(LocalDateTime.now(VIETNAM_ZONE));
+    }
+
+    void sendOverdueReminders(LocalDateTime now) {
+        int currentSlot = (now.getHour() - 10) * 6 + now.getMinute() / 10;
+        LocalDate today = now.toLocalDate();
+        for (int daysOverdue : OVERDUE_REMINDER_DAYS) {
+            sendOverdueRemindersForDate(today.minusDays(daysOverdue), daysOverdue, currentSlot);
+        }
+        stopVeryOverdueSchedules(today.minusDays(30));
     }
 
     @Scheduled(cron = "0 15 2 * * *", zone = "Asia/Ho_Chi_Minh")
@@ -74,6 +94,53 @@ public class VaccineReminderScheduler {
         }
     }
 
+    private void sendOverdueRemindersForDate(LocalDate injectionDate, int daysOverdue, Integer currentSlot) {
+        List<VaccineRecord> records = vaccineRecordRepository.findByInjectionDateAndStatus(
+                injectionDate,
+                Constants.TABLE_STATUS.PENDING
+        );
+        for (VaccineRecord record : records) {
+            if (currentSlot != null && reminderSlot(record) > currentSlot) {
+                continue;
+            }
+            if (isDiseaseStopped(record)) {
+                continue;
+            }
+            createOverdueReminder(record, daysOverdue);
+        }
+    }
+
+    private void stopVeryOverdueSchedules(LocalDate cutoffDate) {
+        List<VaccineRecord> records = vaccineRecordRepository.findByInjectionDateBeforeAndStatus(
+                cutoffDate,
+                Constants.TABLE_STATUS.PENDING
+        );
+        LocalDateTime now = LocalDateTime.now(VIETNAM_ZONE);
+        for (VaccineRecord record : records) {
+            Profile profile = profileRepository.findById(record.getProfileId()).orElse(null);
+            if (!isEligibleChildProfile(profile) || record.getDisease() == null) {
+                continue;
+            }
+
+            ProfileVaccineDiseaseStatus diseaseStatus = profileVaccineDiseaseStatusRepository
+                    .findByProfileIdAndDiseaseId(record.getProfileId(), record.getDisease().getId())
+                    .orElseGet(() -> ProfileVaccineDiseaseStatus.builder()
+                            .profile(profile)
+                            .disease(record.getDisease())
+                            .createdAt(now)
+                            .build());
+            if (VaccineRuleConstants.DISEASE_SCHEDULE_STATUS.STOPPED.equals(diseaseStatus.getStatus())) {
+                continue;
+            }
+
+            diseaseStatus.setStatus(VaccineRuleConstants.DISEASE_SCHEDULE_STATUS.STOPPED);
+            diseaseStatus.setStoppedAt(now);
+            diseaseStatus.setStoppedDoseOrder(record.getDoseOrder());
+            diseaseStatus.setUpdatedAt(now);
+            profileVaccineDiseaseStatusRepository.save(diseaseStatus);
+        }
+    }
+
     private int reminderSlot(VaccineRecord record) {
         long userSeed = profileRepository.findById(record.getProfileId())
                 .map(profile -> profile.getUser().getId())
@@ -83,10 +150,7 @@ public class VaccineReminderScheduler {
 
     private void createReminder(VaccineRecord record, int daysBefore) {
         Profile profile = profileRepository.findById(record.getProfileId()).orElse(null);
-        if (profile == null
-                || profile.getUser() == null
-                || !Constants.TABLE_STATUS.ACTIVE.equals(profile.getStatus())
-                || !"CHILD".equals(profile.getProfileType())) {
+        if (!isEligibleChildProfile(profile)) {
             return;
         }
 
@@ -124,6 +188,60 @@ public class VaccineReminderScheduler {
                 record.getId(),
                 reminderKey
         );
+    }
+
+    private void createOverdueReminder(VaccineRecord record, int daysOverdue) {
+        Profile profile = profileRepository.findById(record.getProfileId()).orElse(null);
+        if (!isEligibleChildProfile(profile)) {
+            return;
+        }
+
+        String profileLabel = resolveProfileLabel(profile, false);
+        String immunizationName = resolveImmunizationName(record);
+        String doseLabel = record.getDoseOrder() == null ? "mũi theo lịch" : "mũi " + record.getDoseOrder();
+        String title = "Mũi tiêm của " + profileLabel + " đã quá hạn " + daysOverdue + " ngày";
+        String body = profileLabel + " đã quá hạn tiêm " + immunizationName + ", " + doseLabel
+                + " từ ngày " + record.getInjectionDate().format(DISPLAY_DATE)
+                + ". Mẹ nên kiểm tra lại lịch và cập nhật sổ tiêm nhé.";
+        String dataJson = record.getDisease() != null
+                ? String.format(
+                        "{\"route\":\"/lichtiem/chitietbenh\",\"screen\":\"VaccineRecordDetail\",\"recordId\":%d,\"profileId\":%d,\"diseaseId\":%d,\"daysOverdue\":%d} ",
+                        record.getId(), record.getProfileId(), record.getDisease().getId(), daysOverdue
+                ).trim()
+                : String.format(
+                        "{\"route\":\"/lichtiem/themmuitiem\",\"screen\":\"VaccineRecordDetail\",\"mode\":\"edit\",\"recordId\":%d,\"profileId\":%d,\"daysOverdue\":%d}",
+                        record.getId(), record.getProfileId(), daysOverdue
+                );
+        String reminderKey = "VACCINE:" + record.getId() + ":" + record.getInjectionDate() + ":OD" + daysOverdue;
+
+        notificationService.createReminderNotification(
+                profile.getUser().getId(),
+                Constants.NOTIFICATION_TYPE.VACCINE_REMINDER,
+                title,
+                body,
+                dataJson,
+                daysOverdue >= 7 ? Constants.NOTIFICATION_PRIORITY.HIGH : Constants.NOTIFICATION_PRIORITY.NORMAL,
+                "VACCINE_RECORD",
+                record.getId(),
+                reminderKey
+        );
+    }
+
+    private boolean isDiseaseStopped(VaccineRecord record) {
+        if (record.getDisease() == null || record.getDisease().getId() == null) {
+            return false;
+        }
+        return profileVaccineDiseaseStatusRepository
+                .findByProfileIdAndDiseaseId(record.getProfileId(), record.getDisease().getId())
+                .map(status -> VaccineRuleConstants.DISEASE_SCHEDULE_STATUS.STOPPED.equals(status.getStatus()))
+                .orElse(false);
+    }
+
+    private boolean isEligibleChildProfile(Profile profile) {
+        return profile != null
+                && profile.getUser() != null
+                && Constants.TABLE_STATUS.ACTIVE.equals(profile.getStatus())
+                && "CHILD".equals(profile.getProfileType());
     }
 
     private String resolveProfileLabel(Profile profile, boolean sentenceStart) {

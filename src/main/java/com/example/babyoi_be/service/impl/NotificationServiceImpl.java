@@ -161,11 +161,42 @@ public class NotificationServiceImpl implements NotificationService {
     public NotificationSettingResponse updateSettings(NotificationSettingRequest request) {
         NotificationSetting setting = getOrCreateSetting(getCurrentUser());
         if (request.getPushEnabled() != null) setting.setPushEnabled(request.getPushEnabled());
-        if (request.getVaccineEnabled() != null) setting.setVaccineEnabled(request.getVaccineEnabled());
-        if (request.getAppointmentEnabled() != null) setting.setAppointmentEnabled(request.getAppointmentEnabled());
-        if (request.getChatEnabled() != null) setting.setChatEnabled(request.getChatEnabled());
-        if (request.getPromotionEnabled() != null) setting.setPromotionEnabled(request.getPromotionEnabled());
-        if (request.getSystemEnabled() != null) setting.setSystemEnabled(request.getSystemEnabled());
+        if (request.getVaccineEnabled() != null) {
+            setting.setVaccineEnabled(request.getVaccineEnabled());
+            setting.setVaccineInAppEnabled(request.getVaccineEnabled());
+            setting.setVaccinePushEnabled(request.getVaccineEnabled());
+        }
+        if (request.getAppointmentEnabled() != null) {
+            setting.setAppointmentEnabled(request.getAppointmentEnabled());
+            setting.setAppointmentInAppEnabled(request.getAppointmentEnabled());
+            setting.setAppointmentPushEnabled(request.getAppointmentEnabled());
+        }
+        if (request.getChatEnabled() != null) {
+            setting.setChatEnabled(request.getChatEnabled());
+            setting.setChatInAppEnabled(request.getChatEnabled());
+            setting.setChatPushEnabled(request.getChatEnabled());
+        }
+        if (request.getPromotionEnabled() != null) {
+            setting.setPromotionEnabled(request.getPromotionEnabled());
+            setting.setPromotionInAppEnabled(request.getPromotionEnabled());
+            setting.setPromotionPushEnabled(request.getPromotionEnabled());
+        }
+        if (request.getSystemEnabled() != null) {
+            setting.setSystemEnabled(request.getSystemEnabled());
+            setting.setSystemInAppEnabled(request.getSystemEnabled());
+            setting.setSystemPushEnabled(request.getSystemEnabled());
+        }
+        if (request.getVaccineInAppEnabled() != null) setting.setVaccineInAppEnabled(request.getVaccineInAppEnabled());
+        if (request.getVaccinePushEnabled() != null) setting.setVaccinePushEnabled(request.getVaccinePushEnabled());
+        if (request.getAppointmentInAppEnabled() != null) setting.setAppointmentInAppEnabled(request.getAppointmentInAppEnabled());
+        if (request.getAppointmentPushEnabled() != null) setting.setAppointmentPushEnabled(request.getAppointmentPushEnabled());
+        if (request.getChatInAppEnabled() != null) setting.setChatInAppEnabled(request.getChatInAppEnabled());
+        if (request.getChatPushEnabled() != null) setting.setChatPushEnabled(request.getChatPushEnabled());
+        if (request.getPromotionInAppEnabled() != null) setting.setPromotionInAppEnabled(request.getPromotionInAppEnabled());
+        if (request.getPromotionPushEnabled() != null) setting.setPromotionPushEnabled(request.getPromotionPushEnabled());
+        if (request.getSystemInAppEnabled() != null) setting.setSystemInAppEnabled(request.getSystemInAppEnabled());
+        if (request.getSystemPushEnabled() != null) setting.setSystemPushEnabled(request.getSystemPushEnabled());
+        syncLegacyCategoryFlags(setting);
         setting.setUpdatedAt(LocalDateTime.now());
         return mapSetting(notificationSettingRepository.save(setting));
     }
@@ -177,6 +208,12 @@ public class NotificationServiceImpl implements NotificationService {
         Users user = usersRepository.findById(userId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
 
+        boolean createInApp = shouldCreateInApp(userId, type);
+        boolean sendPush = push && shouldSendPush(userId, type);
+        if (!createInApp && !sendPush) {
+            return;
+        }
+
         Notification notification = notificationRepository.save(Notification.builder()
                 .user(user)
                 .type(type)
@@ -186,11 +223,11 @@ public class NotificationServiceImpl implements NotificationService {
                 .priority(priority != null ? priority : Constants.NOTIFICATION_PRIORITY.NORMAL)
                 .sourceType(sourceType)
                 .sourceId(sourceId)
-                .status(Constants.TABLE_STATUS.PENDING)
+                .status(createInApp ? Constants.TABLE_STATUS.PENDING : Constants.TABLE_STATUS.DELETED)
                 .createdAt(LocalDateTime.now())
                 .build());
 
-        if (push && shouldSendPush(user.getId(), type)) {
+        if (sendPush) {
             schedulePush(user.getId(), notification.getId());
         }
     }
@@ -202,17 +239,22 @@ public class NotificationServiceImpl implements NotificationService {
         if (!usersRepository.existsById(userId)) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found");
         }
+        boolean createInApp = shouldCreateInApp(userId, type);
+        boolean sendPush = shouldSendPush(userId, type);
+        if (!createInApp && !sendPush) {
+            return false;
+        }
         int inserted = notificationRepository.insertReminder(
                 userId, type, title, body, dataJson,
                 priority != null ? priority : Constants.NOTIFICATION_PRIORITY.NORMAL,
-                sourceType, sourceId, reminderKey, Constants.TABLE_STATUS.PENDING
+                sourceType, sourceId, reminderKey, createInApp ? Constants.TABLE_STATUS.PENDING : Constants.TABLE_STATUS.DELETED
         );
         if (inserted == 0) {
             return false;
         }
         Notification notification = notificationRepository.findByReminderKey(reminderKey)
                 .orElseThrow(() -> new IllegalStateException("Created reminder not found"));
-        if (shouldSendPush(userId, type)) {
+        if (sendPush) {
             schedulePush(userId, notification.getId());
         }
         return true;
@@ -240,19 +282,66 @@ public class NotificationServiceImpl implements NotificationService {
         if (!Boolean.TRUE.equals(setting.getPushEnabled())) {
             return false;
         }
+        return resolveCategoryPushEnabled(setting, type);
+    }
+
+    private boolean shouldCreateInApp(Long userId, String type) {
+        return notificationSettingRepository.findByUserId(userId)
+                .map(setting -> resolveCategoryInAppEnabled(setting, type))
+                .orElse(true);
+    }
+
+    private boolean resolveCategoryInAppEnabled(NotificationSetting setting, String type) {
         if (Constants.NOTIFICATION_TYPE.VACCINE_REMINDER.equals(type)) {
-            return Boolean.TRUE.equals(setting.getVaccineEnabled());
-        }
-        if (Constants.NOTIFICATION_TYPE.ROUTINE_REMINDER.equals(type)) {
-            return Boolean.TRUE.equals(setting.getSystemEnabled());
-        }
-        if (Constants.NOTIFICATION_TYPE.HEALTH_REMINDER.equals(type)) {
-            return Boolean.TRUE.equals(setting.getSystemEnabled());
+            return resolve(setting.getVaccineInAppEnabled(), setting.getVaccineEnabled(), true);
         }
         if (Constants.NOTIFICATION_TYPE.HANDBOOK_COMMENT_REPLY.equals(type)) {
-            return Boolean.TRUE.equals(setting.getChatEnabled());
+            return resolve(setting.getChatInAppEnabled(), setting.getChatEnabled(), true);
         }
-        return Boolean.TRUE.equals(setting.getSystemEnabled());
+        return resolve(setting.getSystemInAppEnabled(), setting.getSystemEnabled(), true);
+    }
+
+    private boolean resolveCategoryPushEnabled(NotificationSetting setting, String type) {
+        if (Constants.NOTIFICATION_TYPE.VACCINE_REMINDER.equals(type)) {
+            return resolve(setting.getVaccinePushEnabled(), setting.getVaccineEnabled(), true);
+        }
+        if (Constants.NOTIFICATION_TYPE.HANDBOOK_COMMENT_REPLY.equals(type)) {
+            return resolve(setting.getChatPushEnabled(), setting.getChatEnabled(), true);
+        }
+        return resolve(setting.getSystemPushEnabled(), setting.getSystemEnabled(), true);
+    }
+
+    private Boolean resolve(Boolean value, Boolean fallback, boolean defaultValue) {
+        if (value != null) {
+            return value;
+        }
+        if (fallback != null) {
+            return fallback;
+        }
+        return defaultValue;
+    }
+
+    private void syncLegacyCategoryFlags(NotificationSetting setting) {
+        setting.setVaccineEnabled(
+                resolve(setting.getVaccineInAppEnabled(), setting.getVaccineEnabled(), true)
+                        && resolve(setting.getVaccinePushEnabled(), setting.getVaccineEnabled(), true)
+        );
+        setting.setAppointmentEnabled(
+                resolve(setting.getAppointmentInAppEnabled(), setting.getAppointmentEnabled(), true)
+                        && resolve(setting.getAppointmentPushEnabled(), setting.getAppointmentEnabled(), true)
+        );
+        setting.setChatEnabled(
+                resolve(setting.getChatInAppEnabled(), setting.getChatEnabled(), true)
+                        && resolve(setting.getChatPushEnabled(), setting.getChatEnabled(), true)
+        );
+        setting.setPromotionEnabled(
+                resolve(setting.getPromotionInAppEnabled(), setting.getPromotionEnabled(), false)
+                        && resolve(setting.getPromotionPushEnabled(), setting.getPromotionEnabled(), false)
+        );
+        setting.setSystemEnabled(
+                resolve(setting.getSystemInAppEnabled(), setting.getSystemEnabled(), true)
+                        && resolve(setting.getSystemPushEnabled(), setting.getSystemEnabled(), true)
+        );
     }
 
     private void sendPush(Long userId, Long notificationId) {
@@ -307,6 +396,16 @@ public class NotificationServiceImpl implements NotificationService {
                         .chatEnabled(true)
                         .promotionEnabled(false)
                         .systemEnabled(true)
+                        .vaccineInAppEnabled(true)
+                        .vaccinePushEnabled(true)
+                        .appointmentInAppEnabled(true)
+                        .appointmentPushEnabled(true)
+                        .chatInAppEnabled(true)
+                        .chatPushEnabled(true)
+                        .promotionInAppEnabled(false)
+                        .promotionPushEnabled(false)
+                        .systemInAppEnabled(true)
+                        .systemPushEnabled(true)
                         .createdAt(LocalDateTime.now())
                         .build()));
     }
@@ -353,6 +452,16 @@ public class NotificationServiceImpl implements NotificationService {
                 .chatEnabled(setting.getChatEnabled())
                 .promotionEnabled(setting.getPromotionEnabled())
                 .systemEnabled(setting.getSystemEnabled())
+                .vaccineInAppEnabled(resolve(setting.getVaccineInAppEnabled(), setting.getVaccineEnabled(), true))
+                .vaccinePushEnabled(resolve(setting.getVaccinePushEnabled(), setting.getVaccineEnabled(), true))
+                .appointmentInAppEnabled(resolve(setting.getAppointmentInAppEnabled(), setting.getAppointmentEnabled(), true))
+                .appointmentPushEnabled(resolve(setting.getAppointmentPushEnabled(), setting.getAppointmentEnabled(), true))
+                .chatInAppEnabled(resolve(setting.getChatInAppEnabled(), setting.getChatEnabled(), true))
+                .chatPushEnabled(resolve(setting.getChatPushEnabled(), setting.getChatEnabled(), true))
+                .promotionInAppEnabled(resolve(setting.getPromotionInAppEnabled(), setting.getPromotionEnabled(), false))
+                .promotionPushEnabled(resolve(setting.getPromotionPushEnabled(), setting.getPromotionEnabled(), false))
+                .systemInAppEnabled(resolve(setting.getSystemInAppEnabled(), setting.getSystemEnabled(), true))
+                .systemPushEnabled(resolve(setting.getSystemPushEnabled(), setting.getSystemEnabled(), true))
                 .build();
     }
 }

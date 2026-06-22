@@ -28,6 +28,7 @@ public class VaccineCatalogServiceImpl implements VaccineCatalogService {
     private static final List<Long> PROGRESS_STATUSES = List.of(
             Constants.TABLE_STATUS.SUCCESS,
             Constants.TABLE_STATUS.PENDING,
+            Constants.TABLE_STATUS.INACTIVE,
             Constants.TABLE_STATUS.CANCELED
     );
 
@@ -228,8 +229,16 @@ public class VaccineCatalogServiceImpl implements VaccineCatalogService {
                 if (disease == null || disease.getId() == null) {
                     continue;
                 }
+                List<ChildDiseaseDoseSchedule> targetSchedules = schedulesByDiseaseId.getOrDefault(disease.getId(), List.of());
+                List<ChildDiseaseDoseSchedule> sourceSchedules = record.getDisease() != null && record.getDisease().getId() != null
+                        ? schedulesByDiseaseId.getOrDefault(record.getDisease().getId(), List.of())
+                        : List.of();
                 if (record.getDisease() == null || record.getDisease().getId() == null) {
-                    recordsByDiseaseId.computeIfAbsent(disease.getId(), ignored -> new ArrayList<>()).add(record);
+                    recordsByDiseaseId.computeIfAbsent(disease.getId(), ignored -> new ArrayList<>())
+                            .add(copyRecordForCoveredDisease(record, disease, targetSchedules, sourceSchedules, profile.getDateOfBirth()));
+                } else if (!disease.getId().equals(record.getDisease().getId())) {
+                    recordsByDiseaseId.computeIfAbsent(disease.getId(), ignored -> new ArrayList<>())
+                            .add(copyRecordForCoveredDisease(record, disease, targetSchedules, sourceSchedules, profile.getDateOfBirth()));
                 }
                 usedCoveragesByDiseaseId.computeIfAbsent(disease.getId(), ignored -> new ArrayList<>()).add(coverage);
             }
@@ -293,7 +302,7 @@ public class VaccineCatalogServiceImpl implements VaccineCatalogService {
         List<VaccineProgressDoseResponse> doses = buildDiseaseProgressDoses(sortedRecords, schedules, totalDoses, dateOfBirth);
         int visibleTotalDoses = doses.size();
         int completedDoses = (int) doses.stream()
-                .filter(dose -> Constants.TABLE_STATUS.SUCCESS.equals(dose.getStatus()))
+                .filter(dose -> isCompletedForProgress(dose.getStatus()))
                 .count();
         int pendingDoses = (int) doses.stream()
                 .filter(dose -> Constants.TABLE_STATUS.PENDING.equals(dose.getStatus()))
@@ -401,6 +410,9 @@ public class VaccineCatalogServiceImpl implements VaccineCatalogService {
             if (dateOfBirth != null && schedule != null && schedule.getRecommendedAgeMonths() != null) {
                 expectedDate = dateOfBirth.plusMonths(schedule.getRecommendedAgeMonths());
             }
+            Long generatedStatus = expectedDate != null && expectedDate.isBefore(LocalDate.now())
+                    ? Constants.TABLE_STATUS.INACTIVE
+                    : Constants.TABLE_STATUS.PENDING;
             responses.add(VaccineProgressDoseResponse.builder()
                     .recordId(null)
                     .doseOrder(doseOrder)
@@ -411,12 +423,80 @@ public class VaccineCatalogServiceImpl implements VaccineCatalogService {
                     .manufacturer(null)
                     .injectionDate(expectedDate)
                     .actualInjectionDate(null)
-                    .status(Constants.TABLE_STATUS.PENDING)
-                    .overdue(isOverdue(Constants.TABLE_STATUS.PENDING, expectedDate))
+                    .status(generatedStatus)
+                    .overdue(isOverdue(generatedStatus, expectedDate))
                     .note(schedule != null ? schedule.getNote() : null)
                     .build());
         }
         return responses;
+    }
+
+    private boolean isCompletedForProgress(Long status) {
+        return Constants.TABLE_STATUS.SUCCESS.equals(status)
+                || Constants.TABLE_STATUS.INACTIVE.equals(status);
+    }
+
+    private VaccineRecord copyRecordForCoveredDisease(
+            VaccineRecord record,
+            ChildVaccineDisease disease,
+            List<ChildDiseaseDoseSchedule> targetSchedules,
+            List<ChildDiseaseDoseSchedule> sourceSchedules,
+            LocalDate dateOfBirth
+    ) {
+        return VaccineRecord.builder()
+                .id(record.getId())
+                .profileId(record.getProfileId())
+                .disease(disease)
+                .doseOrder(resolveCoveredDoseOrder(record, targetSchedules, sourceSchedules, dateOfBirth))
+                .source(record.getSource())
+                .vaccine(record.getVaccine())
+                .injectionDate(record.getInjectionDate())
+                .actualInjectionDate(record.getActualInjectionDate())
+                .price(record.getPrice())
+                .note(record.getNote())
+                .createdAt(record.getCreatedAt())
+                .createdBy(record.getCreatedBy())
+                .updatedAt(record.getUpdatedAt())
+                .updatedBy(record.getUpdatedBy())
+                .status(record.getStatus())
+                .build();
+    }
+
+    private Integer resolveCoveredDoseOrder(
+            VaccineRecord record,
+            List<ChildDiseaseDoseSchedule> targetSchedules,
+            List<ChildDiseaseDoseSchedule> sourceSchedules,
+            LocalDate dateOfBirth
+    ) {
+        Integer sourceRecommendedAgeMonths = sourceSchedules.stream()
+                .filter(schedule -> Objects.equals(schedule.getDoseOrder(), record.getDoseOrder()))
+                .map(ChildDiseaseDoseSchedule::getRecommendedAgeMonths)
+                .filter(Objects::nonNull)
+                .findFirst()
+                .orElse(null);
+        if (sourceRecommendedAgeMonths != null) {
+            Integer matchedDoseOrder = targetSchedules.stream()
+                    .filter(schedule -> Objects.equals(schedule.getRecommendedAgeMonths(), sourceRecommendedAgeMonths))
+                    .map(ChildDiseaseDoseSchedule::getDoseOrder)
+                    .filter(Objects::nonNull)
+                    .findFirst()
+                    .orElse(null);
+            if (matchedDoseOrder != null) {
+                return matchedDoseOrder;
+            }
+        }
+
+        if (record.getInjectionDate() == null || dateOfBirth == null) {
+            return null;
+        }
+
+        return targetSchedules.stream()
+                .filter(schedule -> schedule.getRecommendedAgeMonths() != null)
+                .filter(schedule -> record.getInjectionDate().equals(dateOfBirth.plusMonths(schedule.getRecommendedAgeMonths())))
+                .map(ChildDiseaseDoseSchedule::getDoseOrder)
+                .filter(Objects::nonNull)
+                .findFirst()
+                .orElse(null);
     }
 
     private boolean isOverdue(Long status, LocalDate injectionDate) {
