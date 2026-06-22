@@ -160,16 +160,15 @@ public class BabyRoutineServiceImpl implements BabyRoutineService {
         List<BabyRoutineEntry> tomorrowEntries = getOrCreateRoutineEntries(profile, nextDate);
         List<RoutineSpec> tomorrowSpecs = routineSpecs(resolveAgeMonths(profile, nextDate));
 
-        for (int index = 0; index < tomorrowEntries.size(); index++) {
-            BabyRoutineEntry entry = tomorrowEntries.get(index);
+        for (BabyRoutineEntry entry : tomorrowEntries) {
             if (Boolean.TRUE.equals(entry.getCompleted())) {
                 continue;
             }
-            if (index < tomorrowSpecs.size()) {
-                entry.setPlannedTime(LocalTime.parse(tomorrowSpecs.get(index).time()).plusMinutes(shiftMinutes));
-            } else {
-                entry.setPlannedTime(entry.getPlannedTime().plusMinutes(shiftMinutes));
+            RoutineSpec matchingSpec = findRoutineSpec(tomorrowSpecs, entry);
+            if (matchingSpec == null) {
+                continue;
             }
+            entry.setPlannedTime(LocalTime.parse(matchingSpec.time()).plusMinutes(shiftMinutes));
             entry.setNote("Đậu sức khỏe đã cập nhật từ lịch hoàn thành ngày " + routineDate);
             entry.setSource("DAU_HEALTH_PREDICTION");
             entry.setUpdatedAt(now);
@@ -285,10 +284,23 @@ public class BabyRoutineServiceImpl implements BabyRoutineService {
         }
 
         List<RoutineSpec> specs = routineSpecs(resolveAgeMonths(profile, routineDate));
-        LocalTime anchorBaselineTime = anchorIndex < specs.size()
-                ? LocalTime.parse(specs.get(anchorIndex).time())
-                : entries.get(anchorIndex).getPlannedTime();
-        long deltaMinutes = Duration.between(anchorBaselineTime, anchorEntry.getActualTime()).toMinutes();
+        long targetDeltaMinutes = routineTimeDeltaMinutes(anchorEntry.getPlannedTime(), anchorEntry.getActualTime());
+        long currentTimelineShiftMinutes = 0;
+        for (int index = anchorIndex + 1; index < entries.size(); index++) {
+            BabyRoutineEntry futureEntry = entries.get(index);
+            if (Boolean.TRUE.equals(futureEntry.getCompleted())) {
+                continue;
+            }
+            RoutineSpec matchingSpec = findRoutineSpec(specs, futureEntry);
+            if (matchingSpec != null) {
+                currentTimelineShiftMinutes = routineTimeDeltaMinutes(
+                        LocalTime.parse(matchingSpec.time()),
+                        futureEntry.getPlannedTime()
+                );
+                break;
+            }
+        }
+        long adjustmentMinutes = targetDeltaMinutes - currentTimelineShiftMinutes;
         LocalDateTime now = LocalDateTime.now(APP_ZONE);
 
         for (int index = anchorIndex + 1; index < entries.size(); index++) {
@@ -296,17 +308,16 @@ public class BabyRoutineServiceImpl implements BabyRoutineService {
             if (Boolean.TRUE.equals(entry.getCompleted())) {
                 continue;
             }
-            LocalTime baselineTime = index < specs.size()
-                    ? LocalTime.parse(specs.get(index).time())
-                    : entry.getPlannedTime();
-            entry.setPlannedTime(baselineTime.plusMinutes(deltaMinutes));
+            entry.setPlannedTime(entry.getPlannedTime().plusMinutes(adjustmentMinutes));
             entry.setNote("Đậu sức khỏe đã update timeline theo " + anchorEntry.getActivity());
-            entry.setSource("TIMELINE_UPDATE");
+            if (!"CUSTOM".equals(entry.getSource()) && !"NIGHT_PREDICTION".equals(entry.getSource())) {
+                entry.setSource("TIMELINE_UPDATE");
+            }
             entry.setUpdatedAt(now);
         }
 
         List<BabyRoutineEntry> savedEntries = babyRoutineEntryRepository.saveAll(entries);
-        String summary = "Timeline đã được update " + formatSignedMinutes((int) deltaMinutes)
+        String summary = "Timeline đã được update " + formatSignedMinutes((int) targetDeltaMinutes)
                 + " dựa trên giờ hoàn thành của mục \"" + anchorEntry.getActivity() + "\".";
         return buildDayResponse(profile, routineDate, savedEntries, buildRuleBasedAnalysis(profile, routineDate, savedEntries, summary));
     }
@@ -1063,11 +1074,30 @@ public class BabyRoutineServiceImpl implements BabyRoutineService {
     private int calculateRoutineShiftMinutes(List<BabyRoutineEntry> entries) {
         double averageShift = entries.stream()
                 .filter(entry -> entry.getActualTime() != null)
-                .mapToLong(entry -> Duration.between(entry.getPlannedTime(), entry.getActualTime()).toMinutes())
+                .filter(entry -> entry.getSource() == null || !entry.getSource().startsWith("AUTO_"))
+                .mapToLong(entry -> routineTimeDeltaMinutes(entry.getPlannedTime(), entry.getActualTime()))
                 .average()
                 .orElse(0);
         int roundedToFiveMinutes = (int) Math.round(averageShift / 5.0) * 5;
         return Math.max(-120, Math.min(120, roundedToFiveMinutes));
+    }
+
+    private long routineTimeDeltaMinutes(LocalTime plannedTime, LocalTime actualTime) {
+        long deltaMinutes = Duration.between(plannedTime, actualTime).toMinutes();
+        if (plannedTime.isAfter(LocalTime.of(18, 0))
+                && actualTime.isBefore(LocalTime.of(6, 0))
+                && deltaMinutes < 0) {
+            return deltaMinutes + Duration.ofDays(1).toMinutes();
+        }
+        return deltaMinutes;
+    }
+
+    private RoutineSpec findRoutineSpec(List<RoutineSpec> specs, BabyRoutineEntry entry) {
+        return specs.stream()
+                .filter(spec -> spec.type().equals(entry.getType()))
+                .filter(spec -> spec.activity().equals(entry.getActivity()))
+                .findFirst()
+                .orElse(null);
     }
 
     private String formatSignedMinutes(int minutes) {
@@ -1215,7 +1245,10 @@ public class BabyRoutineServiceImpl implements BabyRoutineService {
     private BabyRoutineSleepPredictionResponse buildSleepPrediction(Profile profile, LocalDate routineDate, List<BabyRoutineEntry> entries) {
         BabyRoutineEntry sleepEntry = entries.stream()
                 .filter(entry -> "SLEEP".equals(entry.getType()))
-                .findFirst()
+                .filter(entry -> !"NIGHT_PREDICTION".equals(entry.getSource()))
+                .max(Comparator.comparing(entry -> entry.getActualTime() != null
+                        ? entry.getActualTime()
+                        : entry.getPlannedTime()))
                 .orElse(null);
         if (sleepEntry == null) {
             return null;
