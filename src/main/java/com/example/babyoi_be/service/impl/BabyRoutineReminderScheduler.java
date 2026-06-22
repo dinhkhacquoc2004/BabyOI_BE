@@ -107,7 +107,7 @@ public class BabyRoutineReminderScheduler {
             return false;
         }
 
-        String childName = normalize(profile.getName(), null);
+        String childName = normalizeChildName(profile.getName());
         String childLabel = childName == null ? "bé" : "bé " + childName;
         String sentenceChildLabel = childName == null ? "Bé" : "Bé " + childName;
         String activity = normalize(entry.getActivity(), "hoạt động theo lịch");
@@ -150,6 +150,14 @@ public class BabyRoutineReminderScheduler {
 
     private String normalize(String value, String fallback) {
         return value == null || value.isBlank() ? fallback : value.trim();
+    }
+
+    private String normalizeChildName(String value) {
+        String childName = normalize(value, null);
+        if (childName != null && childName.length() > 3 && childName.regionMatches(true, 0, "bé ", 0, 3)) {
+            childName = childName.substring(3).trim();
+        }
+        return childName == null || childName.isBlank() ? null : childName;
     }
 
     private String formatTime(LocalTime time) {

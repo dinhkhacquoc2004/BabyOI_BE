@@ -7,7 +7,7 @@ import dotenv from 'dotenv'
 import express from 'express'
 import { authenticate } from './auth.js'
 import { ADMIN_PUBLIC_DIR, buildConnectionConfig, PORT, ROOT_PATH, SPRING_API_BASE_URL } from './config.js'
-import { existingTables, initAdminDatabase } from './database.js'
+import { existingTables, initAdminDatabase, loadDashboardAnalytics } from './database.js'
 import { buildResources } from './admin-sections/index.js'
 import { ADMIN_ASSETS, ADMIN_BRANDING, ADMIN_LOCALE } from './theme.js'
 
@@ -80,10 +80,7 @@ async function start() {
     locale: ADMIN_LOCALE,
     resources,
     dashboard: {
-      handler: async () => ({
-        tables: resources.length,
-        database: connectionConfig.database,
-      }),
+      handler: async () => loadDashboardAnalytics(connectionConfig.connectionString),
       component: BabyOiDashboard,
     },
   })
