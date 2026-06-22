@@ -112,10 +112,12 @@ public class BabyRoutineServiceImpl implements BabyRoutineService {
         }
 
         Profile profile = resolveChildProfileForRoutine(profileId);
-        LocalDate supportedFrom = profile.getDateOfBirth();
+        LocalDate supportedFrom = resolveRoutineStartDate(profile);
         LocalDate supportedTo = profile.getDateOfBirth().plusMonths(25).minusDays(1);
         LocalDate effectiveFrom = fromDate.isBefore(supportedFrom) ? supportedFrom : fromDate;
-        LocalDate effectiveTo = toDate.isAfter(supportedTo) ? supportedTo : toDate;
+        LocalDate today = LocalDate.now(APP_ZONE);
+        LocalDate requestedTo = toDate.isAfter(today) ? today : toDate;
+        LocalDate effectiveTo = requestedTo.isAfter(supportedTo) ? supportedTo : requestedTo;
 
         List<BabyRoutineDayResponse> days = new ArrayList<>();
         if (!effectiveFrom.isAfter(effectiveTo)) {
@@ -1094,6 +1096,12 @@ public class BabyRoutineServiceImpl implements BabyRoutineService {
         if (profile.getDateOfBirth() == null || profile.getDateOfBirth().isAfter(routineDate)) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Ngày sinh của bé không hợp lệ");
         }
+        if (routineDate.isBefore(resolveRoutineStartDate(profile))) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Lịch sinh hoạt chỉ được tính từ ngày tạo hồ sơ"
+            );
+        }
         int ageMonths = resolveAgeMonths(profile, routineDate);
         if (ageMonths > 24) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Routine hiện chỉ hỗ trợ bé từ 0 đến 24 tháng");
@@ -1115,6 +1123,15 @@ public class BabyRoutineServiceImpl implements BabyRoutineService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Ngày sinh của bé không hợp lệ");
         }
         return profile;
+    }
+
+    private LocalDate resolveRoutineStartDate(Profile profile) {
+        LocalDate profileCreatedDate = profile.getCreatedAt() != null
+                ? profile.getCreatedAt().toLocalDate()
+                : profile.getDateOfBirth();
+        return profileCreatedDate.isAfter(profile.getDateOfBirth())
+                ? profileCreatedDate
+                : profile.getDateOfBirth();
     }
 
     private int resolveAgeMonths(Profile profile, LocalDate date) {

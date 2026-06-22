@@ -37,6 +37,14 @@ admin-dashboard/node_modules/
 admin-dashboard/.env
 admin-dashboard/.adminjs/
 
+### Agentic RAG Python service ###
+ai_service/.env
+ai_service/.venv/
+ai_service/chroma_db/
+ai_service/**/__pycache__/
+ai_service/.pytest_cache/
+*.py[cod]
+
 ### SSL certificates ###
 ssl/
 *.key

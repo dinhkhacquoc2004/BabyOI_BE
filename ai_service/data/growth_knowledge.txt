@@ -1,0 +1,45 @@
+# Phạm vi và nguồn
+Kho này dùng để giải thích cách theo dõi tăng trưởng và phát triển của trẻ, không tự chẩn đoán suy dinh dưỡng, béo phì hay chậm phát triển.
+Nguồn chính: WHO Child Growth Standards https://www.who.int/tools/child-growth-standards
+Nguồn bổ sung: UNICEF Early Childhood Development https://www.unicef.org/early-childhood-development
+Rà soát: 2026-06-22.
+
+# Dùng đúng profile và dữ liệu đo
+- Tuổi theo tháng, giới tính, cân nặng, chiều dài/chiều cao và ngày đo phải lấy từ profile đang chọn.
+- Trẻ dưới 2 tuổi thường đo chiều dài nằm; trẻ lớn hơn thường đo chiều cao đứng. Không so trực tiếp hai cách đo nếu không hiệu chỉnh.
+- Cân trên cùng loại cân, ít quần áo, vào điều kiện tương tự. Chiều dài/chiều cao cần dụng cụ và tư thế đúng.
+- Một số đo đơn lẻ không phản ánh đầy đủ. Xu hướng qua nhiều lần đo trên cùng biểu đồ quan trọng hơn một điểm duy nhất.
+
+# Chuẩn tăng trưởng WHO
+- WHO Child Growth Standards áp dụng từ sơ sinh đến 5 tuổi, gồm cân nặng theo tuổi, chiều dài/chiều cao theo tuổi, cân nặng theo chiều dài/chiều cao, BMI theo tuổi và vòng đầu theo tuổi.
+- Không ước tính z-score từ trí nhớ hoặc chỉ từ bảng văn bản. Cần dùng bảng/thuật toán WHO chính thức, đúng giới tính và đúng tuổi chính xác.
+- Đường tăng trưởng đi ngang hoặc tụt qua nhiều kênh, tăng/giảm cân nhanh, hoặc chênh lệch rõ giữa cân nặng và chiều cao cần được nhân viên y tế đánh giá.
+- Trẻ sinh non cần bác sĩ hướng dẫn dùng tuổi hiệu chỉnh trong giai đoạn phù hợp.
+
+# Theo dõi 0–6 tháng
+- Theo dõi bú, số lần tiểu, mức tỉnh táo và xu hướng tăng cân cùng nhau.
+- Cân nặng giảm kéo dài, bú yếu, bỏ bú, ít tiểu, li bì, nôn xanh/nôn máu hoặc khó thở là dấu hiệu cần khám sớm/khẩn.
+- Vòng đầu tăng bất thường, thóp phồng khi trẻ yên, co giật hoặc thay đổi ý thức cần đánh giá y tế.
+
+# Theo dõi 6–24 tháng
+- Giai đoạn này tốc độ tăng cân có thể chậm hơn những tháng đầu; cần xem xu hướng chứ không so với một trẻ khác.
+- Ăn bổ sung, sữa, bệnh gần đây, tiêu chảy kéo dài, giấc ngủ và mức vận động đều có thể ảnh hưởng tăng trưởng.
+- Nếu cân nặng không tăng qua nhiều lần đo, trẻ mất kỹ năng đã có, ăn/bú kém kéo dài hoặc thường xuyên ốm cần khám.
+
+# Phát triển là nhiều lĩnh vực
+- Theo dõi vận động thô, vận động tinh, giao tiếp-ngôn ngữ, nhận thức và tương tác xã hội.
+- Mốc phát triển có khoảng biến thiên; không kết luận chỉ vì trẻ chưa làm được một việc vào đúng một ngày/tháng.
+- Quan sát trẻ trong sinh hoạt thật: nhìn mặt, đáp lại âm thanh, cầm nắm, ngồi/đi theo khả năng, bập bẹ/nói, chơi và tương tác.
+- Mất kỹ năng đã đạt được ở bất kỳ tuổi nào là dấu hiệu cảnh báo cần đánh giá sớm.
+
+# Hỗ trợ phát triển hằng ngày
+- Nói chuyện, hát, đọc sách tranh, gọi tên đồ vật và đáp lại tín hiệu của trẻ.
+- Cho trẻ chơi chủ động trên sàn an toàn, có người lớn quan sát; tăng độ khó theo khả năng thay vì ép mốc.
+- Với trẻ chưa di chuyển, dành thời gian nằm sấp khi thức và có giám sát, chia thành nhiều lần ngắn.
+- Hạn chế thời gian bị giữ trong xe đẩy/ghế cao/địu quá lâu; ưu tiên tương tác trực tiếp.
+
+# Khi cần khám sớm
+- Mất kỹ năng; ít đáp ứng với âm thanh/ánh mắt; yếu hoặc cứng bất thường; co giật.
+- Không tăng cân hoặc sụt cân; vòng đầu thay đổi nhanh; khó ăn/nuốt; nôn kéo dài; tiêu chảy kéo dài.
+- Người chăm sóc cảm thấy có điều bất thường dù chưa khớp một mốc cụ thể.
+- Chatbot chỉ giải thích và gợi ý theo dõi; đánh giá phát triển chính thức cần nhân viên y tế.

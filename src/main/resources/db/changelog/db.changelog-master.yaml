@@ -82,6 +82,4 @@ databaseChangeLog:
   - include:
       file: db/changelog/changes/045_fix_notification_copy.sql
   - include:
-      file: db/changelog/changes/046_fix_routine_notification_profile_labels.sql
-  - include:
-      file: db/changelog/changes/047_create_app_analytics.sql
+      file: db/changelog/changes/046_limit_routine_to_profile_lifetime.sql

@@ -11,6 +11,7 @@ import org.springframework.security.config.annotation.authentication.configurati
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.http.codec.ClientCodecConfigurer;
 
 @Configuration
 @RequiredArgsConstructor
@@ -39,6 +40,13 @@ public class ApplicationConfig {
 
     @Bean
     public WebClient.Builder webClientBuilder() {
-        return WebClient.builder();
+        return WebClient.builder()
+                .codecs(configurer -> configureWebClientCodecs(configurer));
+    }
+
+    private void configureWebClientCodecs(ClientCodecConfigurer configurer) {
+        // Normal AgenticRAG responses are compact, but keep bounded headroom for
+        // diagnostics without relying on Spring WebFlux's 256 KB default.
+        configurer.defaultCodecs().maxInMemorySize(2 * 1024 * 1024);
     }
 }
