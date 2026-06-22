@@ -26,15 +26,18 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 @Slf4j
 public class ProfileServiceImpl implements ProfileService {
+    private static final int CHILD_STANDARD_SCHEDULE_MAX_MONTHS = 24;
 
     private final ProfileRepository profileRepository;
     private final UsersRepository usersRepository;
@@ -71,7 +74,7 @@ public class ProfileServiceImpl implements ProfileService {
         profile.setStatus(Constants.TABLE_STATUS.ACTIVE);
 
         Profile savedProfile = profileRepository.save(profile);
-        seedEligibleChildVaccineRecords(savedProfile, user.getId());
+        syncStandardChildVaccineRecords(savedProfile, user.getId());
         return mapToResponse(savedProfile);
     }
 
@@ -88,6 +91,8 @@ public class ProfileServiceImpl implements ProfileService {
         validateCurrentUser(profile.getUser().getId());
         Users updater = usersRepository.findById(request.getUserId())
                 .orElse(profile.getUser());
+        String previousProfileType = profile.getProfileType();
+        LocalDate previousDateOfBirth = profile.getDateOfBirth();
 
         String profileType = normalizeCode(request.getProfileType());
         validateProfileLimit(profile.getUser().getId(), profileType, profile.getId());
@@ -103,6 +108,10 @@ public class ProfileServiceImpl implements ProfileService {
         profile.setUpdatedBy(resolveAuditName(updater));
 
         Profile savedProfile = profileRepository.save(profile);
+        if ("CHILD".equals(savedProfile.getProfileType())
+                && (!"CHILD".equals(previousProfileType) || !savedProfile.getDateOfBirth().equals(previousDateOfBirth))) {
+            syncStandardChildVaccineRecords(savedProfile, updater.getId());
+        }
         deleteOldAvatarIfChanged(oldImageUrl, newImageUrl);
         return mapToResponse(savedProfile);
     }
@@ -210,37 +219,59 @@ public class ProfileServiceImpl implements ProfileService {
         }
     }
 
-    private void seedEligibleChildVaccineRecords(Profile profile, Long actorId) {
+    private void syncStandardChildVaccineRecords(Profile profile, Long actorId) {
         if (profile == null || !"CHILD".equals(profile.getProfileType()) || profile.getDateOfBirth() == null) {
             return;
         }
 
-        long ageInCompletedMonths = ChronoUnit.MONTHS.between(profile.getDateOfBirth(), LocalDate.now());
-        if (ageInCompletedMonths < 0) {
-            return;
-        }
+        Map<String, VaccineRecord> existingStandardRecords = new HashMap<>();
+        vaccineRecordRepository.findByProfileIdAndSource(profile.getId(), VaccineRuleConstants.RECORD_SOURCE.STANDARD)
+                .stream()
+                .filter(record -> record.getDisease() != null && record.getDisease().getId() != null)
+                .filter(record -> record.getDoseOrder() != null)
+                .forEach(record -> existingStandardRecords.putIfAbsent(recordKey(record.getDisease().getId(), record.getDoseOrder()), record));
 
-        List<VaccineRecord> records = childDiseaseDoseScheduleRepository
+        List<VaccineRecord> recordsToSave = new ArrayList<>();
+        childDiseaseDoseScheduleRepository
                 .findByStatusOrderByDiseaseDisplayOrderAscDoseOrderAsc(Constants.TABLE_STATUS.ACTIVE)
                 .stream()
                 .filter(schedule -> schedule.getDisease() != null)
                 .filter(schedule -> schedule.getRecommendedAgeMonths() != null)
-                .filter(schedule -> schedule.getRecommendedAgeMonths() <= ageInCompletedMonths)
-                .map(schedule -> VaccineRecord.builder()
-                        .profileId(profile.getId())
-                        .disease(schedule.getDisease())
-                        .doseOrder(schedule.getDoseOrder())
-                        .source(VaccineRuleConstants.RECORD_SOURCE.STANDARD)
-                        .injectionDate(profile.getDateOfBirth().plusMonths(schedule.getRecommendedAgeMonths()))
-                        .status(Constants.TABLE_STATUS.PENDING)
-                        .createdAt(LocalDate.now())
-                        .createdBy(actorId)
-                        .build())
-                .collect(Collectors.toList());
+                .filter(schedule -> schedule.getRecommendedAgeMonths() >= 0)
+                .filter(schedule -> schedule.getRecommendedAgeMonths() <= CHILD_STANDARD_SCHEDULE_MAX_MONTHS)
+                .forEach(schedule -> {
+                    LocalDate expectedInjectionDate = profile.getDateOfBirth().plusMonths(schedule.getRecommendedAgeMonths());
+                    VaccineRecord existingRecord = existingStandardRecords.get(recordKey(schedule.getDisease().getId(), schedule.getDoseOrder()));
+                    if (existingRecord == null) {
+                        recordsToSave.add(VaccineRecord.builder()
+                                .profileId(profile.getId())
+                                .disease(schedule.getDisease())
+                                .doseOrder(schedule.getDoseOrder())
+                                .source(VaccineRuleConstants.RECORD_SOURCE.STANDARD)
+                                .injectionDate(expectedInjectionDate)
+                                .status(Constants.TABLE_STATUS.PENDING)
+                                .createdAt(LocalDate.now())
+                                .createdBy(actorId)
+                                .build());
+                        return;
+                    }
 
-        if (!records.isEmpty()) {
-            vaccineRecordRepository.saveAll(records);
+                    if (Constants.TABLE_STATUS.PENDING.equals(existingRecord.getStatus())
+                            && !expectedInjectionDate.equals(existingRecord.getInjectionDate())) {
+                        existingRecord.setInjectionDate(expectedInjectionDate);
+                        existingRecord.setUpdatedAt(LocalDate.now());
+                        existingRecord.setUpdatedBy(actorId);
+                        recordsToSave.add(existingRecord);
+                    }
+                });
+
+        if (!recordsToSave.isEmpty()) {
+            vaccineRecordRepository.saveAll(recordsToSave);
         }
+    }
+
+    private String recordKey(Long diseaseId, Integer doseOrder) {
+        return diseaseId + ":" + doseOrder;
     }
 
     private String resolveSex(String profileType, String sex) {

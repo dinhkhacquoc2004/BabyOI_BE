@@ -150,6 +150,13 @@ public class VaccineRecordServiceImpl implements VaccineRecordService {
         stats.put("pending", vaccineRecordRepository.countByProfileIdAndStatus(profileId, Constants.TABLE_STATUS.PENDING));
         stats.put("canceled", vaccineRecordRepository.countByProfileIdAndStatus(profileId, Constants.TABLE_STATUS.CANCELED));
         stats.put("success", vaccineRecordRepository.countByProfileIdAndStatus(profileId, Constants.TABLE_STATUS.SUCCESS));
+        LocalDate today = LocalDate.now();
+        long overdue = vaccineRecordRepository.findByProfileIdAndStatus(profileId, Constants.TABLE_STATUS.PENDING)
+                .stream()
+                .filter(record -> record.getInjectionDate() != null && record.getInjectionDate().isBefore(today))
+                .count();
+        stats.put("overdue", overdue);
+        stats.put("upcoming", stats.get("pending") - overdue);
         return stats;
     }
 

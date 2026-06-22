@@ -15,6 +15,7 @@ import java.util.List;
 public interface VaccineRecordRepository extends JpaRepository<VaccineRecord, Long> {
     List<VaccineRecord> findByProfileId(Long profileId);
     List<VaccineRecord> findByVaccineId(Long vaccineId);
+    List<VaccineRecord> findByProfileIdAndSource(Long profileId, Long source);
 
     List<VaccineRecord> findByProfileIdAndStatus(Long profileId, Long status);
     List<VaccineRecord> findByProfileIdAndStatus(Long profileId, Long status, Sort sort);

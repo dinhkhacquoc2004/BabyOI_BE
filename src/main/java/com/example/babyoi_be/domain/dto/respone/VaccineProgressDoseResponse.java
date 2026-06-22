@@ -20,5 +20,6 @@ public class VaccineProgressDoseResponse {
     private LocalDate injectionDate;
     private LocalDate actualInjectionDate;
     private Long status;
+    private Boolean overdue;
     private String note;
 }

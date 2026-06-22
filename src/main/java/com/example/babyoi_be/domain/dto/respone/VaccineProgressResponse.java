@@ -21,6 +21,8 @@ public class VaccineProgressResponse {
     private Integer totalDoses;
     private Integer completedDoses;
     private Integer pendingDoses;
+    private Integer overdueDoses;
+    private Integer upcomingDoses;
     private Integer currentDoseOrder;
     private Integer nextDoseOrder;
     private LocalDate nextInjectionDate;

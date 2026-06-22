@@ -298,6 +298,12 @@ public class VaccineCatalogServiceImpl implements VaccineCatalogService {
         int pendingDoses = (int) doses.stream()
                 .filter(dose -> Constants.TABLE_STATUS.PENDING.equals(dose.getStatus()))
                 .count();
+        LocalDate today = LocalDate.now();
+        int overdueDoses = (int) doses.stream()
+                .filter(dose -> Constants.TABLE_STATUS.PENDING.equals(dose.getStatus()))
+                .filter(dose -> dose.getInjectionDate() != null && dose.getInjectionDate().isBefore(today))
+                .count();
+        int upcomingDoses = pendingDoses - overdueDoses;
         Integer nextDoseOrder = doses.stream()
                 .filter(dose -> Constants.TABLE_STATUS.PENDING.equals(dose.getStatus()))
                 .map(VaccineProgressDoseResponse::getDoseOrder)
@@ -323,6 +329,8 @@ public class VaccineCatalogServiceImpl implements VaccineCatalogService {
                 .totalDoses(visibleTotalDoses)
                 .completedDoses(completedDoses)
                 .pendingDoses(pendingDoses)
+                .overdueDoses(overdueDoses)
+                .upcomingDoses(upcomingDoses)
                 .currentDoseOrder(completedDoses)
                 .nextDoseOrder(nextDoseOrder)
                 .nextInjectionDate(nextInjectionDate)
@@ -379,6 +387,7 @@ public class VaccineCatalogServiceImpl implements VaccineCatalogService {
                         .injectionDate(record.getInjectionDate())
                         .actualInjectionDate(record.getActualInjectionDate())
                         .status(record.getStatus())
+                        .overdue(isOverdue(record.getStatus(), record.getInjectionDate()))
                         .note(record.getNote())
                         .build());
                 continue;
@@ -403,10 +412,17 @@ public class VaccineCatalogServiceImpl implements VaccineCatalogService {
                     .injectionDate(expectedDate)
                     .actualInjectionDate(null)
                     .status(Constants.TABLE_STATUS.PENDING)
+                    .overdue(isOverdue(Constants.TABLE_STATUS.PENDING, expectedDate))
                     .note(schedule != null ? schedule.getNote() : null)
                     .build());
         }
         return responses;
+    }
+
+    private boolean isOverdue(Long status, LocalDate injectionDate) {
+        return Constants.TABLE_STATUS.PENDING.equals(status)
+                && injectionDate != null
+                && injectionDate.isBefore(LocalDate.now());
     }
 
     private VaccineRecord preferVisibleRecord(VaccineRecord first, VaccineRecord second) {

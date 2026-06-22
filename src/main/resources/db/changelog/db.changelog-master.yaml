@@ -63,3 +63,5 @@ databaseChangeLog:
       file: db/changelog/changes/035_link_notification_to_vaccine_dose.sql
   - include:
       file: db/changelog/changes/036_link_custom_vaccine_notification.sql
+  - include:
+      file: db/changelog/changes/037_backfill_standard_child_vaccine_records.sql

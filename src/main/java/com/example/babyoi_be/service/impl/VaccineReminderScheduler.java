@@ -83,7 +83,10 @@ public class VaccineReminderScheduler {
 
     private void createReminder(VaccineRecord record, int daysBefore) {
         Profile profile = profileRepository.findById(record.getProfileId()).orElse(null);
-        if (profile == null || profile.getUser() == null) {
+        if (profile == null
+                || profile.getUser() == null
+                || !Constants.TABLE_STATUS.ACTIVE.equals(profile.getStatus())
+                || !"CHILD".equals(profile.getProfileType())) {
             return;
         }
 
