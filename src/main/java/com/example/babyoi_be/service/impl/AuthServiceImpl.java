@@ -279,11 +279,7 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     @Transactional
-    public void logout(String authorizationHeader, RefreshTokenRequest request) {
-        if (authorizationHeader == null || !authorizationHeader.startsWith("Bearer ")) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "auth.authorization.invalid");
-        }
-
+    public void logout(RefreshTokenRequest request) {
         if (request == null || request.getRefreshToken() == null || request.getRefreshToken().isBlank()) {
             return;
         }

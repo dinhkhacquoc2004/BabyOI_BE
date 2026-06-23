@@ -48,7 +48,6 @@ Response thanh cong:
 ```json
 {
   "accessToken": "eyJhbGciOiJIUzI1NiJ9...",
-  "refreshToken": "z5WbqFhU...",
   "tokenType": "Bearer",
   "accessTokenExpiresInMillis": 900000,
   "refreshTokenExpiresInMillis": 2592000000,
@@ -62,7 +61,10 @@ Response thanh cong:
 Y nghia:
 
 - `accessToken`: JWT dung de goi cac API can dang nhap.
-- `refreshToken`: token dung de xin JWT moi khi JWT cu gan het han hoac da het han.
+- `refreshToken` khong con nam trong JSON. Backend dat token nay trong cookie
+  `babyoi_refresh_token` voi cac thuoc tinh `HttpOnly`, `Secure` va `SameSite`.
+- Native mobile gui header `X-Client-Platform: mobile` se nhan `refreshToken`
+  trong JSON de luu bang Keychain/Keystore (Expo SecureStore).
 - `accessTokenExpiresInMillis`: thoi gian song cua JWT. Hien tai la `900000`, tuong duong 15 phut.
 - `refreshTokenExpiresInMillis`: thoi gian song cua refresh token. Hien tai la `2592000000`, tuong duong 30 ngay.
 
@@ -100,26 +102,15 @@ URL:
 http://localhost:8085/api/auth/refresh-token
 ```
 
-Headers:
-
-```http
-Content-Type: application/json
-```
-
-Body:
-
-```json
-{
-  "refreshToken": "refreshToken_vua_nhan_duoc_o_buoc_login"
-}
-```
+Khong can body. Postman luu cookie `babyoi_refresh_token` tu response login va
+gui cookie nay tu dong khi goi cung host. Neu test tren HTTP local, chay backend
+voi `AUTH_COOKIE_SECURE=false` de trinh duyet/Postman chap nhan cookie.
 
 Response thanh cong:
 
 ```json
 {
   "accessToken": "eyJhbGciOiJIUzI1NiJ9...",
-  "refreshToken": "refresh_token_moi",
   "tokenType": "Bearer",
   "accessTokenExpiresInMillis": 900000,
   "refreshTokenExpiresInMillis": 2592000000,
@@ -133,7 +124,7 @@ Response thanh cong:
 Quan trong:
 
 - Sau khi refresh thanh cong, `refreshToken` cu se bi huy.
-- Lan refresh tiep theo phai dung `refreshToken` moi vua duoc tra ve.
+- Backend xoay refresh token va cap cookie moi sau moi lan refresh thanh cong.
 - Day la co che sliding session: neu nguoi dung con dung app va con refresh dung han, phien dang nhap se duoc gia han tiep.
 
 ## 5. Test nhanh luong hoat dong
@@ -141,19 +132,12 @@ Quan trong:
 1. Goi `POST /api/auth/token`.
 2. Copy `accessToken`.
 3. Goi mot API bat ky va gan Bearer token.
-4. Copy `refreshToken`.
-5. Goi `POST /api/auth/refresh-token`.
-6. Lay `accessToken` moi de goi API.
-7. Lay `refreshToken` moi de refresh lan sau.
-8. Khi logout, gui `refreshToken` hien tai de BE thu hoi token do.
+4. Goi `POST /api/auth/refresh-token`; Postman se gui cookie tu dong.
+5. Lay `accessToken` moi de goi API.
+6. Khi logout, goi endpoint logout; backend se thu hoi va xoa cookie.
 
-Logout body:
-
-```json
-{
-  "refreshToken": "refreshToken_hien_tai"
-}
-```
+Logout khong can body. Backend doc refresh token tu cookie, thu hoi token trong
+database va xoa cookie khoi trinh duyet.
 
 ## 6. Cac loi thuong gap
 
