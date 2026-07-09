@@ -89,3 +89,5 @@ databaseChangeLog:
       file: db/changelog/changes/047_split_notification_channel_settings.sql
   - include:
       file: db/changelog/changes/048_mark_past_standard_vaccine_records_not_updated.sql
+  - include:
+      file: db/changelog/changes/049_create_app_analytics.sql

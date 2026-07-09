@@ -1,9 +1,11 @@
 package com.example.babyoi_be.security;
 
+import com.example.babyoi_be.service.AnalyticsService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.extern.slf4j.Slf4j;
 import lombok.RequiredArgsConstructor;
 import org.springframework.lang.NonNull;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -16,11 +18,13 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import java.io.IOException;
 
 @Component
+@Slf4j
 @RequiredArgsConstructor
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtService jwtService;
     private final CustomUserDetailsService customUserDetailsService;
+    private final AnalyticsService analyticsService;
 
     @Override
     protected void doFilterInternal(
@@ -57,6 +61,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     );
 
                     SecurityContextHolder.getContext().setAuthentication(authenticationToken);
+
+                    if (userDetails instanceof CustomUserDetails customUserDetails) {
+                        try {
+                            analyticsService.recordDailyActivity(customUserDetails);
+                        } catch (Exception analyticsException) {
+                            log.warn("Could not record daily activity for user {}", customUserDetails.getId(), analyticsException);
+                        }
+                    }
                 }
             }
         } catch (Exception exception) {
